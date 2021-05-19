@@ -1,0 +1,9 @@
+#+TITLE: Hilos - Threads
+
+  #+BEGIN_COMMENT
+  https://www.geeksforgeeks.org/maximum-number-threads-can-created-within-process-c/?ref=rp
+  https://www.geeksforgeeks.org/print-1-2-3-infinitely-using-threads-in-c/?ref=rp
+  
+  https://github.com/sisoputnfrba/ejemplos-teoria/blob/master/process_and_threads/print-pid-and-tid.c
+  https://github.com/sisoputnfrba/ejemplos-teoria/blob/master/threads_race_condition/hilos-varglobal.c
+  #+END_COMMENT
