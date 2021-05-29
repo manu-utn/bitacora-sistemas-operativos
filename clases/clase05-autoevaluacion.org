@@ -1,4 +1,4 @@
-* Cuestionario Natasha
+* Cuestionario (1)
 ** Pregunta 1
    En que momento se atienden las interrupciones?
    (Suponiendo que NO están deshabilitadas)
@@ -117,7 +117,7 @@
    Es VERDADERO, 
    porque el switcheo no hay *cambio de contexto* ni *cambio de modo*
 
-* Cuestionario (2) Natasha
+* Cuestionario (2)
 ** Pregunta 1
    Cual de los sig. podrian ser sintomas de que esta ocurriendo
    una *Condición de carrera*?
@@ -263,7 +263,7 @@
     1. estemos usando recursos con *mutua exclusión*
     2. tener *planificador* que elije el más prioritario
 *** Observaciones
-* Cuestionario Dan 
+* Cuestionario (3)
 ** Pregunta N
 *** Respuesta elegida
 *** Respuesta correcta

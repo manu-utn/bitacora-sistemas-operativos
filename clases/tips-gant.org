@@ -1,7 +1,5 @@
 #+TITLE: TIPS En los GANTT
 
-Por marquitos :)
-
 * Planificador a largo plazo
   cuando llegan nuevos procesos o termina algun procesos
 * Planificador a mediano plazo
