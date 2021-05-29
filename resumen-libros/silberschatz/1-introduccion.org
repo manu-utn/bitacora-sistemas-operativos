@@ -1,0 +1,600 @@
+#+TITLE: Capitulo 1 - Introducción
+Paginas 22 a
+
+* Introducción
+ 1. Es un intermediario entre el usuario y el hardware
+ 2. Proporciona un entorno para ejecutar programas
+ 3. Gestiona el hardware de la computadora
+ 4. El hardware asegura el funcionamiento del sistema informático
+ 5. Los SO se deben definir, y luego diseñar
+** El diseño de los SO
+   Según su finalidad, se diseñan SO para que sean eficientes, prácticos o ambas
+  1. Los SO para *mainframe* estan *diseñados para optimizar* el uso del hardware
+  2. Los SO para computadora de mano estan diseñados para ser prácticos
+* Que hace un SO
+** Componentes
+   1. un SO en un Sistema informático está conformado por 4 componentes:
+      1. hardware (CPU, memoria, y dipositivos e/s representan los recursos básicos)
+      2. programas (procesador de texto, compilador) definen como administrar
+         los recursos básicos para resolver los problemas de los usuarios
+      3. sistema operativo: controla el hardware, y los programas por los usuarios
+      4. usuarios
+** Punto de vistas
+*** Del usuario
+    1. Diseñados para fácil manejo para el trabajo, el usuario tiene poco interés
+       en administrar los recursos. El sistema mismo se encarga de optimizarlos.
+    2. Diseñados para maximizar el manejo de los recursos. 
+       Los usuarios que utilizan terminales para conectarse a un mainframe o 
+       microcomputadora, y el SO utilice solo lo que necesita.
+    3. Diseñados para un equilibrio entre usabilidad individual y administración de recursos.
+       Los usuarios usan *estaciones de trabajos* conectados entre redes.
+    4. Diseñados para que el usuario tenga interacción (electrodomésticos),
+       solo permiten encender/apagar y algun teclado numérico.
+    5. Diseñados en funcion de la *usabilidad*, pero su rendimiento depende de su bateria.
+       (computadoras de mano)
+*** Del Sistema
+    1. Como *asignador de recursos*, debe decidir como asignarlos a los programas
+       y usuarios de manera eficiente. Fundamental si muchos usuarios intentan
+       conectarse al mismo mainframe.
+    2. Como *programa de control* de los dispositivos de E/S, y los programas de usuario.
+       Tratando de evitar errores.
+** Definición
+   1. Su objetivo es ejecutar programas de usuario
+   2. Los programas de aplicación facilitan el uso del hardware (controlan
+      los dipositivos de E/S)
+   3. Se denomina *kernel* y se considera un programa. El resto son 
+      programas del sistema, y programas de aplicación.
+* Organización de una computadora
+** Funcionamiento
+   1. Pueden tener una o más *CPU*, y varias *controladoras de dispositivos*
+      conectadas a un *bus* que les da acceso a la *memoria compartida*.
+   2. Cada *controladora de dispositivo* se encarga de un dispositivo específico
+      (Ej. unidades de disco, dispositivo de audio, pantalla de video)
+   3. La *controladora de memoria* maneja el acceso a la memoria eficiente
+      entre la cpu y las controladores de dispositivos.
+   4. El *programa de arranque*
+      - se almacena en la memoria *ROM* (read only memory),
+      ó en una memoria EEPROM (eletrically erasable programmable read-only memory)
+      se conoce como *firmware* y está dentro del hardware de la computadora
+      - Carga en memoria el *kernel* (nucleo) del SO, y ejecuta su primer 
+        proceso (ej. init) esperando un evento.
+      - Los eventos se indican mediante *interrupciones* (por hardware ó software)
+        - El hardware genera una interrumpción enviando una señal al CPU, a través del bus del sistema.
+        - El software genera una interrumpción ejecutando una operación conocida *llamada del sistema*
+        - Cada interrupción transifere el control a una rutina de servicio específica,
+          y se pueden manejar de dos maneras
+          1. Con una rutina genérica que analiza la información y luego llama a la 
+             rutina específica. Es bastante lenta.
+          2. Mediante una tabla de punteros a las rutinas de interrupción,
+             evitando una rutina intermedia. Es más veloz.
+             La tabla de punteros se guarda la memoria (1ras 100 posiciones).
+             Es importante guardar la dirección de la instrucción interrumpida,
+             que suele ser en la pila del sistema.
+** Estructura de almacenamiento              
+   1. Los programas deben estar en la *memoria principal* (memoria RAM,
+      Random-access memory) para ser ejecutados.
+*** Comunicacion procesador y RAM
+    El *procesador* accede a la RAM mediante DRAM (dynamic random-access memory)
+    quien forma una matiz de palabras de memoria, donde cada palabra tiene
+    una dirección en memoria.
+    El CPU carga automáticamente instrucciones desde la memoria principal,
+    para su ejecución.
+    La interacción entre procesador y RAM, se logra mediante cargas (load) y 
+    almacenamientos (store) de instrucciones a partes especificas de la memoria.
+    La unidad de memoria solo ve un flujo de direcciones de memoria,
+    no sabe "COMO" se generaron ni "QUE" son, sólo interesa la 
+    secuencia de direcciones de memoria generada pro el programa en ejecución.
+*** Almacenamiento Secundario
+    - Los programas y datos no pueden residir en la memoria principal, porque
+      1. Tiene poca capacidad de almacenamiento
+      2. El almacenamiento es *volatil*, se pierde al quitar la alimentación.
+    - Los *almacenamientos secundarios* solucionan el problema de la capacidad
+      de almacenamiento de la memoria principal, sirven como una extensión de ella.
+    - El dispositivo físico para *almacenamiento secundario* es el *disco magnético*
+      que almacena datos y los programas. Primero se almacenan en estos, y luego
+      se cargan en memoria.
+    - La diferencia entre los *sistemas de almacenamiento* son
+      - la velocidad
+      - el tamaño
+      - la volatilidad
+      - el costo
+    - Cintas magnéticas y memorias semiconductoras son más rapidas y baratas
+*** Tipos Sistemas de almacenamiento
+    Existen dos tipos *volátiles* y *NO volátiles*
+   - Los *Volatiles* pierden los datos cuando se retira la alimentación 
+     del dispositivo, y son:
+     - Registros
+     - Cache
+     - Memoria Principal (RAM)
+   - Los *No volátiles* persisten su contenido
+     - Disco Electrónico (Memoria Flash)
+       1. Las *memorias flash* no necesitan de alimentación para conservar los datos
+          aunque son mas lentas que las *DRAM* que si necesitan de alimentación.
+     - Disco magnético
+     - Disco Óptico
+
+*** Diseño de una Memoria
+    - Según su uso debe existir un equilibrio, pudiendo usarse memorias
+      - rápida, y costosa, y volátil (cache, memoria principal)
+      - ó lenta, barata y no volátil (disco magnético, memoria flash)
+    - Se puede utilizar *memorias caché* para mejorar el rendimiento
+      cuando la comunicación dos componentes es lenta.
+** Estructura de E/S
+*** Conceptos previos
+    - Una computadora normal consta de una o más CPU, con múltiples controladores
+    de dispositivo que se conectan a través de un *bus* común.
+    - Cada controladora de dispositivo se encarga de un tipo específico de dispositivo
+      (Controladora de disco, de video, de sonido, ...)
+    - Según la controladora puede haber más de un dispositivo conectado
+      (Una controladora de almacenamiento puede tener varios dispositivos conectados,
+       Ej. unidades de disco)
+*** Controladoras de dispositivo
+    - Mantienen búferes locales y registros
+    - Transfiere los datos entre los *dispositivos periféricos* que controla 
+      y su *buffer local*
+    - A nivel hardware
+*** Controlador de dispositivo
+    - Los SO tienen un *controlador de dispositivo* (Driver) para cada
+      *controladora hardware* que presenta al SO una interfaz para comunicarse
+      con el dispositivo
+    - A nivel software, y se llaman *Driver*
+*** Proceso de Pequeñas Operaciones de E/S
+    El siguiente proceso se realiza para transferir pequeñas cantidades de datos:
+    1. Al iniciar una operación de E/S, el controlador carga los registros 
+      de la *controladora*. 
+    2. La controladora analiza los *registros* para saber que acción realizar
+       (Ej. leer caracteres del teclado)
+    3. La controladora *transfiere los datos* del dispositivo, a su *buffer local*
+    4. La controladora informa al *controlador de dispositivo* a través de una 
+       interrupción, que ya finalizó la operación
+    5. El controlador le devuelve el control al SO, devolviendo los datos ó
+       un puntero a los datos.
+    Por tanto es una comunicación entre el controlador que le manda ordenes (registros)
+    a la controladora, esta las analiza para saber que ejecutar y se comunica 
+    con el dispositivo. La controladora guarda en su buffer el resultado de la operación,
+    y le informa al controlador (mediante una interrupción), y el controlador le
+    devuelve el control al SO.
+*** Proceso de Grandes Operaciones de E/S
+    - Este proceso se utiliza cuando se trata de grandes movimientos de datos
+    como la E/S de disco.
+    - Se utiliza el DMA (Direct memory access)
+    - La *controladora hardware* transfiere un bloque de datos, entre su buffer
+      y la memoria (no interviene el cpu)
+    - Se genera sólo una interrupción por bloque, para avisarle al controlador
+      que terminó la operación.
+    - Permite al CPU realizar otros trabajos, mientras la controladora hardware
+      hace sus operaciones.
+* Arquitectura de un Sistema Informático
+** Sistemas de un solo procesador
+   - Son los más comunes
+   - Solo hay un CPU principal que ejecuta un conjunto de instrucciones,
+     que incluye instrucciones de los procesos de usuario.
+   - Los *procesadores de propósito especial* ejecutan un conjunto limitado
+     de instrucciones y "NO EJECUTAN PROCESOS DE USUARIO"
+   - El SO gestiona los *procesadores de propósito especial*, mandadole
+     que tareas realizar, y consultando su estado. Liberando al CPU principal
+     de tareas adicionales, que pueden realizar esos otros.
+   - Si solo hay una CPU de propósito general, entonces el sistema es
+     de un solo procesador.
+** Sistemas multiprocesador
+*** Conceptos
+   - Se conocen como *sistemas paralelos* ó *sistemas fuertemente acoplados*
+   - Los procesadores se comunican entre si, compartiendo
+     - el bus de la computadora
+     - el reloj
+     - la memoria
+     - los dispositivos periféricos
+*** Ventajas
+     1. *Mayor rendimimiento*:
+        - Al haber más procesadores, el trabajo se realiza en menos tiempo
+        - Se distribuye las tareas entre los procesadores
+     2. *Economía de escala*:
+        - Es más barato, porque los procesadores comparten los periféricos
+          (Ej. todos comparten los datos en un mismo disco)
+          en contraparte de un procesador con varios sistemas con varios discos
+          y muchas copias de los datos.
+     3. *Mayor fiabilidad*:
+        - Al distribuirse las tareas entre los procesadores,
+          si uno llegase a fallar, el sistema se haría un poco más lento.
+          Pero no dejaría de funcionar, sólo aumentaría el trabajo entre
+          el resto de los procesadores.
+*** Clasificación de Fiabilidad 
+    La máxima fiabilidad consiste en seguir operando apesar de las fallas.
+    Es decir que el sistema no deje de funcionar por una falla.
+    - *Degradación suave*: Capacidad de operar al nivel de hardware 
+       superviviente. Es decir, si alguno de los
+      componentes falla, la capacidad de servicio disminuye, y viceversa.
+    - *Tolerancia a fallos*: Apesar de sufrir fallos en algun componente, 
+       siguen operando.
+     
+*** Tipos
+    - *Multiprocesamiento asimétrico*:
+      - Aparece la relación maestro/esclavo
+      - El procesador maestro, controla el sistema y a los demás procesadores
+      - Los procesadores esclavos, esperan instrucciones del procesador maestro
+        ó tienen tareas predefinidas.
+    - *Multiprocesamiento simétrico* (SMP)
+      - Es el más común, no existe la relación maestro/esclavo
+      - Cada procesador realiza todas las tareas del SO
+      - Disminuye la carga de trabajo de procesadores
+** Chips multiprocesador
+   - Tienen multiples núcleos de cálculo en un mismo chip
+   - Se agregan en el diseño de CPU, consideradas como CPU con N múltiples núcleos
+   - el SO los ve como N procesadores estándar.
+** Servidores Blade      
+   - Cada procesador arranca de forma independiente y tiene su propio SO
+** Sistemas en Cluster      
+*** Conceptos
+   - Utilizan multiples CPU, como los *sistemas multiprocesador*
+   - Comparten almacenamiento, yse conectan a través de una red 
+     de área local (LAN, local area network)
+   - Proporciona un servicio con *alta disponibilidad*, 
+     es decir, el servicio funcionará por más que uno o más sistemas 
+     del cluster fallen.
+*** Tipos de Estructura
+    - *Cluster asimétrico*, una maquina host ejecuta las aplicaciones y la otra
+      la monotoriza y toma el control si la otra falla.
+    - *Cluster simétrico*, mas de una máquina host ejecuta las aplicaciones,
+      y se monotorizan entre si.
+    - *Cluster en paralelo*, permiten que multiples hosts accedan a los mismos datos.
+      Se requiere de software especial, y de mecanismos de control de acceso y de bloqueo
+      para evitar conflictos entre operaciones. Estos mecanismos se conocen 
+      como DLM (distributed lock manager)
+    - *Cluster conectados a una red de area extensa (WAN)*
+    Las redes *SAN* (storage-area network) permiten conectar muchos sitemas
+    a una bateria(?) de almacenamiento. En los Cluster de base de datos,
+    aumentan el rendimiento y fiabilidad, ya entre los hosts comparten
+    las bases de datos, y si uno cae, el otro lo reemplaza.
+* Estructura de un SO
+** Multiprogramación
+  - Un SO proporciona un entorno para ejecutar programas
+  - Tienen la capacidad de *multiprogramar*
+  - La *multiprogramación* incrementa el uso del CPU, organiza los trabajos 
+    (código y datos). Teniendo siempre al menos uno en ejecución.
+** Sistemas de Tiempo compartido (multitarea)
+   - El *tiempo compartido* comparte el concepto de *multiprogramación*
+   - La CPU ejecuta múltiples trabajos, alternando entre ellos.
+   - Los sistemas deben ser *interactivos*, que haya una interacción
+     entre usuario y sistema. El usuario interactúa con el SO o un programa
+     mediante un dispositivo de Entrada (Ej. teclado) y el sistema responde
+     con un dispositivo de salida (Ej. monitor)
+   - El tiempo de respuesta del sistema tiende a ser muy corto, por tanto es rápido
+   - Permite que varios usuarios utilicen la misma computadora, y cada uno
+     tiene al menos un programa en memoria
+   - Temas y Mecánismos que deben asegurar estos sistemas
+     1. Mecánismos de comunicación y sincronización de trabajos (Cap. 6)
+     2. Asegurar que los trabajos no generen interbloques (Cap. 7)
+     3. Sistema de archivos (Cap. 12)
+     4. Mecánismos Gestión de discos (Cap. 10, 11)
+     5. Mecánismo de proteccion de recursos de usos inapropiados (Cap. 14)
+** Procesos
+   - Representan *programas cargados en memoria* y en *ejecución*
+** Cola de trabajos
+   - Son procesos que esperan la asignacion de la memoria principal
+     (osea, son trabajos que esperan a pasar a memoria)
+   - Se almacena en disco, porque la memoria principal tiene poca capacidad de espacio
+   - 
+** Planificación de trabajos
+   - Proceso de selección de trabajos que irán a memoria
+   - Cuando hay trabajos listos para ir a memoria, pero hay suficiente espacio
+** Planificación de la CPU
+   - Proceso de selección de que trabajos se ejecutarán
+   - Cuando hay varios trabajos preparados para ejecutarse al mismo tiempo
+** Memoria Virtual
+   - Relacionado con lo que un *Sistema de tiempo compartido* debe ofrecer
+   - Permite un tiempo de respuesta rápido
+   - Permite ejecutar procesos que no estan del todo en la memoria
+   - Permite ejecutar programas más grandes que la memoria física real
+   - Permite una abstracción de la memoria principal pero de mayor tamaño
+* Operaciones del SO
+** Conceptos
+  - Los SO son *controlados mediante interrupciones*
+  - Un SO está *inactivo* esperando que un evento suceda, siempre que:
+    1. No tiene ningun proceso que ejecutar
+    2. No interactúa con ningún dispositivo de E/S
+    3. No interactúa con ningún usuario
+** Eventos que esperan 
+*** Una excepción
+    - Es una *interrupción* provocada por un software debido a
+      - Por un error
+      - Una solicitud específica del programa a un servicio del SO
+*** Una interrupción
+    - Determinan que acción se debe realizar (descripta en código)
+    - Se utilizará a las *rutinas de servicio* responsables para tratarlas
+** Operación en modo dual
+*** Conceptos
+    - Es soportado por el *hardware* para dar protección al SO
+    - Evita que programas de usuario sobreescriban archivos de SO
+*** Diferencias
+    - Permite diferenciar las tareas ejecutadas por el usuario, y cuales por el SO
+      - *Modo kernel*: eĺ código del SO (también conocido como modo del sistema
+        ó modo privilegiado)
+      - *Modo usuario*: el código definido por el usuario
+      - Los modos los diferencia por el *bit de modo*
+        - 0 para kernel
+        - 1 para usuario
+*** Ejemplos Modo usuario 
+    - Cuando el SO ejecuta una aplicación de usuario
+    - Cuando el SO se inició y se cargan las aplicaciones de usuario
+*** Ejemplos Modo kernel
+    - Cuando el SO tiene el control de la computadora
+    - Cuando el SO arranca
+    - Cuando se produce una *excepción*
+    - CUando se prouce una *interrupción*
+    - Cuando una aplicación de usuario solicita un servicio de sistema
+      (lo hace a través de una *llamada al sistema*)
+*** Problemas 
+    Si no hubiese el *modo bit* tampoco habría *modo dual*,
+    y un sistema donde el hardware no de soporte al modo dual podria
+    - Que un programa de usuario sobreescriba los archivos del SO
+    - Que el SO falle y haga que multiples programas escriban sobre un dispositivo
+*** Ventajas       
+    - Protege al SO de usuarios que causen errores
+    - Evita que se ejecuten *instrucciones privilegiadas* (permitidas en modo kernel)
+    - Si se intenta ejecutar *instrucciones privilegiadas* se lanza una excepción al SO
+*** Ejemplos de Instrucciones privilegiadas
+    - Pasar al modo usuario
+    - Controlar las E/S
+    - Gestión de las interrupciones
+*** Ciclo de vida de una instrucción
+    1. El SO tiene el control, se ejecutan en modo kernel
+    2. Si se da el control a una aplicación de usuario, pasa a modo usuario
+    3. Se devuelve el control al SO, a través de
+       1. Una interrupción
+       2. ó una excepción
+       3. ó una llamada al sistema
+*** Llamadas al sistema           
+**** Conceptos
+     - Son el medio que utilizan los *programas de usuario*
+       para solicitar al SO que realize tareas reservadas
+     - Son utilizados por los *procesos*
+     - Pueden transformarse en *excepciones* que pueden ejecutarse por una *instrucción*
+       (Según el sistema la instrucción puede ser: trap ó syscall)
+     
+    *Nota*: una excepción, es un tipo de interrupción provocada por un software,
+    ya sea por un error ó una solicitud a un servicio del SO)
+**** Proceso
+     Más en detalle en el Cap. 2.1
+     1. Cuando se ejecuta una *llamada al sistema*, el hardware la trata como
+        una *interrupción de software* (una excepción)
+     2. El control del SO pasa a una *rutina de servicio* del SO
+     3. El modo *bit de modo* pasa a *modo kernel* (0)
+     4. El kernel analiza la *instrucción* que genera la *interrupción*
+        para determinar la *llamada al sistema*
+        (la *llamada al sistema* contiene el *tipo de servicio* que solicita
+        el *programa del usuario*, el tipo de servicio se pasa por parámetro)
+     5. El kernel analiza que los parámetros son válidos, y ejecuta la solicitud
+     6. El kernel le devuelve el control del SO a la *instrucción* siguiente
+        de la llamada de servicio
+*** Manejo de errores de violación de modo
+    1. El hardware detecta los errores de violación de modo, cuando un programa falla
+       - Si un programa de usuario intenta ejecutar una instrucción ilegal
+       - Si un programa de usuario intenta acceder a una zona de memoria
+         externa a la zona de memoria del usuario
+    2. El hardware envía una *excepción* al SO, para que se encarge
+    3. La *excepción* le sede el control al SO (a través del vector de interrupcion)
+    4. El SO finaliza el programa (termina su ejecución)
+** Temporizador
+   - Para asegurar que el SO mantenga el contol sobre la CPU
+   - Evita que un programa de usuario no llame a los *servicios del sistema*
+     y no devuelva el control al SO
+   - Se utiliza para limitar el tiempo de ejecución de un *programa de usuario* 
+     y este no se ejecute por un período excesivo
+   - Se suele implementar un *temporizador variable* mediante
+     - un reloj de frecuencia fija
+     - un contador (que se irá decrementando)
+   - Cuando el contador del temporizador llega a cero, se produce una *interrupción*
+   - Cuando produce una *interrupción* el SO toma el control
+   - El SO puede considerar a la *interrupción* como
+     - Un error fatal
+     - ó darle más tiempo (y devolver el control al usuario)
+* Gestión de Procesos
+** Proceso
+  - Un *proceso* es un trabajo ó programa en ejecución
+  - "un proceso es un programa en tiempo compartido?" (???)
+  - Es una unidad de trabajo en un sistema
+  - Cada SO tiene un conjunto de procesos
+    - Procesos del SO (código del sistema)
+    - Procesos de usuario (código del usuario)
+** Recursos de un Proceso
+  - Un proceso para realizar su tarea utiliza *recursos*
+    - tiempo de cpu
+    - archivos
+    - memoria
+    - dispositivos de E/S
+  - Los *recursos* que utiliza un proceso, se le puede asignar
+    - cuando se crea
+    - ó durante su ejecución
+  - Cuando un *proceso* termina, el SO reclama los *recursos*
+** Proceso de una hebra
+   - Tienen sólo un *contador de programa* que determina la siguiente instrucción
+     a ejecutar
+   - Su ejecución es *secuencial*
+     1. la CPU ejecuta una instrucción de proceso
+     2. luego otra, y asi... hasta finalizar
+   - En la secuencia de ejecución, un proceso puede ejecutar no más de una instrucción
+     por vez. Por tanto si dos procesos están asociados a un mismo programa,
+     la *secuencia de ejecución* de ambos, se trata por separado.
+** Proceso multihebra
+   - Tiene múltiples contadores de programa y cada uno apunta
+     a la siguiente instrucción a ejecutar de una hebra determinada
+** Actividades del SO para gestionar los procesos
+   - Crear y borrar los procesos de usuario/sistema
+   - Suspender y reanudar procesos
+   - Ofrecer mecanismos para sincronización de procesos
+   - Ofrecer mecanismos para comunicación entre procesos
+   - Ofrecer mecanismos para tratamiento de interbloqueos
+      
+** Referencias Capítulos
+   - Capitulo 3
+   - Capitulo 6
+* Gestión de Memoria
+** La Memoria Principal
+   - Es una *matriz de palabras* (ó bytes)
+   - Permite el acceso rápido a datos
+   - Se comparte entre la CPU y los dispositivos de E/S
+** Ejemplos
+   1. Procesar datos de un disco
+      - La CPU transfiere los datos a la memoria principal 
+      - los transfiere mediante llamadas de E/S
+   2. Ejecutar instrucciones
+      - Deben estar en la memoria para que las CPU las ejecute
+   3. Ejecución de un programa
+      - Debe estar cargado en memoria y asignado a direcciones absolutas (???)
+      - Accede a las instrucciones y datos en memoria
+      - Genera las direcciones absolutas (???)
+      - Cuando finaliza, se libera espacio para cargar y ejecutar el sig. programa
+** Computadoras de propósito general
+   - Pueden mantener varios programas en memoria
+   - Requieren mecanismos de gestión de la memoria
+** Actividades del SO para Gestionar la memoria
+   - Controlar que partes de la memoria están en uso, y por quien
+   - Decidir que datos, y procesos ó partes de procesos, añadir ó extraer de la memoria
+   - Asignar y liberar la asignación de espacio de memoria
+** Referencias Capítulos
+   - Capitulo 8
+   - Capitulo 9
+* Gestión de almacenamiento
+** Conceptos
+  - El SO define como *archivo* a una *unidad de almacenamiento lógico*, 
+    abstrayendo las propiedades físicas de los dispositivos de almacenamiento
+  - El SO asigna los archivos a los *soportes físicos*
+  - El SO accede a los archivos a traves de dispositivos de almacenamiento
+** Gestión del sistema de archivos
+   - Se puede almacenar información en diferentes tipos de medios físicos
+     (discos magnéticos, discos ópticos, ...)
+   - Cada medio se controla mediante un dispositivo (Ej. unidad de disco)
+*** Un archivo
+    - Son una colección de información
+    - Representan programas y datos
+    - Puede ser númericos, alfabéticos, alfanúmericos ó binarios
+    - Se organizan en directorios
+*** Actividades del SO para Gestionar el almacenamiento
+    - Copia de seguridad de archivos en medios de almacenamiento estables (no volátiles)
+    - Creación y borrado de archivos/directorios
+    - Asignación de archivos a los dispositivos de almacenamiento secundario
+*** Referencias Capítulos
+    - Capitulo 10
+    - Capitulo 11
+** Gestión de almacenamiento masivo    
+*** Conceptos
+   - La mayoría de los programas y datos se almacenan en disco,
+     hasta que se carguen en memoria
+   - La memoria principal sólo se utiliza para programas en ejecución
+     porque su tamaño es menor
+   - Se consideran *dispositivos de almacenamiento terciario* las
+     - Las unidades de cinta magnética
+     - Las unidades de CD/DVD
+*** Actividades del SO para Gestión de Disco
+    - Gestión del espacio libre
+    - Asignación del espacio de almacenamiento
+    - Planificación del disco
+*** Funciones del SO
+    - Montaje/Desmontaje de medios en los dispositivos
+    - Asignación/Liberación de dispositivos (para su uso por los procesos)
+*** Referencias Capítulos
+    - Capitulo 12
+** Almacenamiento en caché (falta desarrollar mejor..)
+*** Conceptos
+   - La caché permite un acceso más rápido que la memoria principal
+   - Cuando se usa la información, se copia de forma temporal en la caché
+   - La mayoría de los sistemas disponen de una o más cache de alta velocidad
+     en la jerarquía de memoria
+*** Formas de implementar la caché
+    1. Controladas por Software
+       - mediante *algoritmos de asignación de recursos* y *reemplazamiento de registros*
+       - para decidir que información mantener en los registros, y cual en memoria principal
+       - ofrece un gran incremento en el rendimiento
+    2. Mediante hardware  
+*** Relación Memoria Principal como caché
+    - La *memoria principal* puede verse como caché para el *almacenamiento secundario*
+    - Los datos del almacenamiento secundario deben copiarse a la memoria principal
+      - para ser utilizados
+      - y para se guardados
+*** Jerarquía de almacenamiento 
+    Los datos del sistema de archivos, que están en el almacenamiento secundario
+    de forma permanente, pueden aparecer en varios niveles de jerarquía de almacenamiento
+    1. Caché de datos del sistema de archivos
+*** Almacenamiento según el entorno
+    Si se plantea incrementar el valor de un dato A
+**** Si se ejecuta un proceso
+     - Se realiza la copia en el nivel más alto de la jerarquía
+     - No plantea dificultades
+**** Entorno multitarea 
+     - Se ejecutan multiples procesos
+     - Puede tener problemas
+     - Solución: Cada proceso debe tener el valor más reciente de A
+**** Entorno multiproceso
+     - Puede tener más problemas que en uno de multitarea
+     - El dato de A puede estar en varias cachés
+     - La solución se conoce como *coherencia de caché*
+     - Solución: A nivel hardware, cada caché debe tener el valor más reciente
+**** Entorno Distribuido
+     - Puede tener más problemas que uno *multiproceso*
+** Sistemas de E/S 
+*** Componentes del subsistema de E/S
+    - Componente de gestión de memoria, que incluye
+      1. Almacenamiento en buffer
+      2. GEstión de caché
+      3. Gestión de colas
+    - Interfaz para controladores de dispositivos
+    - Controladores para dispositivos de hardware específicos
+*** Referencias Capítulos
+    - Capítulo 13
+** Protección y seguridad
+   - Es cualquier mecanismo que controle el acceso a los recursos (por procesos ó usuarios)
+   - Este mecanismo debe proporcionar
+     1. los medios para especificar los controles
+     2. los medios para la aplicación de esos controles (?)
+   - Un sistema orientado a la protección proporciona un medio para distinguir
+     - Entre un uso autorizado
+     - y un uso NO autorizado
+*** Referencias Capítulos
+    - Capitulo 14
+    - Capitulo 15
+** Sistemas distribuidos
+*** Conceptos 
+    - Es una colección de computadoras fisicamente separadas y conectadas en red
+    - Una red es una vía de comunicación entre dos o más sistemas
+    - Siempre que varias computadoras se comunican, estaránusando o creando una red.
+    - Su funcionalidad dependen de la red
+*** Tipos de Protocolos de red
+    - TCP/IP (el más soportado por los SO)
+    - ATM
+*** Requisitos de los Protocolos de red
+    1. Un dispositivo de interfaz (Ej. un adaptador de red)
+    2. Un controlador de dispositivo (para que lo gestione)
+    3. Un software (para los datos)
+*** Clasificación de Redes
+**** Red de Area pequeña
+     - Con dispositivos bluetooth
+**** Red de Area local (LAN)
+     - Una pequeña red (habitación, oficina, ...)
+**** Red de Area extendida (WAN)
+     - Una red grande (edificios, ciudades, paises)
+     - La suelen implementar multinacionales
+**** Red de Area metropolitana (MAN)
+     - Una red grande (edificios de una ciudad)
+*** Referencias Capítulos
+    - Capitulo 16
+    - Capitulo 18
+** Sistemas de propósito general
+*** Sistemas embebidos en tiempo real
+**** Tipos
+     - Algunos ejecutan SO estándar (Ej. unix)
+     - Otros son dispositivos hardware con circuitos integrados (No requieren SO)
+**** Que ejecutan
+    - Siempre ejecutan *sistemas operativos en tiempo real*
+**** Cuando se usan
+    - Cuando se establecieron los requisitos de tiempo en la operación de un pocesador
+      ó el flujo de datos
+**** Como QUE se usan 
+     Como dispositivo de control en una aplicación dedicada
+
+
+**** Tienen restricciones
+     - El procesamiento tiene q hacese dentro de esas resticciones
+     sino el sistema falla
+    - funciona OK, solo si proporciona el resultado corecto dentro de sus *restricciones de tiempo*
+*** Sistema Embebido Vs Sistema de tiempo Compartido
+

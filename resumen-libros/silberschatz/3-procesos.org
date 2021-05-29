@@ -1,0 +1,632 @@
+#+TITLE: Capítulo 3 - Procesos
+
+QUEDASTE EN LA PAGINA 170, 
+solo te falta 3.7 los ejemplos de posix, y 3.8 sockets
+Dudas: 
+  - [[DUDA 1]]
+  - [[DUDA 2]]
+  - [[DUDA 3]]
+* Proceso
+** Conceptos
+  - Representa un programa en ejecución
+  - Es una unidad de trabajo
+  - Un sistema contiene un conjunto de procesos
+    - para ejecutar codigo de usuario
+    - paa ejecutar codigo del sistema operativo
+  - se pueden ejecutar de manera *concurrente*
+  - pueden *multiplexar* la CPU (ó CPUs)    (???)
+  - su estado está representado 
+    - por un valor del (PC)
+    - el contenido de los registros del *procesador*
+** Capa de procesos en memoria
+    La capa de memoria de los procesos se divide en 
+
+     |-------|
+     | Stack |
+     |-------|
+     |       |
+     |       |
+     |-------|
+     | Heap  |
+     |-------|
+     | data  |
+     |-------|
+     | text  |
+     |-------|
+*** Codigo que representa cada capa de memoria
+      #+BEGIN_SRC c
+        #include <stdio.h>
+        #include <stdlib.h>
+
+        // estas dos sentencias
+        // se guardan en el bloque de "datos"
+        int x;
+        int y=15;
+
+        // los parámetros de main,
+        // se guardan en un bloque separado
+        int main(int argc, char *argv[]){
+
+          // estados dos sentencias
+          // se guardan en el (Stack)
+          int *valores;
+          int i;
+
+          // al reserva memoria de forma dinámica
+          // se guarda en la sección de (HEAP)
+          valores = (int *) malloc(sizeof(int)*5);
+        }
+      #+END_SRC
+*** Sistema operativo
+    - Se encarga que la memoria de Stack y Heap no se superpongan
+*** (Stack) Pila
+    - almacenamiento temporal para invocación de funciones
+      (parámetros de funciones, variables locales, ...)
+*** (Heap) pila?
+    - la memoria que se almacena de forma dinámica
+      durante tiempo de ejecución
+    - aumenta en tamaño cuando se almacena memoria de forma dinámica
+    - disminuye cuando se libera memoria hacia el sistema
+*** datos
+    - En este bloque aparecen las *variables globales*
+    - Se puede dividir en dos secciones
+      - Datos inicializados
+      - Datos sin inicializar (declarados)
+        
+     |-------------------------|
+     | Stack                   |
+     |-------------------------|
+     |                         |
+     |                         |
+     |-------------------------|
+     | Heap                    |
+     |-------------------------|
+     | ~datos sin inicializar~ |
+     |                         |
+     |-------------------------|
+     |                         |
+     | ~datos inicializados~   |
+     |-------------------------|
+     | text                    |
+     |-------------------------|
+*** texto
+    En este bloque aparecen el código ejecutable
+** Programas
+   - Un programa se convierte en un *proceso* sólo cuando
+     su archivo ejecutable se carga en *memoria*
+     mientras tanto será sólo un achivo más
+   - Cada nueva ejecución de un programa es un *proceso* nuevo
+   - La ejecución de un programa en ejecución 
+     puede generar varios procesos
+* Estado de un Proceso
+  |------------+---------------------------------------|
+  | Estado     | Descripción                           |
+  |------------+---------------------------------------|
+  | New        | Un proceso está siendo creado         |
+  |            |                                       |
+  | Running    | Las instrucciones del proceso         |
+  |            | están siendo ejecutadas               |
+  |            |                                       |
+  | Waiting    | El proceso está esperando que         |
+  |            | ocurra un evento                      |
+  |            | (una señal ó que una E/S se complete) |
+  |            |                                       |
+  | Ready      | El proceso está esperando que sea     |
+  |            | asignado por un procesador            |
+  |            |                                       |
+  | Terminated | Finalizó su ejecución                 |
+  |------------+---------------------------------------|
+
+  Sólo se puede estar ejecutando un solo proceso en cualquiera
+  de los nucleos del procesador, y en cualquier momento.
+  Pero puede haber unos procesos preparados o esperando.
+
+* Bloque de control de Proceso
+** Conceptos
+  - Las siglas en ingles son (PCB, Process Control Block)
+  - También se lo denomina *Bloque de control de tarea*
+  - Cada proceso es representado por un (PCB)
+  - Contiene información de proceso específicos
+  - Sirve como repositorio para toda la información que 
+    se necesita para inciar/reiniciar un proceso
+
+    #+NAME: bloque-de-control-de-proceso
+    |--------------------|
+    | process state      |
+    |--------------------|
+    | process number     |
+    |--------------------|
+    | program counter    |
+    |--------------------|
+    | registers          |
+    |                    |
+    |--------------------|
+    | memory limits      |
+    |--------------------|
+    | list of open files |
+    |--------------------|
+** Process State
+   Tiene información sobre los distintos estados que puede tener
+   - new
+   - ready
+   - running
+   - waiting
+** Program Counter
+   Tiene la *dirección de la siguiente instrucción* 
+   que será ejecutada por este proceso
+** CPU Registers
+   - La cantidad y tipos, dependerán de la arquitectura de la computadora
+   - Ante una *interrupción* se debe guardar la información de todos
+     estos registros. Para que luego de la interrupción, puede continuar
+     su ejecución normalmente.
+** I/O status information
+   - Una lista de los dispositivos de E/S asignados al proceso
+** Otros
+   habian varios mas en el libro
+* Hilos(Threads)
+** [TODO] Sistemas operativos antiguos
+   <<DUDA 1>> Eran los que tenían solo un núcleo el CPU? (procesador)
+  - Un proceso es un programa que tiene sólo un hilo de ejecución
+  - Ese hilo le permitia a un proceso ejecutar solo una tarea a la vez.
+** Sistemas operativos modernos 
+  - Un proceso puede tener muchos hilos de ejecución
+    por tanto pueden ejecutar mas de una tarea a la vez
+  - En sistemas con multiprocesador, pueden tener multiples hilos
+    corriendo en paralelo
+  - En estos sitemas el (PCB) se incluyó tener la información
+    de cada hilo
+* Planificación(Schedule) de Proceso
+** Conceptos
+  - La *Planificación de Proceso* junta la *multiprogramación* y *tiempo compartido*
+    seleccionando entre un conjunto de *procesos disponibles* para 
+    la ejecución del programa en uno de los nucleos
+  - Se conoce como *el grado de multiprogramación* a la cantidad de 
+    procesos que estén en memoria.
+    <<DUDA 2>>: Entonces el grado este puede variar?
+
+    #+BEGIN_QUOTE
+    Para sistemas con śolo un núcleo en el procesador,
+    sólo podrán ejecutar un proceso por vez.
+
+    Para sistemas que tienen más de un núcleo (multicore)
+    podrán ejecutar multiples procesos al mismo tiempo.
+
+    Si hay mas procesos que núcleos, esos procesos excedentes
+    tendrán que esperar que alguno de los nucleos se libere
+    y puedan ser replanificados (los procesos excedentes)
+    #+END_QUOTE
+** Multiprogramación
+    - La *multiprogramación* consiste en ejecutar varios procesos todo 
+      el tiempo para mejorar el uso del CPU
+** Tiempo compartido
+    - El *tiempo compartido* consiste en intercambiar un nucleo del CPU,
+      entre procesos frecuentemente de forma que los usuarios puedan
+      interactuar con cada programa mientras se están ejecutando
+* Colas(queue) de Planificación
+** Concepto
+   - Cuando un proceso es asignado a un núcleo del CPU,
+     este se ejecuta por un tiempo hasta que
+     - el proceso finaliza
+     - el proceso es interrumpido
+     - ó se queda esperando algún evento en particular
+       (que se complete una solicitud de E/S)
+
+   *Observación:*
+   Un proceso continua con este ciclo de pasar de cola en cola,
+   hasta que su ejecución finaliza y entonces se remueve de todas las colas.
+** Cola de Trabajo
+  - Es un cola del tipo *lista doble enlazada*
+  - En esta cola se agregan los procesos que ingresan al sistema
+  - Los procesos se quedan esperando a ser ejecutados en alguno de 
+    los núcleos del CPU
+  - Cada nuevo proceso se agrega en esta cola y
+    - ó es seleccionado para ser ejecutado
+    - ó se despacha (a otra cola supongo?)
+** Cola de Espera
+   - Se agregan los procesos que se quedan esperando algún evento
+     en particular (Ej. que se complete una solicitud de E/S)
+
+   #+BEGIN_EXAMPLE
+   Suponga que hay un proceso que hace una solicitud a un 
+   dispositivo de E/S como puede ser una impresora/teclado/disco de almacenamiento
+
+   como los dispositivos de E/S son más lentos que un procesador,
+   el proceso deberá aguardar que el dispositivo termine su operación,
+   mientras se queda esperando en la *Cola de espera*
+   #+END_EXAMPLE
+** Procesos seleccionados para ejecución
+   Cuando un proceso es asignado a un núcleo del CPU, y está en ejecución
+   puede ocurrir que 
+   1. El proceso genere nuevos procesos hijos, y sea movido a 
+      la *cola de espera* hasta que sus procesos hijos finalizen.
+   2. Ser removido del núcleo donde estaba e ir a la *cola de trabajo* porque
+      - hubo una interrupción
+      - tenia un tiempo de expiración
+   3. Tuvo algún problema con la solicitud de E/S y es colocado
+      en la *cola de espera*
+
+   *Observación:*
+   Cuando un proceso es colocado de *cola de espera* a *cola de trabajo*
+   luego que su estado cambia de *waiting* a *ready*
+* Planificador de CPU
+** Conceptos
+  Selecciona entre varios procesos que están en la *cola de trabajo*
+  y los asigna a un núcleo del CPU (lo hace de forma constante)
+
+  #+BEGIN_QUOTE
+  Un proceso durante su ciclo de vida puede migrar a 
+  distintas colas (de trabajo, de espera,..)
+  #+END_QUOTE
+** Swapping
+   - Su traducción es =intercambio=
+   - Se realiza sólo cuando se necesita liberar memoria,
+     porque ... fue overcommitted (???) <<DUDA 3>>
+   - Consiste en cada cierto tiempo 
+     1. Remover un *proceso* de *memoria* y lo mueve al disco
+       (reduce el grado de multiprogramación)
+     2. Vuelve a colocar el *proceso* en *memoria*, sácándolo del disco
+       (y continúa su ejecución normal)
+* Cambio de contexto
+** Conceptos
+    - Cuando se cambia de un proceso del (CPU) a otro proceso 
+    - Se requiere de dos estados
+      - un *estado de guardado*
+       (el kernel guarda el contexto del proceso actual, en el PCB del proceso)
+      - un *estado de restauración*
+       (el kernel carga el contexto del nuevo proceso)
+    - El *contexto* se guarda en el (PCB, Process Control Block) del proceso.
+    - La velocidad de los cambios de contexto varía según
+      - la computadora
+      - la velocidad de memoria
+      - la cantidad de registros que tiene que copiar
+
+** Conceptos anteriores
+*** Interrupciones
+    - Provocan que el *sistema operativo* obligue al CPU a detener 
+      la tarea que esté ejecutando actual, para ejecutar una rutina de kernel
+    - Cuando ocurren, el Sistema guarda el *contexto del proceso en ejecución* 
+      en el CPU. Para que luego pueda restaurar ese *contexto* cuando 
+      termine de procesar lo que generó la interrupción.
+*** Bloque de Control de Proceso
+    - Este contiene información de 
+      - los registros del CPU
+      - los estados del proceso
+      - información para el manejo de memoria
+* Operaciones sobre Procesos
+** Conceptos
+   - Los procesos se pueden crear y borrar de forma dinámica
+** Llamadas al sistema
+   |--------------------+-----------------------------------------------------|
+   | Llamada al Sistema | Descripción                                         |
+   |--------------------+-----------------------------------------------------|
+   | fork()             | Para crear nuevos procesos hijos                    |
+   |                    | Retorna cero si es un proceso hijo                  |
+   |                    | Retorna mayor a cero es un un proceso padre         |
+   |                    |                                                     |
+   | exec()             | carga el archivo binario a memoria                  |
+   |                    | y comienza su ejecución                             |
+   |                    | (no devuelve el control, a menos que haya un error) |
+   |                    |                                                     |
+   | wait()             | mueve al proceso a la cola de trabajo               |
+   |                    | (hasta que sus procesos hijos terminen)             |
+   |                    |                                                     |
+   | exit()             | para finalizar un proceso                           |
+   |--------------------+-----------------------------------------------------|
+
+   *Observaciones:*
+   - Luego de la syscall exec() se recomienda usar la syscall wait(),
+     ya que la primera no devuelve el control a menos que ocurra un error.
+   - La syscall ~wait()~
+     - se le puede pasar un parámetro para conocer el estado del proceso
+       Ej. ~wait(&estado)~
+     - devuelve el (PID, process identifie) del proceso hijo finalizado
+** Creación de un Proceso
+*** Conceptos
+   - Un proceso puede crear nuevos procesos, y estos otros nuevos
+     (Formando un árbol de procesos)
+   - Los procesos de identifican unívocamente con un número entero
+     llamado (PID, process identifie) 
+
+   #+BEGIN_QUOTE
+   En linux en vez del término *proceso*, utilizan *tarea*
+
+   Los procesos se crean con al llama al syscall fork()
+   #+END_QUOTE
+*** Procesos importantes
+   |---------+-----------------------------------------------------|
+   | proceso | descripcion                                         |
+   |---------+-----------------------------------------------------|
+   | systemd | es el proceso padre de todos los procesos           |
+   |         | su (PID, process identifie) es el 1                 |
+   |         | y es el primero en ejecutarse al bootear el sistema |
+   |---------+-----------------------------------------------------|
+   | logind  | gestiona los usuarios que ingresan                  |
+   |         | en el sistema                                       |
+   |---------+-----------------------------------------------------|
+   | sshd    | gestiona los usuarios que ingresan en el sistema    |
+   |         | mediante (SSH, Secure Shell)                        |
+   |---------+-----------------------------------------------------|
+*** Uso de recursos
+    Cada proceso nuevo, osea un proceso hijo 
+    - Requiere de *recursos* (CPU Time, memoria, archivos, dispositivos de E/S)
+    - Pueden utilizar recursos de dos maneras
+      1. Obtenerlos directamente del sistema operativo
+      2. Obtenerlos de proceso padre quien puede limitarlos
+    - Para evitar sobrecargar el sistema, los *procesos padres deben 
+      restringir los recursos* de procesos hijos, evitando que estos
+      creen muchos otros procesos más.
+*** Su ejecución
+    Cuando un proceso nuevo es creado, el proceso padre puede
+    - Seguir ejecución de manera *concurrente* con sus *procesos hijos*
+    - Se queda esperando que algunos (ó todos) procesos hijos finalizen
+*** Espacio de Dirección (???) Otro nombre ????
+    Cuando un proceso nuevo es creado, este proceso hijo puede
+    - ser una copia del proceso padre (tiene el mismo programa, y datos)
+    - tener otro programa para cargar
+    
+** Fin de un Proceso
+*** Conceptos
+   - ejecuta su última sentencia y solicita al sistema operativo ser borrado
+     (invocando la syscall ~exit()~ )
+   - le avisa a su proceso padre su estado mediante la syscall ~wait()~
+   - los recursos son reclamados por el *sistema operativo*
+     (memoria fisica/vitual, archivos abiertos, buffers de E/S)
+
+   #+BEGIN_QUOTE
+   En linux, el proceso *init* (ó systemd) cada tanto ejecuta 
+   la syscall ~wait()~ para finalizar los procesos huerfanos
+   #+END_QUOTE
+*** Lo finaliza un proceso padre
+    un proceso padre puede da fin a un proceso hijo porque
+    - El proceso hijo excedió el uso de recursos que le asignó su proceso padre
+    - El proceso hijo ya no era necesario
+    - El propio proceso padre finaliz a
+      (Algunos sistemas operativos, no permiten procesos hijos huerfanos)
+*** Proceso Zombie
+    - Cuando un proceso finaliza pero su proceso padre no ejecuta ~wait()~
+    - Todos los procesos pasan por este estado cuando finalizan,
+      pero por muy poco tiempo
+* [DOING] Comunicación entre procesos
+** Procesos independientes
+   - Son procesos que NO comparten información con otros procesos
+** Procesos cooperativos   
+   - Son procesos que comparten información con otros procesos
+*** Ventajas
+**** Información compartida
+     - Muchas aplicaciones comparten la misma información
+**** Mayor Velocidad computacional
+     - Para que una tarea se ejecute más rapido
+       - Se debe dividir en subtareas
+       - Cada subtarea se ejecutará en paralelo
+     - La computadora requiere de varios nucleos de procesamiento
+**** Modularidad
+*** Modelos (IPC, interprocess comunication)
+    Para que los procesos puedan cooperar entre ellos se requiere
+    de un mecanismo para intercambiar información.
+    (Enviar y recibir información)
+**** Compartir memoria
+     - Son mucho más rápido que los de [[Envío de mensajes][envío de mensajes]]
+**** Envío de mensajes
+     - Para manejar pequeñas cantidades de datos
+     - Más fácil de implmentar que los que [[Compartir memoria][comparten memoria]]
+     - utilizan llamadas al sistema (syscalls)
+     - son más lentos que los que comparten memoria
+       por hacer las syscalls (hacen que el kernel intervenga)
+** IPC en Sistemas de Memoria compartida
+   - Para lograr comunicación entre los procesos se debe
+     establecer una *región de memoria compartida*
+   - Los procesos son responsables de validar que no están
+     escribiendo en la misma posicion de forma simultánea
+  
+   #+BEGIN_QUOTE
+   En el código del programa que hagamos debe figurar explicitamente
+   el acceso y manipulacion de la memoria compartida
+   #+END_QUOTE
+
+   *Observación:*
+   IPC significa comunicación entre procesos
+*** Región de Memoria compartida
+   - Se encuentra en el espacio del proceso que crea el segmento 
+     de memoria compartida
+   - Requiere que los procesos permitan *eliminar la restricción 
+     que impone el sistema operativo* de que un proceso NO pueda 
+     acceder a la memoria de otro proceso.
+     (permitiendo la escritura/lectura de los datos las areas 
+      de memoria compartidas)
+   - 
+*** Proceso Productor y Proceso Consumidor
+    Un problema común entre procesos cooperativos, es cuando
+    aparecen el proceso *productor*, que produce la información
+    y el proceso *consumidor* que consume esa información.
+
+    *Observación:*
+    El productor y consumidor deben estar *sincronizados*,
+    evitando que el consumidor intente consumir información
+    que aún no fue generada.
+   
+    #+BEGIN_EXAMPLE
+    Un servidor web actúa como un proceso productor
+    y un cliente web (Chrome, Firefox, ...) actúa como proceso consumidor
+
+    El servidor web produce información como archivos html, imagenes, ..
+    que son consumidos (leídos) por el cliente web quien solicita 
+    esos recursos
+    #+END_EXAMPLE
+*** Buffer Limitado y Buffer Ilimitado
+**** Buffer Ilimitado
+     - NO tiene limites de espacio
+     - EL proceso consumidor tiene que esperar que haya nuevos datos
+     - El *proceso productor* genera datos todo el tiempo
+**** Buffer Limitado (???)
+     - EL buffer tiene un espacio limitado
+     - El *proceso consumidor* debe esperar que el buffer esté vacío
+     - EL *proceso productor* debe esperar que el buffer se llene
+** IPC en Sistemas de Envío de Mensajes
+*** Conceptos
+    - Es útil para entornos distribuidos donde la comunicación
+      de los procesos reside en distintas computadoras conectadas
+      por internet
+
+      #+BEGIN_EXAMPLE
+      Un ejemplo sería un programa de chat por internet
+      donde los paricipantes puedan comunicarse entre ellos
+      intercambiando mensajes
+      #+END_EXAMPLE
+*** Operaciones
+    Requiere sólo de dos operaciones una es ~enviar(mensaje)~ y 
+    la otra ~recibir(mensaje)~
+*** Enlace de comunicación
+    - Para que dos procesos puedan comunicarse, debe existir
+      un *enlace de comunicación* entre ambos.
+    - Algunas maneras para implementar un *enlace de comunicación*
+      1. Comunicación directa ó indirecta
+      2. Comunicación sincrónica ó asincrónica
+      3. Automática ó almacenamiento en un buffer explícito
+*** Nombrado
+    Si entre procesos se quieren comunicar deben poder referenciar
+    uno al otro
+**** Comunicación directa
+***** Conceptos
+      - Cada proceso debe explicitar el nombre del *transmisor* ó el *receptor*
+
+      #+BEGIN_EXAMPLE
+      El esquema simétrico sería
+      enviar(A, mensaje)    <- Enviar un mensaje al proceso A
+      recibir(B, mensaje)   <- Recibir un mensaje del proceso B
+
+      El esquema asimétrico sería
+      enviar(A, mensaje)    <- Enviar un mensaje al proceso A
+      recibir(id, mensaje)   <- Recibir un mensaje de cualquier proceso
+      #+END_EXAMPLE
+***** Requisitos para que se cumpla la comunicación
+     Para que se pueda realizar, es necesario que 
+     1. Los procesos solo necesitan conocer la identidad del otro 
+        para comunicarse
+     2. Un enlace puede tener sólo dos procesos asociados
+     3. Entre cada par de procesos, sólo puede haber 1 enlace
+**** Comunicación indirecta
+***** Conceptos
+      - Los mensajes son envían/recibidos a *puertos* o *mailboxes*
+      - Un *mailbox* es como un objeto donde los procesos pueden
+        agregar o eliminar mensajes
+      - Cada *mailbox* tiene una identificación única
+      - Un proceso se puede comunicar con otro proceso 
+        - a traves de diferentes *mailboxes*
+        - sólo pueden si un *mailbox* compartido
+    
+      #+BEGIN_EXAMPLE
+      enviar(A, mensaje)    <- enviar un mensaje al mailbox A
+      recibir(A, mensaje)   <- recibir un mensaje del mailbox A
+      #+END_EXAMPLE
+***** Requisitos para que se cumpla la comunicación
+      1. Hay un *enlace* entre un par de *procesos* 
+         si solo si ambos comparten una *mailbox*
+      2. Un *enlace* puede estar asociado con muchos *procesos*
+***** Cuando un mailbox pertenece a un proceso
+      Cuando un *mailbox* pertenece a un *proceso* y este finaliza
+      el *mailbox* desaparece
+***** Cuando un mailbox pertenece al sistema operativo
+      Cuando un *mailbox* le pertenece al *sistema operativo* este
+      da alguos mecanismos
+      1. Crear un nuevo mailbox
+      2. Enviar y recibir mensajes a traves del mailbox
+      3. borrar un mailbox
+*** Comunicación Sincrónica
+    - Para implementar las llamadas primitivas ~enviar()~ y ~recibir()~
+      se implementan 
+      - con *bloqueos* (sincrónico)
+      - ó *sin bloqueos* (asincrónico)
+
+   |-----------------------+--------------------------------------------------------|
+   | Envio con bloqueo     | El proceso que envía el mensaje es bloqueado hasta que |
+   |                       | hasta que el recepetor del mensaje (ó el *mailbox*)    |
+   |                       | recibe el mensaje                                      |
+   |                       |                                                        |
+   | Envío sin bloqueado   | El proceso transmisor envía el mensaje                 |
+   |                       | y continúa la operación                                |
+   |-----------------------+--------------------------------------------------------|
+   | Recibir con bloqueo   | El receptor que recibe el mensaje es bloqueado         |
+   |                       | hasta que el mensaje esté disponible                   |
+   |                       |                                                        |
+   | Recibir sin bloqueado | El receptor extrae un mensaje válido o nulo            |
+   |-----------------------+--------------------------------------------------------|
+*** Comunicación con almacenamiento en buffer
+    Cuando la comunicación es *directa* ó *indirecta* los mensajes
+    que son intercambiados entre procesos residen en una *cola temporal*
+    que se puede implementar de tres maneras
+**** Capacidad cero
+     - El *enlace* no tiene ningun mensaje esperando dentro de este
+     - El *transmisor* se *bloquea* hasta que el *receptor* 
+       reciba el mensaje 
+**** Capacidad limitada
+     - La cola tiene una longitud finita N, pudiendo guardar solo N mensajes
+     - El *transmisor* puede continuar ejecutando sin tener que esperar
+     - Si el *enlace* está lleno, el *transmisor* está *bloqueado*
+       hasta que haya espacio disponible en la *Cola*
+**** Capacidad Ilimitada
+     - La cola tiene longitud infinita , puede recibir tantos mensajes
+       sin necesidad de esperar
+     - el *transmisor* nunca se *bloquea*
+** IPC
+** Sockets
+*** Conceptos
+   - Un par de procesos que se comunican en una red 
+     utilizan un par de sockets, un stocket para cada poceso
+   - Cada socket se identifca con una dirección IP asociada a un número de puertos
+   - Los paquetes que viajan entre las computadoras Host son enviados
+     a traves de un proceso que utiliza un número de puerto como destino
+   - Todas las conexiones deben ser únicas, y consisten en un par único de sockets
+     en el que si ya un proceso del HOST se comunica con un webserver,
+     y otro proceso también desea establecer una conexión con ese webserver
+     entonces se le asignará otro puerto mayor al 1024.
+*** Puertos
+     - Todos los puertos por debajo del 1024 se denominan *bien conocidos*
+       y son utilizados por sevicios estándares
+     - Si un proceso cliente inicializa una solicitud para una conexión,
+       se le asigna un puerto de la computadora, que puede ser un valor 
+       cualquiera pero mayor al 1024
+*** Desventajas
+    - Los sockets solo permiten que se intercambie un flujo NO estructurado
+      de bytes entre los hilos (threads) de comunicación. Por tanto es 
+      responsabilidad de la aplicación cliente ó sevidor imponer una
+      estructura a los datos.
+* Glosario
+  - PCB: Process Control Block
+  - PC: Program Counter
+  - *concurrente*: 
+* Vocabulary
+** accomplish
+   - to succeed in doing sth
+** behalf
+** arises
+   - if a problem or difficult situation arises, it begins to happen
+   - to arise from sth (surgir de algo)
+** shrink 
+   - if sth shrinks, or if you shrink it, it becomes smaller
+** spawn
+   to make a series of things happen or start to exist 
+** imply
+   - to suggest that sth is true without saying or showing it directly
+** along
+   - from one place on a line, road, rive, etc.. to another place on it
+   - at a paticular place on a line, road, river, etc..
+** [TODO] bound
+   lo usan como limitación...
+   Ej. unbounded buffer (buffer ilimitado)
+       bounded buffer   (buffer limitado)
+
+   Se usaría para vincular dos cosas (???)
+   Although a CPU-Bound process wil require ...
+   An I/O-bound process may execute for only a few seconds..
+** idle
+   - to spend time doing nothing
+   - not working or being used
+   - if a engine idles, it runs slowsly while the vehicule is not moving
+** fork
+   - if a road or river forks, it divides into two pats
+** retrieve
+   - to find sth and bring it back
+
+** overload
+   - to put too many things or people on or into sth
+   - to give sb too much work to do or information to deal with

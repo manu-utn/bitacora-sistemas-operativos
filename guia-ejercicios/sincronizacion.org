@@ -1,0 +1,828 @@
+https://www.youtube.com/watch?v=ZWQ3_dq7HgI&list=PLAjdG1oI3oIr4FvPxtWuqZAnQ6xMPrHnE
+https://www.youtube.com/playlist?list=PLAjdG1oI3oIphiotvieIvSGX3oeubUn-5 
+https://docs.google.com/spreadsheets/d/1dAQQfvx7HiWlJFQi03JTT6g-GeaSMNsjkTkyENoKc0Y/edit#gid=673908221 
+
+* Preguntas en Zoom
+** Pregunta 1
+Pregunta: entonces mientras N > 0, se pueden consumir tantos recursos como haya con signal, y cuando N==0, espera a que incremente el semaforo contador con wait? 
+Respuesta : Claro, en realidad cuando haces wait() al semaforo, este tiene un valor. Si es mayor a cero, lo decrementa y sigue. Si es menor o igual a cero, lo decrementa y bloquea al proceso que hizo el wait() 
+** Pregunta 2
+Pregunta: si hay dos procesos que hacen un signal, y otro proceso hace un wait de ambos, se puede hacer un wait(algo, N) siendo N la cantidad de signal? 
+o hay que hacer un wait por cada uno de esos 2 signal 
+
+Respuesta: ambas son correctas. Si son muchas, podes poner signal(S, 10) o wait(S, 10), o signal(S) x 10 
+** Pregunta 3
+Preguntas: si u proceso esperaba 2 wait(), en vez de hacer wait(s, 2) se podria hacer un semaforo contador inicializado en 2? 
+
+RESPUESTA: NO, porque no se respetaria el flujo
+* Observaciones
+** Wait
+   En cualquier semáforo el ~wait()~ hace que el proceso quede en *estado bloqueado*
+   (NO produce *espera activa* porque no se queda ejecutando haciendo nada, se bloquea, hasta que lo despierten)
+** Implementaciones de Wait y Signal
+   Estas son una idea de como se podrían llegar a implementar a grandes rasgos
+
+   #+BEGIN_SRC C
+     wait(sem){
+       sem--;
+
+       if (sem < 0) bloquear_proceso();
+     }
+
+     signal(sem){
+       deshabilitar_interrupciones(); // para que ningun proceso lo interrumpa
+       sem++;
+
+       if (sem <= 0) desbloquear_algun_proceso();
+       // suponiendo que es un semáforo Mutex
+       if (sem > 1) sem = 1; // porque un mutex, su valor máximo es 1
+
+       habilitar_interrupciones();
+     }
+   #+END_SRC
+
+** Vector de Recursos e Instancias
+   #+BEGIN_SRC C
+     // definimos un vector de semáforos
+     // - Los indices representarían un semáforo para c/recurso
+     // - Las constantes A, B, C serían la cant. de accesos (ó instancias) a cada recurso
+     //
+     // Ej. Si A=10 => puede haber máx. 10 procesos utilizando este recurso
+     recursos[] = [A,B,C];
+
+     // alternativa 1
+     while(true){
+       id_recurso = pedir_recurso();
+       wait(recursos[id_recurso]);
+       utilizar_recurso(id_recurso);
+       signal(recursos[id_recurso]);
+     }
+
+     // alternativa 2
+     while(true){
+       id_recurso = pedir_recurso();
+
+       if(id_recurso == 1){ // lo mismo para cada recurso, pero no es eficiente si hay muchos recursos ej. 4,5,10,50
+         wait(sem1);
+         utilizar_recurso(id_recurso);
+         signal(sem1);
+       }
+      }
+   #+END_SRC
+* Ejercicio 1
+** Problema
+   Dados los siguientes procesos con variables compartidas, sincronizarlos para garantizar la mutua exclusión sobre ellas
+   
+  #+BEGIN_SRC C
+    variables_compartidas a = b = 1;
+
+    // Proceso (0)
+    variable_local d = 1;
+      while (TRUE){
+      a = a + d;
+      d = d * d;
+      b = b – d;
+    }
+
+    // Proceso (1)
+    variable_local e = 2;
+      while (TRUE){
+        b = b * e;
+        e = e ^ e;
+        a++;
+    }
+  #+END_SRC
+** Solucion
+   - Utilizamos un *semáforo mutex* para cada variable ~a~ y otro para ~b~ que son *secciones críticas*
+   - Ambos procesos (0) y (1) hacen lectura/escritura de las variables, por tanto hay *Condición de carrera*
+
+   *Observaciones:*
+   Podriamos haber usado un único *semaforo mutex* para rodear a las variables que son *sección crítica*,
+   que podria ser valido pero.. como se sugiere que la *sección crítica* sea lo más chica posible, lo separamos y usamos 
+   un semaforo para cada sección critica (cada variable) para reducirlas.
+
+   La solución actual que tenemos, genera un tanto de *overhead* porque hace dos ~syscalls~ por cada semaforo, en vez de una sola,
+   por tanto también más *cambios de contexto* pero... nos garantiza lo anterior mencionado de una sección critica reducida,
+   y también que no se bloquee el acceso a una de las variables (Ej. a) porque se está accediendo a otra (ej. b)
+
+  #+BEGIN_SRC C
+    variables_compartidas a = b = 1;
+
+    // inicializamos los "Semáforos Mutex" en 1 (por defecto)
+    mutexA = 1;
+    mutexB = 1;
+
+    // Proceso (0)
+    variable_local d = 1;
+      while (TRUE){
+        wait(mutexA);   // solicitamos el recurso
+        a = a + d;      // <<Sección Critica, la rodeamos con el semáforo>>, utilizamos el recurso
+        signal(mutexA); // lo liberamos
+
+        d = d * d;
+
+        wait(mutexB);
+        b = b – d;
+        signal(mutexB);
+    }
+
+    // Proceso (1)
+    variable_local e = 2;
+      while (TRUE){
+        wait(mutexB);
+        b = b * e;
+        signal(mutexB);
+
+        e = e ^ e;
+
+        wait(mutexA);
+        a++;
+        signal(mutexA);
+    }
+  #+END_SRC
+
+* [TODO] Ejercicio 2
+** Poblema
+   Dado un sistema con N procesos del mismo programa, 
+   sincronice su código mediante semáforos para respetar los
+   siguientes límites:
+   a. 3 recursos con M instancias
+   b. M recursos con 3 instancias
+
+   #+BEGIN_SRC C
+     while (TRUE){
+       id_recurso = pedir_recurso();
+         usar_recurso(id_recurso);
+     }
+   #+END_SRC
+** Solución (A)
+   #+BEGIN_SRC C
+     // Punto (A)
+
+     // definimos un vector de semáforos uno para cada recurso
+     // con M instancias (cant. máx. de accesos a c/recurso)
+     recursos[] = [M,M,M];
+
+     while (TRUE){
+       id_recurso = pedir_recurso();
+
+       wait(recursos[id_recurso]);
+       usar_recurso(id_recurso);
+       signal(recursos[id_recurso]);
+     }
+   #+END_SRC
+** Solución (B)
+
+   #+BEGIN_SRC C
+     // definimos un vector de semáforos
+     // - con M cantidad de recursos
+     // - con 3 instancias máximo para cada recurso (limitamos el acceso)
+     recursos[M] = [3,3,3];
+
+     while (TRUE){
+       id_recurso = pedir_recurso();
+
+       wait(recusos[id_recurso]);
+       usar_recurso(id_recurso);
+       signal(recusos[id_recurso]);
+     }
+   #+END_SRC
+* Ejercicio 3
+** Problema
+   Dado un sistema con los siguientes tipos de procesos, 
+   sincronice su código mediante semáforos sabiendo que hay *tres*
+   impresoras, *dos* scanners y *una* variable compartida.
+
+   #+BEGIN_SRC C
+     while (TRUE){
+       usar_impresora();
+       variable_compartida++;
+     }
+
+     while (TRUE){
+       variable_compartida++;
+       usar_scanner();
+     }
+
+     while (TRUE){
+       usar_scanner();
+       usar_impresora();
+     }
+   #+END_SRC
+** Solución
+   Implementamos 1 *semáforo mutex* para el recurso compartido que era una variable,
+   para que lo usen de forma alternada el proceso (A) y (B)
+
+   También 2 *semáforos contadores* uno para "impresora"  y otro para "scanner"
+   y los inicializamos con el valor a la cant. máxima de accesos (instancias) según el enunciado
+
+   #+BEGIN_SRC C
+     // inicializamos el "Semáforo Mutex" para la variable compartida
+     mutex = 1;
+
+     // inicializamos los "Semaforos Contadores" por separado para la impresora/scanner
+     // limitamos la cant. de accesos (instancias) a cada recurso
+     //
+     // limitamos el recurso "impresora" a no más de 3 instancias (accesos)
+     semImpresora = 3;
+     // limitamos el recurso "scanner" a no más de 2 instancias (accesos)
+     semScanner = 2;
+
+     // Proceso (A)
+     while (TRUE){
+       wait(semImpresora);    // 1. Solicitamos al recurso
+       usar_impresora();     // 2. Lo usamos
+       signal(semImpresora); // 3. Lo liberamos
+
+       wait(mutex);
+       variable_compartida++;
+       signal(mutex);
+     }
+
+     // Proceso (B)
+     while (TRUE){
+       wait(mutex);
+       variable_compartida++;
+       signal(mutex);
+
+       wait(semScanner);
+       usar_scanner();
+       signal(semScanner);
+     }
+
+     // Proceso (C)
+     while (TRUE){
+       wait(semScanner);
+       usar_scanner();
+       signal(semScanner);
+
+       wait(semImpresora);
+       usar_impresora();
+       signal(semImpresora);
+     }
+   #+END_SRC
+* Ejercicio 4
+** Problema
+   Sean dos procesos A y B, sincronizarlos para que ejecuten de manera alternada: A,B,A,B...
+** Solución 1
+   Utilizamos dos *semáforos binarios* para marcar una *prioridad de ejecución*
+   empezando por (A) luego (B) y que se alternen su ejecución de esa manera, para lograr un ciclo A,B,A,B,...
+   
+   #+BEGIN_SRC C
+     semA = 1;
+     semB = 0;
+
+     // Proceso (A)
+     while (TRUE){
+       wait(semA);             // 1. pedimos el recurso (está inicializado en 1, es por el proceso que empezará)
+       // codigo
+       signal(semB);          // 3. lo liberamos, asi continúa otro proceso (el B)
+     }
+
+     // Proceso (B)
+     while (TRUE){
+       wait(semB);                // 1. solicitamos el recuso
+      // codigo
+       signal(semA);             // 3. lo liberamos, asi continúa otro proceso (el A)
+     }
+   #+END_SRC
+** Solución 2
+   #+BEGIN_SRC C
+     // Proceso (A)
+     while(TRUE){
+     }
+
+     // Proceso (B)
+     while(TRUE){
+     }
+   #+END_SRC
+* Ejercicio 5
+** Problema
+   Sean los procesos A, B y C, sincronizarlos para que ejecuten de manera alternada: A,B,C,A,B,C...
+** Solución (1)
+   #+BEGIN_SRC C
+     semA = 1;
+     semB = 0;
+     semC = 0;
+
+     // Proceso (A)
+     while (TRUE){
+     // - Como está inicializado en 1, es por el proceso que empezará
+     // 1. Solicitamos el recurso
+       wait(semA);
+     //
+     // 2. Codigo...
+     //
+     // 3. Lo liberamos para que lo utilice el proceso (B)
+       signal(semB);
+     }
+
+     // Proceso (B)
+     while (TRUE){
+     // 1. Pedimos el recurso
+     // - como está inicializado en 0, debe esperar que alguien lo despierte/desbloquee con un signal(semB)
+       wait(semB);
+     //
+     // 2. Codigo...
+     //
+     // 3. Lo liberamos para que lo utilice el proceso (C)
+       signal(semC);
+     }
+
+     // Proceso (C)
+     // - A partir de aca se repite el ciclo, empezando por el proceso (A)
+     while (TRUE){
+     // 1. Pedimos el recurso
+     // - como está inicializado en 0, debe esperar que alguien lo despierte/desbloquee con un signal(semC)
+       wait(semC);
+     //
+     // 2. Codigo...
+     //
+
+     // 3. Lo liberamos para que lo utilice el proceso (C)
+       signal(semA);
+     }
+   #+END_SRC
+** Solucion (2)
+   #+BEGIN_SRC C
+     // Proceso (A)
+     while(true){
+
+     }
+
+     // Proceso (B)
+     while(true){
+
+     }
+
+     // Proceso (C)
+     while(true){
+
+     }
+   #+END_SRC
+* Ejecicio 6
+** Problema
+   Sean los procesos A, B y C, sincronizarlos para que ejecuten de la 
+   siguiente manera: B,A,C,A,B,A,C,A...
+** Solucion
+   1. Detectamos que el orden de ejecución de los procesos es
+      (A) seguido de (B) ó (C) entonces implementamos un *semáforo binario*
+      inicializado en 1 llamado ~semBC~
+      - El (A) los habilitará con ~signal(semBC)~
+      - El (B) y (C) aguardan a ser habilitados con ~wait(semBC)~
+      - El (B) y (C) habilitaran a (A) con ~signal(semA)~
+        (/Nota: por tanto A también tendrá otro semáforo para ser activado/)
+   2. Detectamos que el primer proceso a ejecutar es (B) antes que (C)
+      implementamos otros dos *semáforos binarios* para cada uno,
+      siendo el de (B) el que esté inicializado en 1, para que este empiece
+      y luego se alterne con (C)
+
+   #+BEGIN_SRC C 
+     semA = 0; // se activará con (B) ó (C)
+     semBC = 1;
+     semB = 1; // para que se ejecute primero (B), antes que (C)
+     semC = 0; // se activará en (B)
+
+     // Proceso (A)
+     while (TRUE){
+       // 1. Solicitamos poder ejecutar
+       wait(semA);
+       // codigo ...
+
+       // Liberamos cualquiera de los procesos (B) ó (C)
+       // los habilitamos para que alguno se ejecute
+       signal(semBC);
+     }
+
+     // Proceso (B)
+     while (TRUE){
+       // 1. Solicitamos poder ejecutar
+       // - como está inicializado en 1, se ejecutará antes que (C)
+       wait(semB);
+
+       // Esperamos que (A) nos despierte
+       wait(semBC);
+       // codigo ...
+
+       // Liberamos a (A) y (C), habilitandolos que se ejecuten
+       // no interesa el orden en este caso
+       signal(semA);
+       signal(semC);
+     }
+
+     // Proceso (C)
+     while (TRUE){
+       // 1. Solicitamos poder ejecutar
+       // - como está inicializado en 0, deberá esperar que (B) lo despierte
+       wait(semC);
+
+       // Esperamos que (A) nos despierte
+       wait(semBC);
+       // codigo ...
+
+       // Liberamos a (A) y (B), habilitandolos que se ejecuten
+       // no interesa el orden en este caso
+       signal(semA);
+       signal(semB);
+     }
+   #+END_SRC
+* [TODO] Ejecicio 7
+** Problema
+   Suponga que un proceso tiene por tarea compilar un conjunto de programas y luego enviar el resultado de cada
+   compilación por email al encargado de ese proyecto. Dicho proceso está organizado de la siguiente manera: *N hilos de kernel*
+   compilan cada uno un programa distinto, y luego cada uno de ellos depositan en una lista (compartida para todo
+   el proceso) el resultado; por otro lado, *un hilo de kernel* retira los resultados de las compilaciones y manda un email por
+   cada uno de ellos
+   
+   #+BEGIN_SRC C
+     Estructura compartida: lista // Lista de resultados de compilaciones
+
+     // KLT compilador (N instancias)
+     while (TRUE){
+       id_programa = obtener_nuevo_programa();
+       r = compilar_programa(id_programa);
+       depositar_resultado(r, lista);
+     }
+
+     // KLT notificador (1 instancia)
+     while (TRUE){
+       r2 = retirar_resultado(lista);
+       enviar_email(r2);
+     }
+   #+END_SRC
+** Solucion
+   #+BEGIN_SRC C
+     mutexLista = 1;
+     procesosDisponibles = N;
+     elementosEnLista = 0;
+
+     Estructura compartida: lista // Lista de resultados de compilaciones
+
+     // KLT compilador (N instancias)
+     while (TRUE){
+       wait(procesosDisponibles);                 // Chequeamos que hayan procesos disponibles
+       id_programa = obtener_nuevo_programa();
+       r = compilar_programa(id_programa);
+
+       wait(mutexLista);               // 1. Pedimos el recurso 
+       depositar_resultado(r, lista);  // 2. Lo utilizamos, <<Sección Crítica>> protegida
+       signal(mutexLista);             // 3. Lo liberamos
+
+       signal(elementosEnLista);       // Avisamos que ya hay elementos cargados
+     }
+
+     // KLT notificador (1 instancia)
+     while (TRUE){
+       wait(elementosEnLista); // nos quedamos esperando que hayan elementos cargados
+
+       // rodeamos la <<Sección Crítica>> con el mutex, con la misma intención que con el  KLT compilador
+       wait(mutexLista);
+       r2 = retirar_resultado(lista);
+       signal(mutexLista);
+
+       signal(procesosDisponibles);     // Liberamos, avisando que pueden acceder otros
+
+       enviar_email(r2);
+     }
+   #+END_SRC
+* Ejecicio 8
+** Problema
+   Existe un aeropuerto que se utiliza como base de operaciones de una flota de aviones. Existen muchos aviones, *diez*
+   pistas de aterrizaje / despegue y *dos* controladores aéreos. Cada vez que un avión desea despegar o aterrizar, debe
+   utilizar una pista. Para ello, la misma es solicitada al controlador de entrada, y luego de ser utilizada se le notifica al
+   controlador de salida para que vuelva a estar disponible.
+   Se pide que sincronice el siguiente pseudo­código respetando las reglas establecidas, sin que se produzca deadlock ni
+   starvation (cuando el avión ya pidió pista). Para ello solamente debe utilizar semáforos, indicando el tipo de los mismos
+   y sus valores iniciales. 
+
+   #+BEGIN_SRC C
+     pistasLibres = 10; // variable compartida
+
+     // AVIÓN
+     while(TRUE){
+       mantenimiento();
+       despegar();
+       volar();
+       aterrizar();
+     }
+
+     // CONTROLADOR ENTRADA
+     while(TRUE){
+       otorgarUnaPista();
+       pistasLibres­­;
+       log(pistasLibres);
+     }
+
+     // CONTROLADOR SALIDA
+     while(TRUE){
+       liberarUnaPista();
+       pistasLibres++;
+       log(pistasLibres);
+     }
+
+     // Nota: La función log() imprime por pantalla el valor actual de pistas libres.
+   #+END_SRC
+** Solucion
+   1. Detectamos que existe un *recurso compartido* entre los dos *controladores aéreos* (entrada/salida)
+      como ambos lo modifican, existe la *condición de carrera* (que debemos resolver)
+      - Implementamos un *semáforo mutex* ~mutex~ para proteger la *sección crítica* (que es la variable ~pistasLibres~)
+   2. Implementamos un *semáforo contador* ~pistasDisponibles~ para limitar la cantidad de accesos (instancias) al recurso ~pistasLibres~
+   3. Implementamos dos *semaforos binarios* para ~despegar()~
+      - Uno es  ~pedidoPista~ para pedirle a la *controladora entrada*
+      - El otro es ~pedidaListaOK~ para que la *controladora de entrada* confirme que puede despegar
+   4. Reutilizamos los *semaforos binarios* del paso anterior para ~aterrizar()~ repitiendo la lógica del paso anterior
+   
+   #+BEGIN_SRC C
+     pistasLibres = 10; // variable compartida
+
+     pistasDisponibles = 10; // semáforo contador
+     mutex = 1;
+     pedidoPista = 0;
+     pedidoPistaOK = 0;
+     pistaLiberada = 0;
+
+     // AVIÓN
+     while(TRUE){
+       mantenimiento();
+
+       signal(pedidoPista); // 1. pedimos, solicitamos pista
+       wait(pedidoPistaOK); // 2. esperamos confirmación
+       despegar();
+
+       volar();
+       // se incrementa en 1 el "semáforo contador"
+       // (asi otro lo puede pedir con wait que lo decrementa)
+       signal(pistaLiberada); 
+
+       signal(pedidoPista); // 1. pedimos, solicitamos pista
+       wait(pedidoPistaOK); // 2. esperamos confirmación
+       aterrizar();
+
+       // se incrementa en 1 el "semáforo contador"
+       // (asi otro lo puede pedir con wait que lo decrementa)
+       signal(pistaLiberada);
+     }
+
+     // CONTROLADOR ENTRADA
+     while(TRUE){
+       // mientras pistasDisponibles <= 10, ejecutamos para otorgar pista, caso contrario nos bloqueamos
+       // (además incrementamos el "semáforo contador")
+       wait(pistasDisponibles);
+
+       wait(pedidoPista);      // 1. Esperamos que un avión solicite una pista
+       otorgarUnaPista();      // 2.
+       signal(pedidoPistaOK); //  3. Le confirmamos, y le damos el OK
+
+       // - encerramos la sección crítica, con nuestro semáforo mutex
+       // - permitimos "mutua exclusión", evitando que la "condición de carrera" genere inconsistencias
+       wait(mutexPistas); // mutex - inicio
+       pistasLibres­­;
+       log(pistasLibres);
+       sign(mutexPistas); // mutex - fin
+     }
+
+     // CONTROLADOR SALIDA
+     while(TRUE){
+       wait(pedidoPista);         // 1. Esperamos que un avión solicite una pista
+       liberarUnaPista();         // 2.
+       signal(pistasDisponibles); // (decrementamos el semáforo contador)
+       signal(pedidoPistaOK);     // 3. Le confirmamos, y le damos el OK
+
+       // - encerramos la sección crítica, con nuestro semáforo mutex
+       // - permitimos "mutua exclusión", evitando que la "condición de carrera" genere inconsistencias
+       wait(mutexPistas); // mutex - inicio
+       pistasLibres++;
+       log(pistasLibres);
+       sign(mutexPistas); // mutex - fin
+     }
+
+     // Nota: La función log() imprime por pantalla el valor actual de pistas libres.
+   #+END_SRC
+* Ejecicio 9
+** Problema
+   Se tiene un programa para simular la ejecución de penales de un partido de fútbol, el cual consta de tres procesos:
+   árbitro, jugador y arquero. 
+   
+   Las reglas que se deben cumplir son las siguientes:
+   + Existen cinco procesos jugadores, un proceso árbitro y un proceso arquero.
+   + Los jugadores no pueden patear si el árbitro no lo indicó.
+   + El arquero no puede atajar si el jugador no pateó.
+   + El árbitro sólo puede dar la orden cuando el jugador y el arquero están posicionados.
+   + Existe una variable global GOL, la cual es modificada por la función validar_tiro(),que indica si el último penal pateado
+     fue gol o no.
+   + Una vez que se valide el penal, se le pasará el turno al próximo jugador.
+   + Los jugadores siempre patean en un orden definido (ej: jug1, jug2, …, jug5, jug1, jug2, etc).
+   + Existe a disposición la función actual() que retorna el id del pateador actual, y la función siguiente() que retorna el id del
+     próximo pateador.
+   + Provea una solución que sincronice los tres procesos usando solamente semáforos, asegurándose que se cumplan las
+     reglas establecidas sin producirse deadlock ni starvation. Se deberá inicializar cada semáforo, indicando también su tipo.
+   
+   El pseudo­código es el siguiente
+   
+   #+BEGIN_SRC C
+     // Proceso ARBITRO
+     while(TRUE){
+       dar_orden();
+       validar_tiro();
+     }
+
+     // Proceso JUGADOR
+     while(TRUE){
+       posicionarse();
+       patear();
+
+       if (GOL==TRUE){
+         festejar();
+       else{
+         lamentarse();
+       }
+     }
+
+     // Proceso ARQUERO
+     while(TRUE){
+       posicionarse();
+       atajar();
+
+       if (GOL==FALSE){
+         festejar();
+       else{
+         lamentarse();
+       }
+     }
+   #+END_SRC
+** Solucion
+   
+   #+BEGIN_SRC C
+     pedidoParaPatear = pedidoParaPatearOK = 0;
+     pelotaPateada = 0;
+     posicionadoArq = posicionadoJug = 0;
+
+     validarPenal = 0;
+     penalValidadoArq = penalValidadoJug = 0;
+
+     // es importante que el primero esté en 1
+     // eso indica que el primer jugador está inicializado
+     jugadores[] = [1,0,0,0,0];
+
+     // Proceso ARBITRO
+     while(TRUE){
+       wait(pedidoParaPatear); // esperamos que el jugador solicite
+       //wait(personasPosicionadas);
+       wait(posicionadoArq); // esperamos que el arquero esté posicionado
+       wait(posicionadoJug); // y también el jugador
+       dar_orden();
+       signal(pedidoParaPatearOK); // le confirmamos al jugador que patee
+
+       //wait(mutexGol);
+       wait(validarPenal); // esperamos que nos pidan que validemos
+       validar_tiro();
+       signal(pedidoValidarPenalArqOK); // le confirmamos al arquero
+       signal(pedidoValidarPenalJugOK); // y al jugador
+      //signal(mutexGol);
+     }
+
+     // Proceso JUGADOR
+     while(TRUE){
+       wait(jugadores[actual()]); // obtenemos del arreglo, el proceso
+       posicionarse();
+       signal(posicionadoJug); // avisamos que estamos posicionado
+       signal(pedidoParaPatear); // pedimos al árbitro
+       wait(pedidoParaPatearOK); // y esperamos su respuesta
+       patear();
+       signal(pelotaPateada); // habilitamos al arquero
+
+       wait(penalValidadoJug); // esperamos respuesta del arbitro
+
+       // NOTA: Los mutexGol ya NO son necesarios, porque es el árbitro quien controla la variable
+
+       //wait(mutexGol);
+       if (GOL==TRUE){
+         // prevenimos, y liberamos antes de festejar() por si esta invocase un syscall exit()
+         // signal(mutexGol);
+         festejar();
+       else{
+         // prevenimos, y liberamos antes de lamentarse() por si esta invocase un syscall exit()
+         // signal(mutexGol);
+         lamentarse();
+       }
+
+       // avanzamos al siguiente proceso jugador
+       signal(jugadores[siguiente()]);
+     }
+
+     // Proceso ARQUERO
+     while(TRUE){
+       posicionarse();
+       signal(posicionadoArq); // avisamos que está posicionado (al arbitro)
+       wait(pelotaPateada); // esperamos que el jugador patee
+       atajar();
+
+       signal(validarPenal); // pedimos al arbitro
+       wait(penalValidadoArq); // y esperamos su respuesta
+
+       // NOTA: Los mutexGol ya NO son necesarios, porque es el árbitro quien controla la variable
+
+       //wait(mutexGol);
+       if (GOL==FALSE){
+         festejar();
+       // signal(mutexGol);
+       else{
+         lamentarse();
+       // signal(mutexGol);
+       }
+     }
+   #+END_SRC
+* Ejecicio 10
+** Problema
+   Sincronice el siguiente código, correspondiente a un proceso que genera procesos hijos, para evitar inconsistencias,
+   deadlocks e inanición. Además debe tener en cuenta lo siguiente  
+
+   - El archivo donde se escriben los logs es único.
+   - No debe haber más de 50 procesos en ejecución
+   - El padre debe escribir en el log antes que el hijo recién creado.
+
+   #+BEGIN_SRC C
+     int main() {
+       while (true){
+       pid = fork();
+
+       if (pid < 0) {
+         log(‘Error’);
+       }
+       else if (pid == 0) {
+         log("Y yo soy el hijo");
+         realizarTarea();
+         // Finaliza el proceso hijo
+         exit(0);
+       }else { // Padre
+          log(pid + " soy tu padre”);
+        }
+       }
+     }
+   #+END_SRC
+** Solucion
+   1. Implementamos un *semáforo mutex* ~mutexLog~ para proteger el recurso de escritura en el log
+      - Se utiliza en caso de error al crear el proceso hijo
+      - Se utiliza cada vez que el proceso padre ó hijo hagan un log
+   2. Implementamos un *semáforo contador* ~procesosDisponibles~ para limitar la cant. de accesos (instancias) a 50
+      - Se utiliza antes de la syscall ~fork~ para saber si crear o no procesos hijos
+      - Se utiliza luego de ejecutarse cada proceso hijo
+   3. Implementamos dos *semáforos binarios* ~semPadre~ y ~semHijo~ para tener un orden de ejecución
+      1. el primero está inicializado en 1, para ejecutarse antes, y luego habilitar al proceso hijo
+      2. el segundo está inicializado en 0, y aguarda a ser habilitado, luego de ejecutarse le avisa al proceso padre
+
+   #+BEGIN_SRC C
+     mutexLog = 1; // protege la sección crítica (la escritura del log) 
+     procesosDisponibles = 50; // limitamos la cant. de accesos al recurso
+
+     // asignamos prioridades para orden de ejecución
+     semPadre = 1;
+     semHijo = 0;
+
+     int main() {
+       while (true){
+        wait(procesosDisponibles); // verificamos que no sean mas 50 procesos
+        pid = fork();
+
+        if (pid < 0) {
+          signal(procesosDisponibles); // si ocurre error, liberamos para que otros procesos accedan
+
+          wait(mutexLog);   // mutex - inicio
+          log("Error");     // sección critica, la proteje el mutex
+          signal(mutexLog); // mutex - fin
+        }
+
+        // Proceso HIJO
+        //
+        else if (pid == 0) {
+          wait(semHijo); // al estar inicializado en 0, espera que proceso padre lo habilite
+
+          wait(mutexLog);             // 1. pedimos el recurso
+          log("Y yo soy el hijo");   // 2. lo usamos (sección crítica, la proteje el mutex)
+          signal(mutexLog);        // 3. lo liberamos
+
+          realizarTarea();
+          signal(procesosDisponibles); // por cada proceso hijo que termine, liberamos
+          signal(semPadre); // cuando termine, le avisamos al proceso padre que continúe
+          // Finaliza el proceso hijo
+          exit(0);
+        }
+
+        // Proceso PADRE
+        //
+        else {
+           wait(semPadre); // como está inicializado en 1, se ejecutará antes
+
+           wait(mutexLog);             // 1. pedimos el recurso
+           log(pid + " soy tu padre"); // 2. lo utilizamos (sección crítica, asegurada por mutex)
+           signal(mutexLog);           // 3. lo liberamos
+
+           signal(semHijo); // habilitamos al proceso hijo
+        }
+       }
+
+       // liberamos
+       // hacemos lugar para que otros procesos tengan acceso al recurso
+       signal(procesosDisponibles);
+     }
+   #+END_SRC

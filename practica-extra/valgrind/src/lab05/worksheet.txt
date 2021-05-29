@@ -1,0 +1,60 @@
+Name:
+
+Task 1
+------
+
+Compile and execute `memleak.c`. Verify the output and try and
+understand the program.
+
+1.  Run valgrind on the `memleak` program. How many bytes does it say
+    have been definitely lost?
+
+
+
+
+2.  On which lines does valgrind indicate memory leaks have occurred?
+
+
+
+
+
+3.  Describe what causes each memory leak.
+
+
+
+
+
+4.  Try and fix the memory leaks and verify your fix with valgrind.
+    Describe how you fixed the memory leaks.
+
+
+
+
+
+Task 2
+------
+
+Compile and execute the memviolation.c program.
+
+1.  Describe the output and execution of the program.
+    Does it seem to be consistent?
+
+
+
+
+2.  Run the program under valgrind. Identify the line of code that is
+    causing the memory violation and its input.
+
+
+
+
+3.  Debug the memory violation and describe the programming bug.
+
+
+
+
+4.  Fix the memory violation and verify your fix with valgrind.
+
+
+
+

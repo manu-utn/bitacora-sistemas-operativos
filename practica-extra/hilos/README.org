@@ -1,0 +1,55 @@
+#+TITLE: Hilos - Threads
+* Conceptos
+  + Las funciones que utilizamos son
+    - ~pthread_create(4)~ para crear un hilo y ejecutar su rutina, retorna 0 si tuvo éxito
+    - ~pthread_join(2)~ para evitar que el programa main finalice antes que el hilo
+    - ~pthread_exit(1)~ 
+  + La biblioteca de cabecera que debemos incluir es ~pthread.h~
+  + Para poder compilar por terminal ejecutamos  ~gcc nombrePrograma.c -pthread~
+ 
+  #+BEGIN_SRC C
+    // Crea un hilo, guarda la referencia en el identificador que tiene como 1er parámetro,
+    // y ejecuta la rutina/función que se le asignó como 3er parámetro
+    int pthread_create(
+                       // un puntero al hilo (del tipo pthread_t ..!)
+                       // - recordemos que un puntero apunta a una dirección de memoria
+                       // - usamos operador & para pasarle la dir. de memoria del hilo que habiamos declarado con pthread_t
+                       pthread_t *thread, 
+                       // los atributos del hilo
+                       // - podemos dejarlo en NULL y tomará los que se asignan por defecto
+                       const pthread_attr_t *attr, 
+                       // un puntero a una función, que ejecutará el hilo
+                       void *(*start_routine) (void *), 
+                       // argumentos que recibirá la función a ejecutar (el argumento anterior)
+                       // - como requiere un puntero a nulo, debemos castear el dato a (void *)
+                       void *arg 
+                       );
+
+    // lo usamos para que el compilador espere a que se termine de ejecutar nuestro hilo, antes de finalizar el main
+    // - Es una "función Bloqueante"
+    // - Si no lo usamos, podemos no darle tiempo suficiente (rafagas de CPU) al hilo que queriamos se ejecute
+    // - El programa principal (main) se bloquea mientras espea que se termine de ejecutar el hilo elegido 
+    int pthread_join(
+                     // el hilo que queremos que se ejecute (Ojo que no dice del tipo puntero, le pasamos solo el identificador)
+                     pthread_t thread,
+                     // es la variable donde guardará el resultado final de la rutina ejecutada por el hilo
+                     // podemos dejarlo en NULL
+                     void **retval     
+    );
+
+    pthread_exit();
+  #+END_SRC
+* Páginas de Man
+  Es posible que algunas funciones que busquemos con el comando ~man~ en la terminal de linux
+  nos encontremos con una explicación diferente a la que queriamos.
+  Por eso dejo este apartado con las páginas que deberiamos elegir para ciertas funciones.
+
+  1. Para ~sleep()~ ejecutar ~man 3 sleep~
+* Curiosidades
+  + Para saber la cant. máxima de hilos que se pueden crear ejecutemos ~cat /proc/sys/kernel/threads-max~
+* Referencias
+  1. https://www.personal.kent.edu/~rmuhamma/OpSystems/Myos/threads.htm
+  2. http://www.csc.villanova.edu/~mdamian/threads/posixthreads.html
+  3. https://www.cs.cmu.edu/afs/cs/academic/class/15492-f07/www/pthreads.html
+  4. https://cs.famaf.unc.edu.ar/~nicolasw/Docencia/so2002/lab3.html
+  5. https://linuxhint.com/posix-thread-c-programming/

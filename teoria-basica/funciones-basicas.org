@@ -1,0 +1,271 @@
+#+TITLE: Funciones Básicas de C
+* inputs
+  Esto no es de C, sólo lo pongo a modo de interactuar con la entrada estandar
+  e ingresar datos
+
+  #+NAME: input_file
+  #+BEGIN_SRC shell :results none :exports none
+    echo "10 12 15 20" > /tmp/in.txt
+  #+END_SRC
+* Lectura/Escritura en flujos estándares (stdin/stdout)
+** gets (lectura en stdin)
+*** Conceptos
+    + Leer cadena de caracteres
+    + Lee de la entrada estándar ~stdin~ y guarda en una variable especificada
+    + La variable donde se guarda es un *puntero* a la cadena de caracteres leída
+   
+   #+NAME: gets-firma
+   #+BEGIN_SRC C
+     char* gets(char* str);
+
+     /*
+      * str:
+      * - puntero a un bloque de memoria (arreglo de caracteres)
+      */
+   #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C :results output :var tmp=input_file :cmdline < /tmp/in.txt
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      #define MAX 15
+
+      int main(){
+        // De esta manera reservabamos memoria de forma estática
+        //char buffer[MAX];
+
+        // De esta otra forma reservamos memoria de forma dinámica
+        char *buffer;
+        // le asignamos espacio en memoria para 30 caracteres
+        buffer = malloc(sizeof(char) * 30);
+
+        printf("Ingrese una cadena de caracteres: ");
+        gets(buffer);
+        printf("\nTexto ingresado: %s\n", buffer);
+
+        free(buffer);
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : Ingrese una cadena de caracteres: 
+    : Texto ingresado: 10 12 15 20
+** puts (escritura en stdout)
+*** Conceptos
+    + Escribir cadena de caracteres
+    + Escribe en la salida estandar ~stdout~
+    + Reemplaza el carácter nulo ~\0~ por un salto de línea ~\n~
+    + Valor de retorno
+      * Devuelve un entero mayor a cero, la longitud de la cadena de caracteres,
+        más el caracter nueva linea ~\n~
+      * Si se produce un error, retorna ~EOF~
+
+    #+NAME: puts-firma
+    #+BEGIN_SRC C
+      int puts(const char* str);
+    #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C :results output
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a una cadena de caracteres
+        char* nombre;
+        // le asignamos espacio en memoria para 30 caracteres
+        // que son 30 Bytes aprox.
+        nombre = malloc(sizeof(char) * 30);
+        strcpy(nombre, "Carlos");
+        puts(nombre);
+
+        strcpy(nombre, "Pedro");
+        puts(nombre);
+
+        strcpy(nombre, "Pepito");
+        puts(nombre);
+
+        int valor = puts(nombre);
+        printf("El valor de retorno de puts() es: %d\n", valor);
+
+        free(nombre);
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : Carlos
+    : Pedro
+    : Pepito
+    : Pepito
+    : El valor de retorno de puts() es: 7
+
+* Lectura/Escritura en cualquier flujo
+** Conceptos
+   Por defecto funciones como ~gets()~ y ~puts~ usan las salidas estándares 
+   pero podemos cambiar el flujo a un buffer, ó.. (stder ???)
+
+   En término de flujo se conoce por ~stream~
+** fgets (lectura)
+*** Conceptos
+    + Para leer de un flujo de entrada, que puede ser ~stdin~ u otro (Ej. un buffer)
+    + El valor de retorno es la cadena de caracteres copiada del flujo de entrada
+
+    #+NAME: fgets-firma
+    #+BEGIN_SRC C
+      char *fgets(char *str, int n, FILE *stream);
+
+      /*
+       ,* str:
+       ,* - puntero a una cadena de caracteres
+       ,* - es donde se copiará el contenido de stream
+       ,*
+       ,* n:
+       ,* - Cantidad máxima de caracteres que se copiarán
+       ,* de stream a str, incluyendo el caracter nulo \0
+       ,*
+       ,* stream:
+       ,* - puntero a un objeto archivo, que se identifica
+       ,* como un flujo de entrada (Ej. el stdin)
+       ,*/
+    #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C :results output :var tmp=input_file :cmdline < /tmp/in.txt
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos una cadena de caracteres
+        char *buffer;
+        // le asignamos memoria para 30 caracteres
+        buffer = malloc(sizeof(char)*30);
+
+        // copiamos solo 5 caracteres de la entrada estandar (stdin)
+        // hacia la cadena de caracteres buffer
+        fgets(buffer, 10, stdin);
+        //printf("la cadena escrita fue: %s\n", buffer);
+        printf("la cadena escita fue: %s\n", buffer);
+
+        printf("el 1er caracter es: %c\n", *buffer);
+        printf("el 2do caracter es: %c\n", *(buffer+1));
+        printf("el 4to caracter es: %c\n", *(buffer+3));
+
+        free(buffer);
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : la cadena escita fue: 10 12 15 
+    : el 1er caracter es: 1
+    : el 2do caracter es: 0
+    : el 4to caracter es: 1
+** getline
+*** Conceptos
+    + Esta función más segura y confiable, comparado con ~gets, fgets, scanf~ que NO lo son
+    + Automáticamente agranda el bloque de memoria a medida que necesite
+      (con ~realloc~ )
+    + Valor de retorno
+      * Devuelve el nuevo tamaño del bloque
+      * Devuelve (-1) si se produce un eror
+
+    #+BEGIN_SRC C
+      size_t getline(char **lineptr, size_t *n, FILE *stream);
+
+      /*
+       ,* lineptr:
+       ,* - puntero a un bloque asignado por "malloc" ó "calloc"
+       ,* - es donde se va a guardar lo que se leerá del stream
+       ,*
+       ,* n:
+       ,* - el tamaño en bytes del bloque de memoria de "lineptr"
+       ,* - RECORDAR: Debe ser del tipo size_t
+       ,*
+       ,* stream:
+       ,* - es el flujo del que vamos a leer los datos
+       ,*/
+    #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+
+        return 0;
+      }
+    #+END_SRC
+* Manipular cadenas de Caracteres
+  La mayoría de las funciones para manipular cadenas de caracteres 
+  provienen de la biblioteca ~<string.h>~
+** strcat (concatenar)
+*** Conceptos
+    + Agrega un string a otro string, y le agrega al final el carácter nulo ~\0~
+
+    #+BEGIN_SRC C
+      char *strcat(char* destino, const char* origen);
+    #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C :results output
+      #include <stdio.h>
+      #include <stdlib.h>
+      #include <string.h>
+
+      int main(){
+        char apellido[20] = "fernandez"; // se asigna un espacio en memoria fijo
+        char* nombreApellido;
+
+        // esto es lo mismo que hacer
+        // char nombre[20] = "carlos"
+        // con la diferencia que la longitud la puedo definir luego de su declaración
+        const char* nombre;
+        nombre = malloc(sizeof(char)*20);
+        strcpy(nombre, "carlos");
+
+        nombreApellido = malloc(sizeof(char)*60);
+
+        strcat(nombreApellido, nombre);
+        puts(nombreApellido);
+
+        strcat(nombreApellido, apellido);
+        puts(nombreApellido);
+
+        free(nombre);
+        free(nombreApellido);
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : carlos
+    : carlosfernandez
+** strchr
+*** Conceptos
+*** Ejemplos
+** strcmp
+*** Conceptos
+*** Ejemplos
+** strcpy
+*** Conceptos
+*** Ejemplos
+** strlen
+*** Conceptos
+*** Ejemplos
+** strncat
+*** Conceptos
+*** Ejemplos
+** strncpy
+*** Conceptos
+*** Ejemplos
+** strstr ()
+*** Conceptos
+*** Ejemplos
+** strlwr (lowercase)
+*** Conceptos
+*** Ejemplos
+** strupr (uppercase)
+*** Conceptos
+*** Ejemplos

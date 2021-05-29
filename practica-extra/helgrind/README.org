@@ -1,0 +1,26 @@
+* Conceptos
+  + *Helgrind* es una heramienta provista por *valgrind* (además del conocido  *Memcheck*)
+  + Detecta errores de *sincronización* de programas en C/C++
+  + Clasifica y detecta tres tipos de errores
+    1. MAL uso del API POSIX
+    2. Potenciales *interbloqueos* ó *deadlock* (tener un orden incorrecto de los ~locks~ de los ~mutex~)
+    3. Condiciones de carrera (también llamado *data races*)
+
+  #+BEGIN_EXAMPLE
+  Los "potenciales interbloqueos" ó "deadlocks" ó "puntos muertos" aparecen cuando tenemos un orden incorrecto 
+  de los locks de los mutex. Este error puede aparecer también como "orden de bloque inconsistente".
+
+  Ocurre cuando dos subprocesos intentan acceder al mismo recurso.
+  #+END_EXAMPLE
+* Compilación && Ejecución
+  + Para compilar ejecutamos ~gcc programa.c -pthread -lm Wall~
+  + Para comprobar si hay *Deadlock* utilizamos la herramienta *helgrind* que viene 
+    por defecto en *Valgrind* ejecutando ~valgrind --tool=helgrind ./a.out~
+
+  #+BEGIN_SRC shell
+    # para compilar y analizar si hay deadlock
+    gcc programa.c -pthread -lm -Wall && # compila
+        valgrind --tool=helgrind ./a.out # luego lo analiza
+  #+END_SRC
+* Referencias
+  1. https://valgrind.org/docs/manual/hg-manual.html

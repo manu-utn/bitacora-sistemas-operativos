@@ -1,0 +1,35 @@
+#+TITLE: Clase 01 - Intro al hardware
+
+* Procesador
+** Componentes
+*** registros de procesador 
+     los que usa el progamador
+*** (UAL) Unidad arimética lógica
+*** Memoria     
+*** SO
+    para que los progamas se ejecuten
+*** Modulo de E/S
+*** BUS
+    - Para interconectar los componentes
+    - Varios tipos (buses de datos, ....)
+
+* Registros
+** Registros visibles
+   - visibles para los usuarios (programadores)
+   - se usan para el calculo de variables
+** Registros de control y estado 
+   - no son visibles para el usuario
+   - no se puede manejar de forma directa
+   - El estado del indica si hubo una interrupción
+
+* Procesador
+  #+BEGIN_EXAMPLE
+  i = i + 1;
+  
+  esto es una sentencia, NO una instrucción
+  equivale a 
+
+  mov AC, [100Ah]
+  add AC, 1
+  mov [100Ah], AC
+  #+END_EXAMPLE

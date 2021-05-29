@@ -1,0 +1,223 @@
+* Referencias
+  1. https://ess.cs.tu-dortmund.de/Software/AnimOS/CPU-Scheduling/
+* Template
+
+  |----+----+-----+----+-----|
+  |    | LL | CPU | ES | CPU |
+  |----+----+-----+----+-----|
+  | P1 |    |     |    |     |
+  |----+----+-----+----+-----|
+  | P2 |    |     |    |     |
+  |----+----+-----+----+-----|
+  | P3 |    |     |    |     |
+  |----+----+-----+----+-----|
+
+  |----+---+---+---+---+---+---+---+---+---+----+----+----+----+----+----|
+  | P1 |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |
+  |----+---+---+---+---+---+---+---+---+---+----+----+----+----+----+----|
+  | P2 |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |
+  |----+---+---+---+---+---+---+---+---+---+----+----+----+----+----+----|
+  | P3 |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |
+  |----+---+---+---+---+---+---+---+---+---+----+----+----+----+----+----|
+  | 0  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+  |----+---+---+---+---+---+---+---+---+---+----+----+----+----+----+----|
+* Diagrama 3 estados
+  #+BEGIN_SRC plantuml :file img/diagrama-3-estados.png
+    @startuml
+    [*] -r-> Ready
+    Ready -r-> Running : Dispatch (seleccionado)
+    Running -l-> Ready : Time out (desalojo)
+
+    Running -d-> Blocked : Event wait
+    Blocked -u-> Ready : Event occurs
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/diagrama-3-estados.png]]
+
+* FCFS/FIFO - First Come First Served  
+** Prioridad
+   El proceso que llegó primero, el que más tiempo se queda en la *cola de listos* esperando
+** Ejemplo
+    Un ejemplo hipotécico de 3 procesos que compiten por usar el CPU
+    habiendo un único procesador y un único dispositivos de Entrada/Salida
+
+   *Referencias de la tabla:*
+   + LL: Instante de llegada del proceso a la *cola de listos*
+   + CPU: Rafagas de cpu
+   + ES: Rafagas de E/S
+   
+   *Observaciones:*
+   En el diagrama de planificación de este ejemplo
+   la E/S no se pueden solapar porque hay solo UN dipositivo de E/S
+
+   |----+----+-----+----+-----|
+   |    | LL | CPU | ES | CPU |
+   |----+----+-----+----+-----|
+   | P1 |  0 |   4 |  2 |   1 |
+   |----+----+-----+----+-----|
+   | P2 |  1 |   2 |  3 |   3 |
+   |----+----+-----+----+-----|
+   | P3 |  2 |   1 |  3 |   2 |
+   |----+----+-----+----+-----|
+
+   #+BEGIN_SRC plantuml :file img/fcfs-1.png
+     @startuml
+     Title First Come First Served - FCFS
+
+     concise "Proceso 1" as P1
+     concise "Proceso 2" as P2
+     concise "Proceso 3" as P3
+
+     @0
+     P1 is CPU
+
+     @1
+     P2 is {-}
+
+     @2
+     P3 is {-}
+
+     @4
+     P1 is "E/S"
+     P2 is CPU
+
+     @6
+     P1 is {-}
+     P2 is "E/S"
+     P3 is CPU
+
+     @+1
+     P1 is CPU
+     P2 is "E/S"
+     P3 is {hidden}
+
+     @+1
+     P1 is {hidden}
+     P2 is {hidden}
+     P3 is "E/S"
+
+     @+3
+     P3 is CPU
+
+     @+2
+     P3 is {hidden}
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/fcfs-1.png]]
+* SJF - Short Job First - Sin desalojo
+** Prioridad
+   El proceso con menor ráfaga de cpu,
+   aunque el siguiente debe esperar que el proceso actual ejecute toda su ráfaga de cpu
+** Ejemplo
+  |----+----+-----+----+-----|
+  |    | LL | CPU | ES | CPU |
+  |----+----+-----+----+-----|
+  | P1 |  0 |   4 |  2 |   1 |
+  |----+----+-----+----+-----|
+  | P2 |  1 |   2 |  2 |   3 |
+  |----+----+-----+----+-----|
+  | P3 |  2 |   1 |  1 |   2 |
+  |----+----+-----+----+-----|
+
+
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P1 | CPU | CPU | CPU | CPU | E/S | E/S |     | CPU |     |     |     |     |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P2 |     |     |     |     |     | CPU | CPU | E/S | E/S |     | CPU | CPU | CPU |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P3 |     |     |     |     | CPU |     | E/S |     | CPU | CPU |     |     |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | 0  |   1 |   2 |   3 |   4 | 5   | 6   | 7   | 8   | 9   |  10 |  11 |     |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+
+  #+BEGIN_SRC plantuml
+    @startuml
+    concise "Proceso 1" as P1
+    concise "Proceso 2" as P2
+    concise "Proceso 3" as P3
+
+    @0
+    P1 is CPU
+
+    @+4
+    P1 is "E/S"
+    P3 is CPU
+
+    @+1
+    'P1 is "E/S"
+    P2 is CPU
+    P3 is {-}
+
+    @+1
+    P1 is "E/S"
+    'P2 is CPU
+
+    @+1
+    P1 is {-}
+
+    @enduml
+  #+END_SRC
+
+* SFJ - Short Job First - Con desalojo
+** Prioridad
+   El proceso siguiente con menor ráfaga de cpu,
+   por cada ráfaga de cpu, se evalúa la prioridad del proceso actual con el siguiente
+** Ejemplo
+  |----+----+-----+----+-----|
+  |    | LL | CPU | ES | CPU |
+  |----+----+-----+----+-----|
+  | P1 |  0 |   4 |  2 |   1 |
+  |----+----+-----+----+-----|
+  | P2 |  1 |   2 |  2 |   3 |
+  |----+----+-----+----+-----|
+  | P3 |  2 |   1 |  3 |   1 |
+  |----+----+-----+----+-----|
+
+
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P1 | CPU |     |     |     | CPU | CPU | CPU |     |     |     |     | CPU |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P2 |     | CPU | CPU | E/S | E/S |     |     | CPU |     | CPU | CPU |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P3 |     |     |     | CPU |     | E/S | E/S | E/S | CPU |     |     |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | 0  |   1 |   2 |   3 | 4   | 5   | 6   | 7   | 8   |   9 |  10 |  11 |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+
+* RR - Round Robin
+** Prioridad
+   Similar al FIFO, pero pueden ejecutar tantas ráfagas de CPU como quantum haya, y dejar al siguiente proceso seguir
+** Ejemplo
+   Con quantum = 3
+
+  #+NAME: procesos-rafagas
+  |----+----+-----+----+-----|
+  |    | LL | CPU | ES | CPU |
+  |----+----+-----+----+-----|
+  | P1 |  0 |   4 |  2 |   4 |
+  |----+----+-----+----+-----|
+  | P2 |  1 |   4 |  2 |   3 |
+  |----+----+-----+----+-----|
+  | P3 |  2 |   3 |  2 |   3 |
+  |----+----+-----+----+-----|
+
+  
+  #+NAME: procesos-rafagas-step-by-step
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P1 | CPU | CPU | CPU |     |     |     |     |     |     | CPU |     | E/S | E/S |     | CPU | CPU | CPU |     |     |     | CPU |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P2 |     |     |     | CPU | CPU | CPU |     |     |     |     | CPU |     |     | E/S | E/S |     |     | CPU | CPU | CPU |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | P3 |     |     |     |     |     |     | CPU | CPU | CPU | E/S | E/S | CPU | CPU | CPU |     |     |     |     |     |     |     |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+  | 0  |   1 |   2 |   3 |   4 |   5 |   6 |   7 |   8 |   9 | 10  | 11  | 12  | 13  | 14  | 15  |  16 |  17 |  18 |  19 |  20 |  21 |
+  |----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----|
+
+ #+BEGIN_SRC plantuml
+ #+END_SRC
+
+* [TODO] VRR - Virtual Round Robin

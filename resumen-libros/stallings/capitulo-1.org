@@ -1,0 +1,48 @@
+#+TITLE: Capitulo 1 - Introducción
+
+Pag. 9-48
+
+* Elementos Básicos
+** Procesador
+*** Conceptos
+   - Controla al computador
+   - Realiza las funciones de procesamiento de datos
+   - Se denomina *Unidad central de proceso* si es uno solo
+*** Funciones
+    Intercambiar datos con la *memoria* a partir de dos registros del procesador
+**** (RDIM) Registro de Dirección de memoria
+     Guarda la siguiente de dirección (lectura/escritura)
+**** (RDAM) Registro de Datos de memoria
+     Tiene los datos que se van a escribir/recibir
+**** (RDI) E/S
+     Especifíca el dispositivo
+**** (RDA) E/S
+     Permite el intercambio de datos
+** Memoria Principal
+*** Conceptos
+    - Es volátil, cuando se apaga el computador se pierde la información
+    - Se denomina *Memoria primaria*
+*** Módulo de memoria
+    - Tiene un conjunto de posiciones (cada una es una instrucción ó dato)
+** Módulos de E/S
+   - Transfieren datos entre el computador y su entorno (dispositivos externos)
+   - Tienen buffers (zonas de almacenamiento internas, temporales hasta que se envíen los datos)
+** Bus del sistema
+   - Permite la comunicación entre
+     - Memoria principal
+     - Módulos de E/S
+     - Procesadores
+
+* Registros del Procesador
+** Conceptos
+** Utilidad
+*** Registros visibles para el usuario
+*** Registros de contol y estado
+** Tipos
+
+
+
+
+
+
+

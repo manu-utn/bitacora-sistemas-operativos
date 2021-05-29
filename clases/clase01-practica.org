@@ -1,0 +1,22 @@
+#+TITLE: Clase 01 - Parte Práctica
+
+no podemos usar *instrucciones privilegiadas* en los programas
+
+el usuario puede hacer *llamadas al sistema*, 
+pero por lo general lo hacemos con *wrappers* (porque es más fácil)
+pero NO podemos llamar a llamadas al sistema que tengan *instrucciones privilegiadas*
+
+#+BEGIN_SRC c
+  // - printf() hace una llamada al syscall write
+  printf("Hola mundo\n");
+
+  // - write es una llamada al sistema (lo hacemos nosotros, usuarios)
+  // - una syscall es un conjunto de instrucciones
+  // - los usuarios podemos usar llamadas al sistema,
+  //   mientras no traten de ejecutar instrucciones privilegiadas
+  //
+  // 1 es ... el medio donde voy a imprimir (?)
+  // 12 es la cantidad de caracteres que reservamos en memoria
+  write(1, "Hola mundo\n", 12)
+#+END_SRC
+

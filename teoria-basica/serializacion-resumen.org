@@ -1,0 +1,115 @@
+#+TITLE: Resumen - Serialización
+
+  |--------------+---------+---------|
+  | Tipo de Dato | Bits    | Bytes   |
+  |--------------+---------+---------|
+  | char         | 8 bits  | 1 Byte  |
+  |              | 16 bits | 2 Bytes |
+  |              | 32 bits | 4 Bytes |
+  |--------------+---------+---------|
+
+* Serializar
+  - Siempre que queramos pasar información por sockets
+
+  #+BEGIN_QUOTE
+  Serializar significa ubicar los datos a enviar de una forma inequivoca y contigua 
+  en un cierto espacio de memoria de tal forma que el receptor pueda 
+  reconstruir la estructura en su propio espacio de memoria.
+  #+END_QUOTE
+* Deserializar
+  - Tomar el *stream de datos* recibidos y obtener los datos que contiene,
+    reconstruirlos para luego poder operarlos
+* Streams (Flujo de Datos)
+  - El =void *= se utiliza para representar =strings=
+    (es un conjunto de bytes que se pueden usar 
+     otros tipos de datos)
+* TAD (Tipo Abstracto de Dato)
+** Conceptos
+  - Debe tener un nombre, y un conjunto de operaciones
+  - Permite generar otros *TAD*
+
+  #+BEGIN_SRC C
+    typedef struct{
+      uint32_t dni;
+      uint32_t pasaporte;// 32 bits    = 4 Bytes
+      uint8_t edad;      // 8  bits    = 1 Byte
+      char nombre[14]; //  (1 Byte*14) = 14 Bytes
+    } t_persona;
+
+    t_persona p1;
+    p1.dni = 35216118;
+    p1.edad = 11;
+    p1.pasaporte = 03123123;
+    strcpy(p.nombre, "Jhonny Cash");
+  #+END_SRC
+** Padding
+   - Lo realiza el *compilador*
+   - Redondea el tamaño de la estructura hacia la 
+     próxima potencia de dos más cercana
+   - Hace los accesos de escritura/lectura hacia una *estructura*
+     sea más rápido
+   - Es útil a nivel máquina
+
+   #+BEGIN_QUOTE
+   El procesador trabaja palabra a palabra (no bytes por bytes)
+   el tamaño de una palabra varía según la arquitectura de la 
+   computadora (32 ó 64bits)
+   #+END_QUOTE
+
+   #+BEGIN_EXAMPLE
+   Las X representarían los padding que genera el compilador
+   
+   si mandaramos la estructura de abajo sin serializar,
+   con la funcón recv(),
+   es posible que NO recibamos los mismos datos
+   porque la arquitectura de la computadora puede ser 
+   diferente (Ej. 32bits ó 64 bits)
+   #+END_EXAMPLE
+
+   |------+------+------+------|
+   | dato | dato | dato | dato |
+   |------+------+------+------|
+   | dato | X    | X    | X    |
+   |------+------+------+------|
+   | dato | dato | dato | dato |
+   |------+------+------+------|
+   | dato | dato | dato | dato |
+   |------+------+------+------|
+   | dato | dato | X    | X    |
+   |------+------+------+------|
+* Identificador Attribute Packed
+  - Lo dispone el compilador de *gcc*
+  - Elimina el [[Padding][padding]]
+  - Se utiliza para estructuras *estáticas* 
+    (Ej. que tenga solo un char, ó solo un int)
+
+  #+BEGIN_EXAMPLE
+  En el TP de SISOP casi no se utiliza, suelen ser todas dinámicas
+  
+  Por ejemplo una ip que puede no tener siempre el mismo largo
+  #+END_EXAMPLE
+
+  #+BEGIN_SRC C
+    typedef struct{
+      uint32_t dni;
+      uint32_t pasaporte;// 32 bits    = 4 Bytes
+      uint8_t edad;      // 8  bits    = 1 Byte
+      char nombre[14]; //  (1 Byte*14) = 14 Bytes
+    } __atribute__((packed)) t_persona;
+  #+END_SRC
+* Serializar
+** Protocolo
+   Porque =send()= y =recv()= necesita 
+   1. El tamaño del mensaje a enviar/recibir
+   2. El mensaje
+
+   Lo que sugieren entonces es
+
+   |--------+-------------+-------+-------------+-------+-----|
+   | Header | size(DATO1) | DATO1 | size(DATO2) | DATO2 | ... |
+   |--------+-------------+-------+-------------+-------+-----|
+
+* Empaquetar
+  - Además de *serializar* también le mandamos
+    - el tipo de mensaje
+    - el tamaño del mensaje

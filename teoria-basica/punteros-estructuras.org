@@ -1,0 +1,514 @@
+#+TITLE: Punteros y Estructuras
+* Tipos de Datos y Modificadores
+** volatile
+*** Conceptos
+    - Es un *modificador*
+    - Indicamos al compilador que una variable puede cambiar en cualquier momento 
+
+    #+BEGIN_QUOTE
+    The volatile keyword is needed to force the compiler 
+    to store the local variable c on the stack rather than in a register.
+    #+END_QUOTE
+*** Ejemplo
+    #+BEGIN_SRC C :results verbatim
+      #include <stdio.h>
+
+      int main(){
+        volatile int personas = 12;
+        printf("%d\n", personas);
+
+        personas = 5;
+        printf("%d\n", personas);
+
+        personas = 2;
+        printf("%d\n", personas);
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : 12
+    : 5
+    : 2
+** const 
+*** Conceptos
+    - Es un *modificador* (???)
+    - Indicamos al compilador que una variable NO podrá cambiar
+    - Permite al compilador aplicar técnicas de optimización (velocidad, menor tamaño, ó ambos)
+*** Ejemplo
+    #+BEGIN_SRC C :results verbatim
+      #include <stdio.h>
+
+      int main(){
+        const int personas = 12;
+        printf("%d\n", personas);
+
+        personas = 5; // Error de compilación
+
+        personas = 2; // Error de compilación
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+** uint8_t uint16_t unint32_t
+*** Conceptos
+  Recordemos que 
+  + 8 bits  representan 1 Byte
+  + 16 bits representan 2 Bytes
+  + 32 bits representan 4 Bytes
+  + 64 bits representan 8 Bytes
+
+  Según la arquitectura de la computadora..
+  + 1 char representa 1 Byte
+*** Ejemplo 1
+    #+BEGIN_SRC C :results verbatim
+      #include <stdio.h>
+      #include <stdint.h>
+
+      typedef struct{
+        uint8_t edad;       // 8 bits = 1 Byte
+        uint16_t telefono; // 16 bits = 2 Bytes
+      } Payload;
+
+      int main(){
+        Payload p1;
+        p1.edad = 8;
+        p1.telefono = 43321;
+
+        printf("edad: %d Bytes\n", sizeof(p1.edad));
+        printf("telefono: %d Bytes", sizeof(p1.telefono));
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : edad: 1 Bytes
+    : telefono: 2 Bytes
+
+*** Ejemplo 2
+    #+BEGIN_SRC C :results verbatim
+      #include <stdio.h>
+      #include <stdint.h>
+
+      int main(){
+        const char* nombre = "carlos";
+        /* volatile uint8_t *personas = ...; */
+        //printf("%d llamadas %s\n", personas, nombre);
+
+        nombre[0] = 'd'; // Error de compilación..!
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+
+*** Ejemplo con funciones y structs
+    #+BEGIN_SRC C :results verbatim
+      #include <stdio.h>
+      #include <stdint.h>
+
+      struct dos_bytes{
+        uint8_t a;
+        uint8_t b;
+      };
+
+      uint8_t suma(uint8_t, uint8_t);
+      uint8_t suma_v2(struct dos_bytes);
+
+      int main(){
+        printf("%d\n", suma(1, 2));
+
+        struct dos_bytes datos;
+        datos.a = 1;
+        datos.b = 2;
+
+        printf("%d", suma_v2(datos));
+
+        return 0;
+      }
+
+      uint8_t suma(uint8_t a, uint8_t b){
+        return a+b;
+      }
+
+      uint8_t suma_v2(struct dos_bytes dato){
+        volatile uint8_t c = dato.a + dato.b;
+
+        return c;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : 3
+    : 3
+
+** Referencias
+   1. https://jeelabs.org/book/1506d/index.html
+   2. https://ro-che.info/articles/2017-01-25-word8-space
+* Estructuras Estáticas
+** Ejemplo 1
+   #+BEGIN_SRC C :results verbatim
+     #include <stdio.h>
+     #include <string.h>
+     #include <stdlib.h>
+
+     int main(){
+       struct Persona{
+         char nombre[20];
+         int edad;
+         int peso;
+       };
+
+       struct Persona p1;
+       strcpy(p1.nombre, "sofia");
+       p1.edad = 11;
+       printf("%s %d\n", p1.nombre, p1.edad);
+
+       // puntero p2 que apunta a una estructura Persona
+       struct Persona *p2;
+       // reservamos memoria dinámica para una sola estructura
+       p2 = malloc(sizeof(struct Persona));
+       // al ser una cadena de caractees usamos strcpy
+       strcpy(p2->nombre, "carlos");
+       // al ser un puntero a una estructura, podemos usar el operador flechita ->
+       p2->edad = 5;
+       // otra manera en vez de usar el operador flechita ->
+       (*p2).peso = 50;
+       printf("%s %d %d\n", p2->nombre, (*p2).edad, p2->peso);
+
+       // liberamos el espacio en memoria que habiamos reservado
+       free(p2);
+
+       return 0;
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : sofia 11
+   : carlos 5 50
+* Punteros a Variables
+** Ejemplo 1
+   #+BEGIN_SRC C :results verbatim
+     #include <stdio.h>
+     #include <string.h>
+     #include <stdlib.h>
+
+     int main(){
+       int *notas;
+
+       // reservamos memoria dinámica para 3 enteros
+       notas = malloc(sizeof(int) * 3);
+       // en la 1ra posición de memoria asignamos valor 0
+       ,*notas = 0; // es lo mismo que: *(notas+0) = 0
+       // en la 2da posición de memoria asignamos valor 5
+       ,*(notas+1) = 5;
+       // en la 3ra posición de memoria asignamos valor 6
+       ,*(notas+2) = 6;
+
+       printf("notas: %d %d %d\n", *notas, *(notas+1), *(notas+2));
+
+       // liberamos memoria
+       free(notas);
+
+       return 0;
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : notas: 0 5 6
+
+* Punteros a Estructuras
+** Ejemplo 1
+  ejecutar fuera de org-mode, no se verán los cambios de forma dinámica
+  #+name: cronometro.c
+  #+BEGIN_SRC C
+    #include <stdio.h>
+
+    #define DELAY 128000;
+
+    struct cronometro{
+      int hora;
+      int minuto;
+      int segundo;
+    } t_cronometro;
+
+    // las funciones mostar() y actualizar()
+    // tendran de parámetro un puntero a una estructura
+    void mostrar(struct cronometro *);
+    void actualizar(struct cronometro *);
+    void delay(void);
+
+    int main(){
+
+      t_cronometro.hora = 0;
+      t_cronometro.minuto = 0;
+      t_cronometro.segundo = 0;
+
+      // loop infinito
+      for(;;){
+        // en ambas funciones le pasamos la direccion de memoria
+        // en sus declaraciones vemos el operador de desreferencia *
+        // se pueden trabajar como un puntero a una estructura
+        mostrar(&t_cronometro);
+        actualizar(&t_cronometro);
+      }
+
+      return 0;
+    }
+
+    void mostrar(struct cronometro *c){
+      printf("%d:%d:%d\n", c->hora, c->minuto, c->segundo);
+    }
+    void actualizar(struct cronometro *c){
+      c->segundo++;
+      if(c->segundo == 60){
+        c->minuto++;
+        c->segundo = 0;
+      }
+      if(c->minuto == 60){
+        c->hora++;
+        c->minuto = 0;
+      }
+      if(c->hora == 24){
+        c->hora = 0;
+      }
+
+      delay();
+    }
+
+    void delay(void){
+      int x;
+      for(x=0; x < 128000 ; ++x) ;
+    }
+  #+END_SRC
+** Ejemplo 2
+  #+BEGIN_SRC C :results verbatim 
+    #include <stdio.h>
+    #include <string.h>
+    #include <stdlib.h>
+
+    struct Direccion{
+      int altura;
+      char *calle;
+      char *pais;
+    } t_direccion;
+
+    int main(){
+      t_direccion.altura = 4536;
+      // reservamos memoria dinámica para 20 caracteres (20 Bytes)
+      t_direccion.calle = malloc(sizeof(char)*20);
+      // usamos strcpy porque es una cadena de caracteres
+      strcpy(t_direccion.calle, "paraguay y borgues");
+
+      t_direccion.pais = malloc(sizeof(char)*20);
+      strcpy(t_direccion.pais, "Argentina");
+
+      printf("%d, %s, %s\n", t_direccion.altura, t_direccion.calle, t_direccion.pais);
+
+      // liberamos memoria por cada miembro de la estructura
+      // de los que reservamos memoria dinámica
+      free(t_direccion.calle);
+      free(t_direccion.pais);
+      return 0;
+    }
+  #+END_SRC
+
+  #+RESULTS:
+  : 4536, paraguay y borgues, Argentina
+
+* Punteros a Funciones
+** Conceptos
+   + Un puntero de tipo ~void~ 
+     * puede guardar la referencia de cualquier tipo de función (Ej. int, char, ...)
+     * al pasarle el identificador de la función, le estamos pasando
+       la dirección de la misma (el comienzo de ella)
+   + Si el puntero a función recibe parámetros, se deben especificar en su *declaración*
+** Ejemplo 1 - Puntero Nulo a una función sin parámetros
+   #+BEGIN_SRC C :results output
+     #include <stdio.h>
+
+     void unaFuncion(void);
+
+     int main(){
+       // puntero nulo a una función (que no recibe parámetros)
+       void (*puntero)(void);
+
+       puntero = unaFuncion;
+       // otra manera...
+       //puntero = &unaFuncion;
+
+       // llamamos a la función a través del puntero
+       puntero();
+
+       return 0;
+     }
+
+     void unaFuncion(void){
+       printf("hola...!\n");
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : hola...!
+** Ejemplo 2 - Puntero Nulo a una función con parámetros
+   #+BEGIN_QUOTE
+   Si un puntero apunta a una función que recibe parámetros,
+   al declarar el puntero se deben especificar los tipos de los parámetros
+   #+END_QUOTE
+
+   #+BEGIN_SRC C :results output
+     #include <stdio.h>
+
+     void escribir(int, int);
+
+     int main(){
+       // puntero nulo a una función que recibe de parámetros dos enteros
+       void (*puntero)(int, int);
+       // - el puntero guarda la dirección de la función escribir()
+       // - el identificador de la función representa la dirección de memoria
+       // de comienzo de la misma
+       puntero = escribir;
+
+       puntero(5, 2);
+
+       (*puntero)(5, 9); // otra manera
+
+       return 0;
+     }
+
+     void escribir(int a, int b){
+       printf("%d %d\n", a, b);
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : 5 2
+   : 5 9
+** Ejemplo 3 - Puntero a una funcion con parámetros
+   #+BEGIN_SRC C :results output
+     #include <stdio.h>
+
+     int sumar(int, int);
+
+     int main(int argc, char* argv[]){
+       // puntero a función que recibe dos parámetros
+       // y retorna un entero
+       int (*puntero)(int, int);
+
+       puntero = sumar;
+       // puntero = &sumar;
+       //
+       // un "Puntero a función" no requiere si o si que usemos el operador &
+       // - el operador de dirección & indica la dirección de memoria
+       // del comienzo de un bloque de memoria que reservamos para un dato (Ej. int, char,..)
+       // - tampoco necesitamos el uso de los paréntesis para invocar la función
+       // solo el identificador de la función y listo
+
+       printf("%d\n", puntero(5, 2));
+
+       return 0;
+     }
+
+     int sumar(int a, int b){
+       return a + b;
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : 7
+** Ejemplo 3 - Pasar funciones por parámetro
+   #+BEGIN_SRC C :results output
+     #include <stdio.h>
+
+     int operacion(int, int, int (*funcion)(int, int));
+     int sumar(int, int);
+     int restar(int, int);
+
+     int main(){
+       int a=5, b=2, resultado=0;
+
+       // - la función operacion() recibe como tercer parámetro
+       // el identificador de otra función
+       // - en la declaración de operacion() manejamos ese identificador
+       // con un puntero, que hace referencia a la dirección de la función
+       resultado = operacion(a, b, sumar);
+       printf("La suma es: %d\n", resultado);
+
+       resultado = operacion(a, b, restar);
+       printf("La resta es: %d\n", resultado);
+
+       return 0;
+     }
+
+     int operacion(int a, int b, int (*funcion)(int, int)){
+       volatile int resultado = funcion(a, b);
+
+       return resultado;
+     }
+
+     int sumar(int a, int b){
+       return a + b;
+     }
+
+     int restar(int a, int b){
+       return a - b;
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : La suma es: 7
+   : La resta es: 3
+
+** Referencias
+   1. http://agora.pucp.edu.pe/inf2170681/12.htm
+   2. https://robologs.net/2019/05/31/tutorial-punteros-a-funciones-en-c/
+* Punteros dobles
+** Ejemplo 1
+   #+BEGIN_SRC C :results verbatim
+     #include <stdio.h>
+     #include <stdlib.h>
+
+     int main(){
+       int num = 10;
+       printf("num=%d\n", num);
+
+       // puntero a un entero,
+       // que guarda la referencia de num
+       int *punteroSimple = &num;
+       // desreferenciamos el puntero,
+       // para cambiar el valor de num
+       ,*punteroSimple = 20;
+       printf("num=%d\n", num);
+
+       // puntero a puntero
+       // guardamos la referencia del puntero,
+       int **punteroDoble = &punteroSimple;
+       // desreferenciamos el puntero,
+       // y le cambiamos el valor al que apuntaba el puntero simple
+       ,**punteroDoble = 30;
+       printf("num=%d\n", num);
+
+       return 0;
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : num=10
+   : num=20
+   : num=30
+
+** Referencias
+  1. http://www.it.uc3m.es/pbasanta/asng/course_notes/pointers_to_pointers_es.html
+  2. https://www.geeksforgeeks.org/double-pointer-pointer-pointer-c/
+  3. https://www.studytonight.com/c/pointer-to-pointer.php
+  4. https://beginnersbook.com/2014/01/c-pointer-to-pointer/
+* Referencias
+** Punteros
+   1. https://www.infor.uva.es/~belar/Ampliacion/Practicas%20C/2.%20Punteros/Punteros_en_C_Transparencias.pdf
+** Estructuras con punteros
+   1. https://www.programiz.com/c-programming/c-structures-pointers

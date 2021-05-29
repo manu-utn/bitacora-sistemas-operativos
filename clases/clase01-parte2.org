@@ -1,0 +1,203 @@
+#+TITLE: Introducción al Sistemas operativos
+
+* temas al aire
+los distintos SO tienen en común
+que tienen funcionalidades que están en el kernel
+* [TODO] Evolución de los Sistemas Operativos
+** Monoprogramados
+   los programas dejaban de funcionar
+   porque el procesador se quedaba esperando
+*** Procesamiento en serie
+    - Se podia ejecutar solo un programa a la vez
+    - Eran las personas quienes que tenian que ejecutar
+      esos otros programas
+*** Sistemas en lotes sencillos
+    ???
+** Multiprogramados
+*** Sistemas en lotes multiprogramados
+    - Se automatizó el procesamiento en serie (???)
+    - se podian ejecutar varios programas
+      de manera *concurrente*
+*** Sistemas de tiempo compartido
+    - Es el utilizado actualmente
+    - son sistemas de multiusuario donde varios 
+      usuarios conectados en 
+* Funciones
+** Administrar la ejecución de programas
+** Interfaz para usuario y programadores
+   - Puede ser a traves de una consola, ó de una interfaz
+** Administración de los recursos de HW y SW
+   - Cuando hacemos un programa (Ej. una calculadora), es este
+     quien le solicita al *SO* que muestre por pantalla los resultados
+   - es el *sistema operativo quien se encarga de administrar los 
+     recursos de hardware*, evitandole al programador lidiar con problemas
+     de hardware
+** Comunicación entre programas
+   - a traves del *sistema operativo* para evitar que otros
+     programas accedan a posiciones de memoria de otro
+     para agregar/sacar información
+    
+     #+BEGIN_EXAMPLE
+     Un ejemplo sería que un programa que aprovecha bugs del SO
+     para ver los datos de otro, como ver el Homebanking
+     #+END_EXAMPLE
+** Protección y seguridad
+   ej. similar al del homebanking
+** Asignación de recursos
+   El mismo SO es quien se encarga de asignarse los recursos
+** Administrar los archivos
+* Capas de una computadora
+** Tipos de usuarios
+   |---------------------------------+-------------------|
+   | Tipo de usuario                 | Que necesita usar |
+   |                                 |                   |
+   |---------------------------------+-------------------|
+   | Usuarios Finales                | Aplicaciones      |
+   |---------------------------------+-------------------|
+   | Programadores                   | Utilidades        |
+   |                                 | Sistema Operativo |
+   |---------------------------------+-------------------|
+   | Diseñador del Sistema Operativo | Hadware           |
+   |---------------------------------+-------------------|
+** Aplicaciones
+   - Los *usuarios finales* solo quieren usar las aplicaciones
+** Utilidades
+  - Son lo que los *programadores* que necesitan para poder programar
+    (Ej. compilador, consola, interfaz grafica)
+  - Para usarlos necesitamos conocer el *sistema operativo*
+    (Ej. mac, linux, windows,.. cada uno su mundo)
+** Sistema operativo (kernel)
+   - Para diseñar un SO necesitamos conocer el hardware
+** Hardware
+* (Syscall) Llamadas al sistema
+   #+BEGIN_EXAMPLE
+   Las llamadas al sistema son a nivel sistema operativo, 
+   porque el printf() en Linux llama a write (llamada al sistema en linux)
+   quiźas en Windows la llamada al sistema tiene otro nombre en vez de write
+   #+END_EXAMPLE
+
+  - permite al programador utilizar recursos
+  - suelen ser utilizadas a traves de una API por medio de wrappers
+    - permiten portabilidad
+      (es decir cuando llamamos a una funcion printf en cualquier 
+      SO deberia hacer lo mismo, aunque por dentro cada SO haga 
+      otra cosa, PERO siempre que usemos funciones estandar)
+  - son a nivel *sistema operativo*  (no es lo mismo en Linux, Windows, ...)
+** Portabilidad de un programa
+   La portabilidad de un programa consiste en poder pasar un 
+   programa de un sistema operativo a otra, y que siga funcionando.
+   Esto se logra con bibliotecas estandar
+
+   *Observaciones:*
+   Las llamadas en cada sistema operativo son diferentes
+   por eso un programa compilado para Linux puede no funcionar en Windows,
+   y viceversa.
+** Wrappers
+     - significa envoltorio
+     - es una función que llama a otra función (que es una llamada 
+       al sistema)
+     - son funciones que incluyen una llamada al sistema
+
+   #+NAME: funcion-printf
+   #+BEGIN_EXAMPLE
+   la función printf(..) de C
+
+   llama a otra función (que es una llamada al sistema, nombrada write)
+   paa poder imprimir en pantalla
+
+   al incluir una llamada al sistema, se lo considera un wrapper
+  
+   nos evita tener que pasarle al write el código del dispositivo 
+   de la pantalla y la cantidad de caracteres a imprimir.
+   Sólo le pasamos los caracteres y listo, él se encarga
+   de imprimir en pantalla.
+   #+END_EXAMPLE
+   
+   #+NAME: syscall-write
+   #+BEGIN_EXAMPLE
+   wite es una funcion del sistema
+   que se puede utilizar para imprimir en cualquier dispositivo
+   (Ej. suponiendo que sabemos el codigo del dispositivo de la pantalla) 
+
+   write NO es una instruccion privilegiada
+   #+END_EXAMPLE
+* Modo de ejecución
+** Conceptos
+   |-------+-------------------|
+   | Nivel | Modo de Ejecución |
+   |-------+-------------------|
+   |     0 | Modo Kernel       |
+   |-------+-------------------|
+   |     1 | Modo Usuario      |
+   |-------+-------------------|
+
+  + según el modo podemos ejecutar o no ciertas *instrucciones* (privilegiadas y no privilegiadas)
+  + el SO es el primero en bootear,
+     - quien cambia a modo usuario todos los programas, 
+     - es el unico que puede cambiar a [[Modo kernel]] y ejecutar [[instrucciones privilegiadas]]
+** Modo kernel
+   - se pueden ejecutar las *instrucciones privilegiadas*
+   - solo el SO puede ejecutar en este modo, 
+     para poder acceder al hardware
+** Modo usuario
+   - se pueden ejecutar las *instrucciones NO privilegiadas*   
+   - cuando ejecutamos una aplicación está en este modo
+   - se pueden ejecutar ALGUNAS *instrucciones*
+** Cambio de modo
+*** Modo usuario a Modo Kernel
+    Puede suceder por
+    + Una [[Interrupción]]
+    + Una [[Syscall]]
+*** Modo Kernel a Modo Usuario
+    A través de 
+    + Una [[instrucción privilegiada]]
+    + Restaurando el contexto
+** conceptos que utiliza
+*** syscall
+    - son llamadas al sistema
+*** interrupción
+    - la notificacion de un evento (ej. de una E/S)
+    - el procesador se entera de esto y un modulo del SO
+      se encarga de manejar esto
+** Ejemplos
+*** Ejemplo 1 - Cambios de modo
+    Ejemplo
+    |----+-----------+---------------------------------------------+-----------+-----+---------------+-----|
+    | K  | U         |                                             | k         | u   | k             | u   |
+    |----+-----------+---------------------------------------------+-----------+-----+---------------+-----|
+    | so | app       | 1. syscall                                  | so        | app | so            | app |
+    |    |           | (Un programa llama a una syscall            |           |     |               |     |
+    |    |           | para pedirle al SO)                         |           |     |               |     |
+    |    | (notepad) | 2. interrupcion                             | (notepad) |     | (calculadora) |     |
+    |    |           | (El SO toma el control del procesador,      |           |     |               |     |
+    |    |           | detiene la ejecución del programa,          |           |     |               |     |
+    |    |           | hace lo que le pidieron                     |           |     |               |     |
+    |    |           | 3. el SO le devuelve el control al programa |           |     |               |     |
+    |----+-----------+---------------------------------------------+-----------+-----+---------------+-----|
+
+    - K: modo kernel
+    - u: modo usuario
+    - app: cualquier aplicación
+*** Ejemplo 2
+    #+BEGIN_EXAMPLE
+    el scanf()
+    1. parte de modo usuario
+    
+    2. pasa a modo kernel,
+    una parte se ejecuta en modo kernel con llamado al sistema
+    (la llamada READ) para pedir datos
+ 
+    3. pasa a modo usuario
+    #+END_EXAMPLE
+*** Ejemplo 3
+  #+BEGIN_EXAMPLE
+  Cuando ejecutamos el scanf()
+  1. Se ejecuta en modo usuario
+  2. Hace una llamada al sistema (nombrada READ)
+  3. El programa se deja de ejecutar, y se cambia al Modo Kernel, 
+     donde el SO solicita al hardware (el teclado en este caso)
+     cuando tiene la información se los envía al programa
+  4. Se cambia al Modo Usuario y el programa ejecuta lo que recibió
+
+  Recordar que solo el Sistema Operativo puede ejecutar en el modo kernel
+  #+END_EXAMPLE

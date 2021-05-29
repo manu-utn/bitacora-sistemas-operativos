@@ -1,0 +1,745 @@
+#+TITLE: Resumen - Sockets
+
+* Ejemplos Cliente-Servidor
+  1. https://www.binarytides.com/server-client-example-c-sockets-linux/
+* Introducción Sockets
+** API de Sockets (BSD)
+   - En la materia se ven *BSD Sockets* que son definidos en la *POSIX* 
+   - La *POSIX* es una familia de estándares que unifican *APIs*
+   - Las *APIs* son Interfaces de Programación de Aplicaciones
+     
+** Conceptos
+   - Los sockets son [[File Descriptor][descriptores de archivos]]
+   - Los *sockets* son una manera estándar para comunicarse con otros procesos
+     utilizando [[File Descriptor][unix file descriptors]]
+   - Cuando hacemos una llamada (ó invocamos) a la rutina del sistema [[Socket][socket()]]
+     esta nos devuelve un *socket descriptor* para comunicarnos con él
+     utilizando las llamadas de sockets [[Send][send()]] y [[Recv][recv()]]   
+** File Descriptor
+   - Es un valor entero asociado con un archivo abierto
+     (el archivo puede ser una conexión de red, una terminal,
+      un archivo de disco, ...)
+   - Cuando intentamos comunicarnos por internet con otros programas,
+     lo haremos a traves de un *file descriptor* (un archivo)
+
+   #+BEGIN_QUOTE
+   La función socket() devuelve un entero, que hace referencia al
+   descriptor del socket
+   
+   Cuando los procesos de unix hacen alguna operación I/O
+   estos leen/escriben en un *file descriptor* (un archivo)
+   #+END_QUOTE
+** Puertos
+   - Son puertas de acceso al [[Hosts][Host]]
+   - Se definen como enteros de 16 bits, con rango de 1 a 65535
+
+   #+BEGIN_QUOTE
+   Una conexión tan solo puede ser asociado a un puerto​.
+   
+   Esto significa que ​NO pueden coexistir dos programas en un
+   mismo host comunicándose por el mismo puerto
+   #+END_QUOTE
+** Hosts
+*** Tipos
+**** Host Cliente
+     - el que inicia la comunicación
+     - necesita conocer la *dirección* y el *puerto*
+**** Host Servidor
+     - el que decide si aceptar conexiones entrantes
+     - sólo necesita conocer el *puerto* a escuchar
+     - cuando un cliente se conecta, la API de Sockets guardará su dirección
+       para que exista una comunicación bidireccional
+*** Conceptos
+    - Las terminales de usuarios se denominan *hosts*
+    - Se pueden comunicar mediante una [[API de Sockets (BSD)][API de Sockets]]
+
+    #+NAME: hosts-comunicacion-por-sockets
+    |------+------------+------|
+    |      | Aplicación |      |
+    |------+------------+------|
+    | HOST | (SOCKET)   | HOST |
+    |------+------------+------|
+    |      | TCP        |      |
+    |------+------------+------|
+    |      | IP         |      |
+    |------+------------+------|
+    |      | Hardware   |      |
+    |------+------------+------|
+
+** Direcciones de Red
+   - Son una serie de números que identifican a los ordenadores de una red
+   - El [[Protocolo IP (Internet Protocol)][Protocolo IP]] las define como un número de 32 bits, dividido en 4 bloques 
+     de 1 byte con un rango de 0 a 255 y separados por puntos (Ej. 192.168.000.001)
+** Tipos de Internet Sockets
+*** Stream Sockets
+**** Conceptos
+     - Se suelen referir a los *SOCK_STREAM*
+     - Utilizan *protocolos* para que la información llege de manera segura
+**** Protocolo TCP (Transmission Control Protocol)     
+     - Se asegura que la información llegue sencuencialmente  y libre de errores
+**** Protocolo IP (Internet Protocol)
+     - Se encarga del trayecto por internet, pero NO de la integridad de la información
+
+     *Observación:*
+     quien se encarga de la integridad de los datos es el protocolo TCP
+*** Datagram Sockets
+**** Conceptos
+    - Se suelen referir a los *SOCK_DGRAM*
+    - Utilizan el *protocolo IP* pero NO USAN el *protocolo TCP*
+**** Protocolo UDP (User Datagam Protocol)
+** Referencias
+   1. https://es.wikipedia.org/wiki/Descriptor_de_archivo
+* Protocolos de Comunicación
+** Conceptos
+  - Un *protocolo* es como una *interfaz* que varios programas plantean respetar
+    de común acuerdo para poder comunicarse entre si
+  - Siempre que queramos comunicarnos mediante [[Introducción Sockets][sockets]], 
+    necesitaremos crear un *protocolo de comunicación*
+
+  |--------+---------|
+  | HEADER | PAYLOAD |
+  |--------+---------|
+** Header
+   - Es de tamaño fijo
+   - Representa la *estructura* de tamaño fijo que identificará al tipo
+     de mensaje a enviar
+** Payload
+   - Es de tamaño variable, dependiendo del header
+   - Representa los *datos* del mensaje a enviar
+* Funciones Sockets
+** Getaddrinfo
+*** Conceptos
+    - Devuelve un puntero a una lista linkeada 
+      que pueden ser una o más estructuras del tipo *addrinfo*
+    - Si tuvo éxito retorna 0 (osea cero)
+    - Es importante luego usar =freeaddrinfo(res)=
+      (donde el parámetro *res* representa la estructura de dirección)
+
+    #+NAME: estructura-addrinfo
+    |-------------+---------------------------------------------|
+    | Campo       | Descripción                                 |
+    |-------------+---------------------------------------------|
+    | ai_family   | define la familia de protocolos             |
+    | ai_socktype | define el tipo de socket                    |
+    | ai_protocol | dfine el protocolo de la familia a utilizar |
+    | ai_addr     | donde se almacena la dirección              |
+    | ai_addrlen  | define el taaño de la dirección             |
+    |-------------+---------------------------------------------|
+**** Funcion getaddrinfo
+    #+BEGIN_SRC C
+      // Forma genérica
+
+      int getaddrinfo(const char *node, // example.com ó IP
+                        const char *service, // http or port number
+                        const struct addrinfo *hints,
+                        struct addrinfo **res);
+      /*
+       ,* node:
+       ,* - es el nombre del hostname a conectar (ó una ip)
+       ,*
+       ,* service:
+       ,* - puede ser un número de puerto (80, 8080, ..)
+       ,* ó un nombre de servicio (http, ftp, ..)
+       ,*
+       ,* hints:
+       ,* - apunta a una estructura "addrinfo" con información que usaremos
+       ,* - contiene la familia de protocolos y el protocolo a utilizar
+       ,*
+       ,* res:
+       ,* - dirección de puntero de la estructura dinámica que utilizaremos
+       ,* para crear el socket
+       ,*
+       ,*/
+    #+END_SRC
+**** Estructura addrinfo
+    #+BEGIN_SRC C
+      struct addrinfo hints, *server;
+
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = AF_UNSPEC; // permite obviar entre IPV4 y IPV6
+      hints.ai_socktype = SOCK_STREAM;
+      hints.ai_flags = AI_PASSIVE; // nos asigna el IP del localhost actual
+    #+END_SRC
+**** Estructura y Funcion
+     #+BEGIN_SRC C
+       int status;
+       struct addrinfo hints;
+       struct addrinfo *servinfo; // will point to the results
+
+       memset(&hints, 0, sizeof hints); // make sure the struct is empty
+       hints.ai_family = AF_UNSPEC; // don't care IPv4 or IPv6
+       hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
+       hints.ai_flags = AI_PASSIVE; // fill in my IP for me
+
+       if ((status = getaddrinfo(NULL, "3490", &hints, &servinfo)) != 0) {
+          fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+          exit(1);
+        }
+     #+END_SRC
+*** Ejemplos
+**** Ejemplo 1
+   #+BEGIN_SRC C :results verbatin
+     #include <stdio.h>
+     #include <sys/types.h>
+     #include <sys/socket.h>
+     #include <netdb.h>
+
+     int main(int argc, char*agv[]){
+       char *hostname = "localhost";
+       char *service = "8080"; // ó http
+
+       struct addrinfo hints, *server;
+       struct in_addr addr;
+       int err, sock;
+
+       memset(&hints, 0, sizeof(hints));
+       /* hints.ai_family = AF_UNSPEC; */
+       hints.ai_family = AF_INET;
+       hints.ai_socktype = SOCK_STREAM;
+       hints.ai_flags = AI_PASSIVE;
+
+       sock = socket(server->ai_family, server->ai_socketype,
+                     server->ai_protocol);
+       bind(sock, server->ai_addr, server->ai_addrlen);
+       listen(sock, 10);
+
+       /*
+       if ((err = getaddrinfo(hostname, service, &hints, &res)) != 0) {
+         printf("error %d: %s", err, gai_strerror(err));
+         return 1;
+         //fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+         //exit(1);
+       }
+
+       sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+       if (sock < 0) {
+         perror("socket");
+         return 1;
+       }
+
+       if (connect(sock, res->ai_addr, res->ai_addrlen) != 0) {
+         perror("connect");
+         return 1;
+       }
+
+       addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
+       printf("ip address : %s\n", inet_ntoa(addr));
+
+       freeaddrinfo(res);
+       ,*/
+
+       return 0;
+     }
+   #+END_SRC
+
+   #+RESULTS:
+**** Ejemplo 2
+     #+BEGIN_SRC C
+       #include <stdio.h>
+       #include <stdlib.h>
+       #include <sys/socket.h>
+       #include <string.h>
+       #include <sys/types.h>
+       #include <netinet/in.h>
+       #include <netdb.h>
+
+       int main(int argc, char** argv) {
+        struct addrinfo hints, *server;
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family =  AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE || SOCK_NONBLOCK;
+        getaddrinfo(NULL, "80", &hints, &server);
+
+        int sockfd = socket(server->ai_family,
+               server->ai_socktype, server->ai_protocol);
+        bind(sockfd, server->ai_addr, server->ai_addrlen);
+        listen(sockfd, 10);
+ 
+        struct sockaddr_storage client_addr;
+        socklen_t addr_size = sizeof client_addr;
+        char headers[] = "HTTP/1.0 200 OK\r\nServer: CPi\r\nContent-type: text/html\r\n\r\n";
+        char buffer[2048];
+        char html[] = "<html><head><title>Temperature</title></head><body>{\"humidity\":81%,\"airtemperature\":23.5C}</p></body></html>\r\n";
+        char data[2048] = {0};
+        snprintf(data, sizeof data,"%s %s", headers, html);
+
+        for (;;) {
+         int client_fd = accept(sockfd,
+          (struct sockaddr *) &client_addr, &addr_size);
+         if (client_fd > 0) {
+          int n = read(client_fd, buffer, 2048);
+          printf("%s", buffer);
+          fflush(stdout);
+          n = write(client_fd, data, strlen(data));
+          close(client_fd); 
+         }
+        }
+        return (EXIT_SUCCESS);
+       }
+
+     #+END_SRC
+
+     #+RESULTS:
+
+*** Referencias
+    1. https://www.geekpage.jp/en/programming/linux-network/
+    2. https://www.i-programmer.info/programming/cc/9993-c-sockets-no-need-for-a-web-server.html?start=2
+    3. https://beej.us/guide/bgnet/examples/client.c
+
+** Socket
+*** Conceptos
+**** Funcion socket()
+     - Retorna un *socket descriptor* para reutilizar con *syscalls*
+     - Si hubo un error retorna un -1
+
+     *Observación:*
+     Luego de usado el socket, es importante cerrar el socket para liberar
+     los recursos que tenía reservado, para evitar *memory leaks*
+     con =int close(int socket)=
+
+     #+BEGIN_SRC C
+       #include <sys/types.h>
+       #include <sys/socket.h>
+
+       int socket(int domain, int type, int protocol);
+
+       /*
+        ,* domain:
+        ,* - puede ser PF_INET, PF_INET6
+        ,*
+        ,* type:
+        ,* - puede ser SOCK_STREAM, SOCK_DGRAM
+        ,*
+        ,* protocol:
+        ,* - si es 0 (osea cero, usará el protocolo por defecto de la familia dada)
+        ,* - ó también se puede usar getprotobyname() para tcp ó udp
+        ,*
+        ,*/
+     #+END_SRC
+**** Funcion socket() y getaddrinfo()
+     Socket se complemeneta con =getaddrinfo()=
+
+     #+BEGIN_SRC C
+       #include <sys/types.h>
+       #include <sys/socket.h>
+
+       int status;
+       struct addrinfo hints, *info;
+       // suponiendo que ya completamos la estructura de "hints"
+       getaddrinfo("example.com", "http", &hints, &info);
+
+       // socket(int domain, int type, int protocol);
+       status = socket(info->ai_family,
+                       info->ai_socktype,
+                       info->ai_protocol);
+     #+END_SRC
+
+** Bind
+*** Conceptos
+   - Para reservar un [[Puerto][puerto]] a un socket
+   - Sólo tiene sentido si usaremos =listen()= osea si estamos escuchando como servidor
+     (el kernel se quedará esperando algún *socket descriptor* de un proceso)
+
+   *Observación:*
+   Recodeos que el *socket descriptor* ...
+
+    #+BEGIN_SRC C
+      #include <sys/types.h>
+      #include <sys/socket.h>
+
+      int bind(int sockfd, struct sockaddr *my_addr, int addrlen);
+
+      /*
+       ,* sockfd:
+       ,* - Es el socket file descriptor devuelto por socket()
+       ,*
+       ,* my_addr:
+       ,* - es un puntero a una estructura sockaddr
+       ,* - contiene informacion de la dirección, dirección IP, puerto,..
+       ,*
+       ,* addrlen:
+       ,* - es el tamaño en bytes de esa dirección
+       ,*/
+    #+END_SRC
+*** Ejemplo
+    #+BEGIN_SRC C
+      struct addrinfo hints, *res;
+      int sockfd;
+
+      // first, load up address structs with getaddrinfo():
+      memset(&hints, 0, sizeof hints);
+      hints.ai_family = AF_UNSPEC; // use IPv4 or IPv6, whichever
+      hints.ai_socktype = SOCK_STREAM;
+      hints.ai_flags = AI_PASSIVE; // fill in my IP for me
+
+      getaddrinfo(NULL, "3490", &hints, &res);
+
+       // make a socket:
+      sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+      // bind it to the port we passed in to getaddrinfo():
+      bind(sockfd, res->ai_addr, res->ai_addrlen);
+    #+END_SRC
+** Connect
+*** Conceptos
+    - Si hubo un error
+      - retorna el valor -1
+      - y un conjunto de =errno=
+
+    #+BEGIN_SRC C
+      #include <sys/types.h>
+      #include <sys/socket.h>
+
+      int connect(int sockfd, struct sockaddr *server_address, int addrlen);
+
+      /*
+       ,* sockfd:
+       ,* - representa el "socket file descriptor" que retorna
+       ,* la llamada socket()
+       ,*
+       ,* server_address
+       ,* - Es una estructura sockaddr que contiene el puerto destino
+       ,* y la dirección IP
+       ,*
+       ,* addrlen:
+       ,* - Es el tamaño en "bytes" de la estructura del server_address
+       ,*/
+    #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C
+      struct addrinfo hints, *serverInfo;
+      int sockfd;
+
+      // cargamos la address structs con getaddrinfo()
+      memset(&hints, 0, sizeof hints);
+      hints.ai_family = AF_UNPSEC;
+      hints.ai_socktype = SOCK_STREAM;
+      getaddrinfo("example.com", "3490", &hints, &serverInfo);
+
+      // creamos un socket
+      sockfd = socket(serverInfo->ai_family, serverInfo->ai_socktype,
+                      serverInfo->ai_potocol);
+
+      // nos conectamos
+      connect(sockfd, serverInfo->ai_addr, serverInfo->ai_addrlen)
+    #+END_SRC
+** Listen
+*** Conceptos
+   - Lo implementa un *servidor*
+   - Se requiere previamente asociar un número de puerto a la dirección IP
+     (con la syscall [[Bind][bind()]] para asociarlo)
+   - Las conexiones entrantes (clientes) las acepta el *servidor*
+     con la syscall [[Accept][accept()]] (si dicho servidor lo permite)
+   - Si hay error
+     - retorna -1
+     - y retorna un conjunto de *errno*
+
+   #+BEGIN_QUOTE
+   Es FUNDAMENTAL luego cerrar el socket de escucha, 
+   
+   porque estaremos usando como recurso ese *puerto*,
+   y puede que el Sistema tarde en cerrarlo/liberalo, 
+   
+   quedando como si se estuviese utilizando,
+   impidiendo volver a iniciar el servidor para que use ese puerto
+   hasta que el Sistema lo libere al puerto
+   #+END_QUOTE
+
+     #+BEGIN_SRC C
+       int listen(int sockfd, int backlog);
+
+       /*
+        ,* sockfd:
+        ,* - es el "socket file descriptor" de la syscall socket()
+        ,*
+        ,* backlog:
+        ,* - es el número de conexiones pendientes
+        ,* - es el limite de conexiones entrantes a encolar
+        ,* (conexiones entrantes que esperarán en una cola, hasta ser aceptadas)
+        ,*/
+         #+END_SRC
+** Accept
+*** Conceptos
+    - Es el tramo final de una conexión cliente-servidor porque
+    - Si hay error
+      - retorna -1
+      - y retorna un conjunto de *errno*
+
+    #+BEGIN_SRC C
+      #include <sys/types.h>
+      #include <sys/socket.h>
+
+      #include <sys/socket.h>
+
+      int accept(int sockfd,
+                 struct sockaddr *addr,
+                 socklen_t *addrlen);
+
+      /*
+       ,* sockfd:
+       ,* - es el "socket descriptor" que estamos escuchando
+       ,* con listen()
+       ,*
+       ,* addr:
+       ,* - es un puntero a una estructura sockaddr
+       ,* - donde se guardará la información de la conexión entrante
+       ,*
+       ,* addrlen:
+       ,* - es el tamaño en bytes de la estructura sockaddr
+       ,* - el tamaño de addr aumentará luego de accept()
+       ,*/
+    #+END_SRC
+
+    #+BEGIN_EXAMPLE
+    1. Alguien (cliente) se intenta conectar connect() al servidor
+    en un puerto que estamos escuchando listen()
+
+    2. Su conexión (cliente) va a esta esperando a ser aceptada 
+    con accept()
+  
+    3. Nosotros (servidor) la aceptamos con accept() 
+    y esta será encolada con las otras conexiones entrantes (más clientes)
+
+    4. Cada conexión aceptada nos devolverá un *socket file descriptor*
+    que será usada solo para esta conexión
+
+    Por tanto tendremos dos archivos *socket descriptor*,
+    uno que está escuchando nuevas conexiones entrantes
+    y el otro es conexión entrante aceptada
+    (esto sucederia con cada conexion nueva que fuese aceptada,
+    tendriamos varios archivos socket descriptor)
+ 
+    Establecida la conexión, ya podemos usar send() y recv() ! :)
+    #+END_EXAMPLE
+*** Ejemplo
+    #+BEGIN_SRC C
+      #include <string.h>
+      #include <sys/types.h>
+      #include <sys/socket.h>
+      #include <netdb.h>
+
+      #define MYPORT "3490" // the port users will be connecting to
+      #define BACKLOG 10 // how many pending connections queue will hold
+
+      int main(void)
+      {
+        struct sockaddr_storage their_addr;
+        socklen_t addr_size;
+        struct addrinfo hints, *res;
+        int sockfd, new_fd;
+
+       // !! don't forget your error checking for these calls !!
+       // first, load up address structs with getaddrinfo():
+
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_UNSPEC; // use IPv4 or IPv6, whichever
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE; // fill in my IP for me
+
+        // generamos la estructura
+        // - en res se guardará la información de las conexiones
+        // - en hints tiene la configuración de los protocolos
+        getaddrinfo(NULL, MYPORT, &hints, &res);
+
+        // creamos el socket descriptor
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        // a la dirección le asignamos el puerto específico
+        bind(sockfd, res->ai_addr, res->ai_addrlen);
+        // escuchamos en la dirección de ese puerto específico
+        listen(sockfd, BACKLOG);
+
+        // aceptamos una conexion entrante y la encolamos
+        addr_size = sizeof their_addr;
+        new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
+
+        // ahora tenemos dos "socket file descriptor"
+        // 1. el que está escuchando en el puerto específico
+        // 2. el que se generó al aceptar la conexión entrante
+        //
+        // YA podemos comunicarnos con el nuevo socket file descriptor
+        // con send() y recv()
+      }
+    #+END_SRC
+** Send
+*** Conceptos
+    - Se utiliza para la comunicación con *stream sockets* ó *datagram socket*
+    - El retorno es una cantidad de "bytes" enviados
+    - Si hay error
+      - retorna -1
+      - y retorna un conjunto de *errno*
+     
+    *Observación:*
+    Si el valor de retorno de =send()= NO coincide con la longitud del mensaje enviado
+    quiere decir que el esto lo tenemos que mandar nosotros.
+    Para evitar esto podemos enviar pequeños paquetes menores a 1K 
+
+    #+BEGIN_SRC C
+      int send(int sockfd, const void *msg, int len, int flags);
+
+      /*
+       ,* sockfd:
+       ,* - es el "socket descriptor" al que queremos enviar información
+       ,* - es el que suele retornar socket() y accept()
+       ,*
+       ,* msg:
+       ,* - es un puntero a la información que queremos enviar
+       ,*
+       ,* len
+       ,* - es la longitud en bytes de la información a enviar
+       ,*/
+    #+END_SRC
+*** Ejemplos
+    #+BEGIN_SRC C
+      char *mensaje = "Hola mundo...?";
+      int longitud_mensaje, bytes_enviados;
+
+      // codigo extra
+
+      longitud_mensaje = strlen(mensaje);
+      bytes_enviados = send(sockfd, // socket descriptor (dirección+puerto asociado)
+                            mensaje, //
+                            longitud_mensaje, //
+                            0); // flags
+    #+END_SRC
+** Recv
+*** Conceptos
+    - Funciona similar al [[Send][send()]]
+    - Si el *servidor* desconecta la conexión, el valor de retorno será 0 (cero)
+    - Si hay error
+      - retorna -1
+      - y retorna un conjunto de *errno*
+
+    #+BEGIN_SRC C
+      int recv(int sockfd, void *buffer, int len, int flags);
+
+      /*
+       ,* sockfd:
+       ,* - es el "socket descriptor" del que leeremos
+       ,*
+       ,* buffer:
+       ,* - Es el buffer que tiene la información a leer
+       ,*
+       ,* len:
+       ,* - Es la longitud máxima del buffer
+       ,*/
+    #+END_SRC
+** Send Vs Recv
+   - El comportamiento de ambos es similar
+     - cargan/vacían el buffer de tranmisión de los sockets
+     - retornan la cant. de bytes enviados ó recibidos
+     - el flag se suele dejar en 0
+   - El [[Recv][recv()]] es una función *bloqueante*
+
+   *Observación:*
+   El [[Recv][recv()]] nos avisa cuando la otra conexión NO está conectado
+
+   #+BEGIN_SRC C
+     int ​send(​int​ socket, ​void ​* mensaje, ​int ​cant, ​int ​flags);
+
+     int ​recv(​int​ socket, ​void ​* buffer, ​int ​cant, ​int ​flags);
+   #+END_SRC
+** Close
+*** Conceptos
+    - Evitamos que se pueda seguir leyendo/escribiendo en el *socket*
+    - Si alguien intenta leer/escribir en el socket recibirá un error
+
+    #+BEGIN_SRC C
+      close(sockfd);
+    #+END_SRC
+** Shutdown
+*** Conceptos
+    - Similar al [[Close][close()]] pero podemos decidir en que dirección
+      cortaremos el flujo de la comunicación
+      (Ej. si el recibir, el enviar, ó ambos)
+    - El valor de retorno es 0 (cero) si la operación fué exitosa
+    - Si hay error
+      - retorna -1
+      - y retorna un conjunto de *errno*
+
+    *Observación:*
+    - Para cerrar el archivo *socket descriptor* se requiere de [[Close][close()]]
+    - El =shutdown()= NO libera el *socket descriptor* se requiere usar =close()=
+
+    |---------------+--------------------------------|
+    | Valor Retorno | Descripción                    |
+    |---------------+--------------------------------|
+    |             0 | Operación =shutdown()= exitosa |
+    |            -1 | Hubo un error..!               |
+    |---------------+--------------------------------|
+       
+    |---------------+----------------------------------------|
+    | Valor del How | Efecto                                 |
+    |---------------+----------------------------------------|
+    |             0 | NO se puede recibir                    |
+    |             1 | NO se puede enviar                     |
+    |               |                                        |
+    |             2 | NO se puede recibir, ni tampoco enviar |
+    |---------------+----------------------------------------|
+
+    #+BEGIN_SRC C
+      int shutdown(int sockfd, int how);
+
+      /*
+       ,* sockfd:
+       ,* - Es el archivo "socket descriptor" que queremos cerrar/bloquear
+       ,*
+       ,* how:
+       ,* - Según el valor determinará que flujo de comunicación se cortará
+       ,*/
+    #+END_SRC
+** Secuencia pasos como Servidor
+*** 1. getaddrinfo()
+    para generar la estructura
+*** 2. socket()
+    para generar el archivo *socket descriptor*
+*** 3. bind()
+    para asociar un puerto a una ip,
+    osea desde que lugar se conectarán a la dirección ip
+*** 4. listen()
+    nos quedamos escuchando un puerto especifico de una dirección ip
+    y encolamos las conexiones entrantes
+*** 5. accept()
+    aceptamos (o no) las conexiones entrantes
+* Cliente TCP
+  #+BEGIN_SRC plantuml :file img/cliente-tcp.png
+    @startuml
+    [*] -r-> getaddrinfo
+    getaddrinfo -r-> socket
+    socket -d-> socket_conectado : connect()
+    socket_conectado -d-> close
+    socket_conectado -r-> servidor : send()
+    servidor -l-> socket_conectado : recv()
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/cliente-tcp.png]]
+* Servidor TCP
+  #+BEGIN_SRC plantuml :file img/servidor-tcp.png
+    @startuml
+    [*] -r-> getaddrinfo
+    ' Creamos el socket
+    getaddrinfo -r-> socket_escucha_creado : socket()
+    ' Le asignamos un puerto
+    socket_escucha_creado -d-> socket_con_puerto : bind()
+    ' Escuchamos un puerto específico
+    socket_con_puerto -d-> socket_listo_escuchando : listen()
+    ' Conexiones entrants (host clientes intentan conectarse)
+    clientes -l-> socket_listo_escuchando : connect()
+    ' Aceptamos las conexiones entrantes
+    ' y se creara un nuevo socket
+    ' (aparte del que se queda escuchando conexiones entrantes)
+    socket_listo_escuchando -d-> socket_cliente : accept()
+    ' Suponiendo que se cierra la conexión del cliente
+    socket_cliente -d-> socket_cliente_cerrado : close()
+    socket_cliente -l-> Cliente : recv()
+    Cliente -r-> socket_cliente : send()
+    socket_cliente_cerrado -u-> socket_listo_escuchando
+    socket_cliente_cerrado -d-> closeSocketEscucha : se desconecta el servidor
+
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/servidor-tcp.png]]

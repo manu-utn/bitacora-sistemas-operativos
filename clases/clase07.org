@@ -1,0 +1,11 @@
+#+TITLE: Clase 07 - Memoria Real/Fisica
+* Tipos de Direcciones
+** Dirección Lógica
+   + Es la que utiliza los procesos
+** Dirección Relativa
+** Dirección Absoluta ó Fisica
+   + Es la que utiliza en SO
+* Bibliotecas Compartidas
+  + 
+* Enlace Estático
+  + 

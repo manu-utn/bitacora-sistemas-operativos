@@ -1,0 +1,286 @@
+#+TITLE: Capítulo 1
+
+Llegaste hasta la página 45 aprox. la =Jerarquía de memoria=
+
+* Elementos Básicos
+  - Están interconectados para lograr la funcion
+    principal de la computadora. Ejecutar los programas.
+** Tabla componentes
+   |--------+-------------------------------|
+   | PC     | Program counter               |
+   | IR     | Instruction register          |
+   | MAR    | Memory address register       |
+   | MBR    | Memory buffer register        |
+   | I/O AR | Input/Output address register |
+   | I/O BR | Input/Output buffer register  |
+   |--------+-------------------------------|
+*** Program counter
+    - Apunta a la dirección de la siguiente instrucción
+      a ejecutar
+*** Instruction Register
+    - 
+** Procesador
+   - Controla las operaciones de la computadora
+   - Controla las funciones de procesamiento de datos
+   - Intercambia datos con la *memoria principal*
+     - A través de dos registros internos (MAR y MBR)
+   - Intercambia datos con los *módulos de E/S*
+     - A través de otros dos registros internos 
+** Memoria Principal
+   - Es volátil
+   - Su contenido se pierde al apagar el ordenador
+   - Almacena datos y programas
+*** Módulo de memoria
+    - Tiene un conjunto de posiciones (definidas
+      por un número secuencial de direcciones)
+    - Cada posición se puede interpretar como
+      - una *instrucción*
+      - un *dato*
+** Módulos de E/S
+   - Traslada datos de la computadora al entorno externo
+     (Ej. disco rigido)
+   - Traslada datos de dispositivos externos al
+     - procesador (viceversa)
+     - memoria (viceversa)
+   - Tienen buffers que almacenan la información 
+     (temporalmente) hasta que se envíen
+** Bus del Sistema
+   - Permite la comunicación entre los componentes mencionados
+* Ejecución de Instrucciones
+** Conceptos
+  - Para que un programa sea ejecutado por el *procesador*
+    se requiere de un conjunto de instrucciones 
+    que están almacenadas en *memoria*
+  - Es un proceso que se repite (ciclo) de dos etapas
+    - buscar la siguiente instrucción
+    - ejecutar instrucción
+  - Al inicio de cada ciclo de instrucción,
+    el *procesador* trae una instrucción de la *memoria*
+    (x lo gral del PC, counter program), luego lo incrementa (con el IR), 
+     y trae la sig. instrucción,...)
+  - También pueden especificar una *operación de E/S*
+** Etapas
+   - Etapa de búsqueda
+   - Etápa de ejecución
+*** Procesador de memoria
+    - Los datos se trasladan de procesador a memoria
+      ó viceversa
+*** Procesador de E/S
+    - Los datos a los periféricos
+      (del procesador a los módulos de E/S ó viceversa)
+*** Procesamiento de Datos
+    El *procesador* realiza operaciones ariméticas
+*** Control
+    Una instrucción puede especificar que la secuencia
+    de ejecución fue alterada
+    (cambiando la posición de la sig. instrucción
+    que se iba a ejecutar)
+* Interrupciones
+** Conceptos
+   - Los módulos de E/S, y de memoria proveen un mecanismo
+     para interrumpir el secuencia normal del procesador
+** Tipos de Interrupciones
+*** Conceptos
+    - Permiten hacer un uso eficiente del procesador
+
+    #+BEGIN_EXAMPLE
+    La mayoria de los dispositivos de E/S son más lentos que
+    un procesador. Por tanto si el procesador detiene las tareas
+    que está haciendo, hasta que se dispositivo le responda
+    (recordando el ciclo de una instrucción), se desperdiciaria
+    tiempo valioso que podría usar ejecutando otras instrucciones
+    mientras tanto.
+    #+END_EXAMPLE
+*** Por Programa
+    - Generado por el resultado de ejecutar una *instrucción*
+    (Ej. dividir por cero, desbordamiento aritmético,
+    ó tratar de ejecutar instrucciones ilegales)
+*** Por Temporizador (timer)
+    - Generador por un timer que está en el *procesador*
+*** De E/S
+    - Generado por el *controlador* de E/S
+    - Indica si una operación se completó ó hubo error
+*** Fallas de Hardware
+*** Programa de E/S
+    Consiste en tres partes importantes
+**** Una secuencia de instrucciones
+      - para trasladar datos
+**** El comando a ejecutar
+     - Se realiza sin *interrupciones*
+     - El programa tiene que esperar la respuesta del dispositivo de E/S
+     - ó también puede revisar el estado de forma periódica
+**** Secuencia de instrucciones
+     - se utiliza un *centinela* para saber si una operación tuvo
+       éxito ó si falló
+** Interrupciones y Ciclo de Instrucción
+*** Interrupciones
+   - Permiten al *procesador* ejecutar otras *instrucciones* 
+     mientras una operación de E/S se esté realizando.
+   - Pueden ocurrir en cualquier momento
+   - Hacen que un *programa de usuario* hace que detenga su 
+     secuencia normal de ejecución
+   - Sólo el *procesador* y el *sistema operativo* pueden suspender
+     un *programa de usuario* para que se ejecute otro, y luego retomar
+     donde estaba antes.
+*** Manejador de Interrupciones
+   - es una *rutina* del Sistema Operativo
+   - se encarga de las *solicitudes de interrupción*
+   - determina la naturaleza de la *interrupción* (su propósito)
+   - toma el control del SO hasta finalizar
+   - Cuando finaliza le devuelve el control al *procesador*
+     para que continúe desde el punto de interrupción
+*** [TODO] Proceso de Interrupción
+    - Una interrupción hace que se ejecuten (trigger) varios eventos
+      en el *procesador* como en el *software*
+*** Multiples interrupciones
+    Se puede resolver de dos maneras
+**** Deshabilitar interrupciones mientras una es procesada
+     - El procesador ignora cualquier petición de interrupción
+     - Luego que la rutina *interrupt-handler* finaliza,
+       se vuelve a habilitar las interrupciones
+     - Cuando se habilitan las interrupciones,
+       el procesador verifica si hay una nueva interrupción
+     - Tiene como desventaja que no hay un control de prioridad 
+       de aquellas que sean más importantes
+**** Definir prioridades
+     - Para que una interrupción de mayor prioridad haga que
+       se detenga otra de menor, y se priorice la anterior.
+*** Ciclo de Instrucción
+  #+NAME: ciclo-de-instrucción
+  #+BEGIN_EXAMPLE
+  1. El *programa de usuario* hace *llamadas al sistema* en forma
+   de *llamadas de ESCRITURA*, invocando a un *programa de E/S*
+  2. Cuando las instrucciones se ejecutaron, se le devuelve el
+   control al *programa de usuario*
+  3. Cuando el dispositivo externo, está listo para recibir más
+    información, éste le envía como señal una *solicitud interrupción*
+    al procesador.
+  4. Y el procesador suspende la ejecución del programa que ejecutaba
+     llendo directo a la rutina del dispositivo de E/S
+  #+END_EXAMPLE
+* Jerarquía de Memoria
+** Conceptos 
+   - Tiempo de acceso más rápido implica más costo por bit (?)
+   - Mayor *capacidad* implica 
+     - tiempo de acceso más lento
+     - menor costo por bit (???)
+** Características importantes
+   - Capacidad
+   - Tiempo de acceso
+   - Costo por bit
+** Organizar datos
+   - El porcentaje de acceso a cada nivel mas bajo es menor
+** Registros del procesador
+   - Es del tipo *volatil* (se pierde al apagar la compu)
+   - Son el tipo de memoria  mas veloz, pequeño y costoso
+** Memoria Principal
+   - Es del tipo *volatil* (se pierde al apagar la compu)
+   - Cada posición en memoria tiene una única dirección
+   - Las *instrucciones* de maquina suelen hacer referencia
+     a una o más *direcciones de memoria*
+** Memoria Cache
+*** Conceptos
+    - Es del tipo *volátil* (se pierde al apagar la compu)
+    - Incrementa la velocidad de la *memoria principal*
+    - NO es visible para
+      - para el usuario (programador)
+      - tampoco para el sistema operativo
+    - Traslada datos entre la *memoria principal* y los
+      *registros del procesador*
+    - Contiene una copia de una porción de la *memoria principal*
+      
+*** Problemas que soluciona
+    *PROBLEMA*
+    Para todos los *ciclos de instrucción* el procesador debe 
+    1. acceder a la memoria
+    2. buscar la instrucción
+    3. leer y/o almacenar resultados
+    Esto se repite una o muchas veces
+
+    La *velocidad en que el procesador puede ejecutar una 
+    instrucción* se ve limitado por el *tiempo de ciclo* de 
+    la memoria, que sería cuanto tarda la memoria en 
+    leer/escribir una palabra de la memoria
+
+    *SOLUCION*
+    Se utiliza el *principio de localidad/aproximación* (???)
+    mediante memorias pequeñas/rápidas entre el *procesador*
+    y la *memoria principal*
+*** Beneficios
+    - Tiempo de acceso a memoria que las memorias más rápidas
+    - un gran tamaño de memoria
+** Memoria Secundaria
+*** Conceptos
+    - Es del tipo *NO volátil* (almacenamiento permanente)
+    - Se considera también como *memoria auxiliar*
+    - Son los *dispositivos de almacenamiento masivo* (disco duro,..)
+    - Para almacenar programas, datos de archivos
+    - Es visible para el usuario (programador) en términos de
+      archivos y registros
+*** Memoria Virtual
+    - Se denomina de esta manera cuando se usa como 
+      extensión de la *memoria principal*
+*** Caché en disco
+    - Cuando se utiliza una parte de la *memoria principal*
+      como *buffer* para almacenar temporalmente datos
+    - Para leer datos de manera más rápida
+** Memoria tipo volatil
+   - Este tipo de memoria se pierde al apagar la computadora
+   - Entran en este tipo de memoria
+     - Memoria principal
+     - Memoria caché
+     - Registros del procesador
+** Memoria NO volatil
+   - Los datos se almacenan de manera permanente, no se pierden
+     al apagar la computadora
+   - Entran en esta categoria
+     - Disco Rigido
+* Vocabulary
+** depicts
+    to show someone in a picture or 
+    to describe them in a story
+** hand-held 
+    a hand-held machine is a small enough to hold
+    in your hand when you use it.
+    (Ex. A hand-held camera)
+** [TODO] due
+** fetch
+    to go and get sth or sb and bring them back
+** idle
+    if an engine idles, it runs slowly while the vehicule is not moving
+    to spend time doing nothing
+** engage
+    if sth engages your interest or attention, it makes you
+    stay interested.
+** perfom
+   to do sth such as a job or piece of work
+   to do sth well, badly, etc.. 
+** overhead
+   above your head
+** trigger
+   to make sth start to happen
+** issue
+   a subject or problem that people discuss
+** [TODO] retrieved
+** drawback 
+   a disvantage 
+** constraint
+   formal to limit sth, or to stop sb from doing what they want to do
+   sth that limites your freedom to do what you want
+** [TODO] trade-off
+** [TODO] staging
+   controlar (?)
+* Glosario
+  - PC, es el *counter program* ó *puntero de instrucción*
+  - PSW: program status word 
+** Palabra
+   - es una cadena finita de bits, manejada como un conjunto
+   - su *longitud* hace referencia al número de bits que tiene
+   - el valor numerico tipico que utiliza la computadora
+     es el *tamaño de palabra*
+   - la cant. de datos transferidos entre el CPU y la Memoria
+     suele ser más de una palabra
+   - una dirección que indica para una posición de memoria
+     ocupa una palabra
+   - actualmente el tamaño de una palabra suele ser de 16,32 ó 64 bits
+

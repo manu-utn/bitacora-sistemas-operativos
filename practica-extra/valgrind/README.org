@@ -1,0 +1,509 @@
+#+TITLE: Valgrind - Perfilador de Memoria
+* Memset
+** Conceptos
+   Para completar un bloque de memoria con un valor particular
+
+   #+BEGIN_SRC C
+     void *memset(void *ptr, int x, size_t n)
+
+     /*
+      ,* ptr:
+      ,* - dirección de memoria que será completada/rellena
+      ,*
+      ,* x:
+      ,* - el valor que usará para completar/rellenar
+      ,*
+      ,* n:
+      ,* - cantidad de bytes que completará, partiendo de ptr
+      ,*/
+   #+END_SRC
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC C :results verbatim
+     #include <stdio.h>
+     #include <string.h>
+
+     int main(){
+       char str[50]= "hola mundo como va gente";
+       printf("before: %s\n", str);
+
+       // completamos 5 caracteres desde str[5] con '.'
+       memset(str+5, '.', 5*sizeof(char));
+       printf("after: %s\n", str);
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   : before: hola mundo como va gente
+   : after: hola ..... como va gente
+*** [TODO] Ejemplo 2
+    #+BEGIN_SRC C :results verbatim
+      #include <stdio.h>
+      #include <string.h>
+
+      void printArr(int arr[], int n){
+        for (int i=0; i<n; i++)
+          printf("%d ", arr[i]);
+      }
+
+      int main(){
+        int n = 10;
+        int arr[n];
+
+        memset(arr, -1, n*sizeof(arr[0]));
+        printf("array after memset()\n");
+        printArr(arr, n);
+
+        return 0;
+      }
+    #+END_SRC
+
+    #+RESULTS:
+    : array after memset()
+    : -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+** Referencias
+   1. https://www.microchip.com/forums/m887392.aspx
+   2. https://linuxhint.com/memset_function/
+   3. https://www.codegrepper.com/code-examples/cpp/memset+c
+   4. https://www.ibm.com/docs/en/zos/2.2.0?topic=functions-memset-set-buffer-value
+   5. https://randu.org/tutorials/c/dynamic.php
+* Memcpy
+** Conceptos
+   Para copiar un bloque de memoria (origen) a otro (destino)
+
+  #+BEGIN_SRC C
+  void *memcpy(void *dest, const void * src, size_t n)
+  #+END_SRC
+** Ejemplos
+
+  #+BEGIN_SRC C
+  #include <stdio.h>
+  #include <string.h>
+
+  int main(){
+    const char src[50] = "oaaaaa";
+    char dest[50];
+
+    strcpy(dest, "jojo");
+    printf("before %s\n", dest);
+
+    memcpy(dest, src, strlen(src)+1);
+    printf("after %s\n", dest);
+
+    return 0;
+  }
+  #+END_SRC
+
+  #+RESULTS:
+  | before | jojo   |
+  | after  | oaaaaa |
+* Valgrind - Memcheck
+** Conceptos
+   Cuando estamos analizando los errores de memoria con *valgrind*
+   en realidad estamos usando la heramienta *memcheck*.
+   
+   Es curioso mencionarla porque además también tenemos a *helgrind*
+   que es otra que provee *valgrind* pero que es especificamente para *hilos* (threads)
+** Compilación
+   Es importante pasarle al compilador *gcc* el parámetro -g 
+** Flags
+  |----------------+----------------------------------------------------------|
+  | FLAG           | Descripción                                              |
+  |----------------+----------------------------------------------------------|
+  | leak-check     | mostrar en detalle cada pérdida, en lugar de un resumen  |
+  | track-origins  | Mostrar donde se originaron los valores NO inicializados |
+  | show-reachable | Mostrar todo tipo de *memory leaks*                      |
+  |----------------+----------------------------------------------------------|
+
+  #+BEGIN_SRC shell
+    gcc -Wall -g -o miprograma programa.c &&
+        valgrind --leak-check=full --track-origins=yes --show-reachable=yes ./miprograma
+  #+END_SRC
+** Referencias
+   1. https://github.com/tomasaccini/Valgreen
+* Errores Comunes
+** Conceptos IMPORTANTES
+   + Cuando reservamos memoria con ~malloc()~ estamos reservando un *bloque de memoria*
+     que utilizará el programa que usemos
+   + Si nos olvidamos de liberar ese *bloque de memoria* que reservamos, este quedará ocupado
+     y el *sistema operativo* NO podrá utilizarlo para asignarselo a otro programa
+   + Los programas no pueden acceder a bloques de memoria de otros (ni para lectura ni escritura)
+   + Si pisamos la referencia a un *bloque de memoria* que habiamos reservado, 
+     ya no lo podemos recuperar, y ese espacio quedará ocupado
+   + Si liberamos un *bloque de memoria* que habiamos reservado, y luego intentamos acceder
+     para escritura ó lectura, el *compilador* NO nos "debería" dejar..
+     porque ahora ese *bloque de memoria* ya no le pertenece a este programa, y estariamos
+     accediendo a la memoria de otro programa (si es que el sistema operativo ya asignó el espacio
+     a ese otro programa)
+** Invalid Free
+*** Conceptos
+   Cuando se trata de liberar un bloque de memoria que 
+   + ya fue liberado (porque hicimos free)
+   + ó cuando este no fue reservado previamente
+     (porque apesar de que el puntero sigue apuntando 
+      a la misma dirección, apunta a algo que no reservamos)
+      
+   #+BEGIN_EXAMPLE
+   Ej. Cuando reservamos memoria para un puntero,
+   luego q hacemos free de ese puntero, 
+   se libera la memoria que ocupaba,
+
+   pero.. al ser un puntero, este sigue apuntando 
+   a la misma dirección de memoria,
+   y en ese sector ahora quizas hay otros datos
+   #+END_EXAMPLE
+*** Ejemplos
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==23431== Invalid free() / delete / delete[] / realloc()
+      ==23431==    at 0x483F9AB: free (vg_replace_malloc.c:538)
+      ==23431==    by 0x1091A9: main (invalid-free1.c:10)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        int *a = malloc(sizeof(int));
+        ,*a = 4;
+
+        printf("a vale %d\n", *a);
+        free(a);
+
+        // ACA "debería" de haber problemas
+        // estamos tratando de liberar de memoria algo que no reservamos
+        // porque lo que habiamos reservado lo liberamos con el primer free()
+        free(a);
+
+        return 0;
+      }
+    #+END_SRC
+
+** Invalid Read
+*** Conceptos
+    + Cuando se intenta leer un bloque de memoria que no fue reservado 
+*** Ejemplo 1 - Leer posiciones de memoria que no reservamos
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==24120== Invalid read of size 4
+      # detecta que hubo un error en la linea 18 del archivo programa.c
+      ==24120==    at 0x109194: main (invalid-read.c:18)
+      # se trató de realizar una lectura en una posición posterior al bloque de memoria asignado de 4 bytes
+      # NOTA: Es importante que al final dice "alloc" y no "free", osea que aún no había sido liberado
+      ==24120==  Address 0x4a4a04c is 4 bytes after a block of size 8 alloc
+      ==24120==    at 0x483E77F: malloc (vg_replace_malloc.c:307)
+      # nos indica el número de línea donde se reservó el bloque de memoria
+      ==24120==    by 0x10916A: main (invalid-read.c:11)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a entero
+        int *numeros;
+
+        // reservamos memoria para dos enteros,
+        // "similar" a un arreglo int numeros[2] (pero NO es const)
+        // con capacidad para 2 elementos numeros[0] y numeros[1]
+        numeros = malloc(sizeof(int)*2);
+
+        // tratamos de acceder a una posición de memoria "inválida"
+        // porque el índice/posición del último elemento, debería ser [1]
+        //
+        // "deberia" de arroja error
+        printf("el valor de numeros[2] es %d\n", *(numeros+2));
+        printf("el valor de numeros[3] es %d\n", *(numeros+3));
+        free(numeros);
+
+        return 0;
+      }
+    #+END_SRC
+*** Ejemplo 2 - Leer de una dirección ya liberada
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==24329== Invalid read of size 4
+      # nos indica el número de línea donde se produce el error de lectura
+      ==24329==    at 0x1091A0: main (invalid-read2.c:16)
+      # y que se trató de hacer una lectura en una posición posterior al bloque de memoria reservado
+      # NOTA: Es importante que al final dice "free", nos indica que tratamos de leer un bloque 
+      # que ya había sido liberado
+      ==24329==  Address 0x4a4a04c is 4 bytes after a block of size 8 free
+      ==24329==    at 0x483F9AB: free (vg_replace_malloc.c:538)
+      # y nos indica en que linea (la 14) se liberó ese bloque
+      ==24329==    by 0x109197: main (invalid-read2.c:14)
+      ==24329==  Block was alloc at
+      # y que el bloque de memoria fue reservado con malloc()
+      # en la linea 11
+      ==24329==    at 0x483E77F: malloc (vg_replace_malloc.c:307)
+      ==24329==    by 0x10916A: main (invalid-read2.c:11)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a entero
+        int *numeros;
+
+        // reservamos memoria para dos enteros,
+        // "similar" a un arreglo int numeros[2]
+        // con capacidad para 2 elementos numeros[0] y numeros[1]
+        numeros = malloc(sizeof(int)*2);
+
+        printf("el valor de numeros[2] es %d\n", *(numeros+2));
+        free(numeros);
+        // esto "debería" arroja error
+        printf("el valor de numeros[3] es %d\n", *(numeros+3));
+
+        return 0;
+      }
+    #+END_SRC
+** Invalid Write
+*** Conceptos
+    + Cuando se intenta escribir en un bloque de memoria que NO fue reservada previamente
+*** Ejemplo 1 - Escribir en posiciones de memoria que NO reservamos
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==24697== Invalid write of size 4
+      # nos indica que el error de escritura en memoria, se produce en la linea 13
+      ==24697==    at 0x109167: main (invalid-write1.c:13)
+      # al final dice sólo "alloc" nos indica que el bloque aún NO había sido liberado
+      # sinó diría "free"
+      ==24697==  Address 0x4a4a048 is 0 bytes after a block of size 8 alloc
+      ==24697==    at 0x483E77F: malloc (vg_replace_malloc.c:307)
+      # nos avisa en que linea (la 10) se reservó el bloque de memoria de 8 Bytes
+      ==24697==    by 0x10915A: main (invalid-write1.c:10)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a entero
+        int *numeros;
+        // hacemos un arreglo con capacidad para dos enteros
+        // las únicas posiciones posibles serían 0 y 1
+        // (porque 0 es siempre el primero, al menos en C)
+        numeros = malloc(sizeof(int)*2);
+
+        // "debería" arrojar error
+        ,*(numeros+2) = 3;
+        free(numeros);
+
+        return 0;
+      }
+    #+END_SRC
+*** Ejemplo 2 - Tratar de escribir en un bloque de memoria liberada    
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==24843== Invalid write of size 4
+      # el problema sucedió en la linea 15 del archivo programa.c
+      ==24843==    at 0x109173: main (programa.c:15)
+      # el bloque de memoria fue liberado con malloc() en la linea 12
+      # NOTA: Es importante que al final dice "free", eso nos indica que 
+      # habiamos tratado de escribir en un bloque liberado (que tenía 8 bytes)
+      ==24843==  Address 0x4a4a044 is 4 bytes inside a block of size 8 free
+      ==24843==    at 0x483F9AB: free (vg_replace_malloc.c:538)
+      ==24843==    by 0x10916A: main (programa.c:12)
+      # el bloque fue resevado previamente en la linea 10 del achivo programa.c
+      ==24843==  Block was alloc at
+      ==24843==    at 0x483E77F: malloc (vg_replace_malloc.c:307)
+      ==24843==    by 0x10915A: main (programa.c:10)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a entero
+        int *numeros;
+        // hacemos un arreglo con capacidad para dos enteros
+        // las únicas posiciones posibles serían 0 y 1
+        // (porque 0 es siempre el primero, al menos en C)
+        numeros = malloc(sizeof(int)*2);
+
+        free(numeros);
+        // Acá..! "debería" arrojarnos "Segmentation Fault"
+        //
+        // - "tratamos" de asignar un valor a la posición 2 del vector,
+        // osea numeros[1] = 3
+        // - si el sistema operativo asigna ese bloque de memoria liberado
+        // para otro programa, osea lo ocupa, tendremos error...
+        // porque un programa no debería de poder acceder ni escribir en
+        // la memoria de otro
+        // - si no arroja error es porque aún no se lo asignó a otro programa
+        ,*(numeros+1) = 3;
+
+        return 0;
+      }
+    #+END_SRC
+** Conditional jump or move depends on unitilized value(s)
+*** Conceptos
+    + Cuando en un condicional evaluamos una variable
+      que NO fue inicializada
+*** Ejemplo 1 - Evaluar una variable estática no inicializada
+    #+BEGIN_SRC shell
+    # Este es el error que debería de arrojar valgrind..
+
+    ==26080== Conditional jump or move depends on uninitialised value(s)
+    ==26080==    at 0x109145: main (conditional-jump1.c:7)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        int a;
+
+        if(a){
+          printf("Dependemos de una variable no inicializada\n");
+        }
+
+        return 0;
+      }
+    #+END_SRC
+*** Ejemplo 2- Evaluar una variable dinámica NO inicializada
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==26358== Conditional jump or move depends on uninitialised value(s)
+      ==26358==    at 0x109177: main (conditional-jump1.c:7)
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        int *b = malloc(sizeof(int));
+
+        if(*b){
+          printf("Dependemos de una variable no inicializada");
+        }
+
+        free(b);
+      }
+    #+END_SRC
+** Memory Leak
+*** Conceptos
+   + Cuando nos olvidamos de liberar memoria (con ~free()~)
+   + Cuando pisamos una referencia donde habiamos
+     reservado memoria con ~malloc()~, por otra asignación
+     de memoria con ~malloc()~
+     (NO se puede recuperar la referencia perdida)
+*** Tipos
+    #+NAME: tipos-memory-leak
+    |-----------------+-------------------------------------------------------------------|
+    | Tipo            | Descripción                                                       |
+    |-----------------+-------------------------------------------------------------------|
+    | Definitely lost | Al finalizar el programa NO hay puntero a dicho bloque de memoria |
+    |-----------------+-------------------------------------------------------------------|
+    | Indirectly lost | Cuando el puntero es valido, pero apunta a un bloque marcado      |
+    |                 | como *definitely lost*                                            |
+    |-----------------+-------------------------------------------------------------------|
+    | Possibly lost   | Cuando Valgrind no sabe si es *Definitely* ó *Still Reachable*    |
+    |-----------------+-------------------------------------------------------------------|
+    | Still Reachable | Al finalizar el programa todavía se tiene un puntero válido       |
+    |                 | al bloque a liberar                                               |
+    |-----------------+-------------------------------------------------------------------|
+    | Suppressed      | Algunos errores se pueden ignorar por configuración               |
+    |-----------------+-------------------------------------------------------------------|
+*** Ejemplo 1 - Pisar y perder una referencia a un bloque de memoria reservado
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==26687== HEAP SUMMARY:
+      ==26687==     in use at exit: 16 bytes in 1 blocks
+      # se reservó dos veces memoria dinámica, y sólo 1 vez se liberó
+      # (Cada vez que reservamos memoria, debemos liberarla cuando ya no la usamos)
+      ==26687==   total heap usage: 2 allocs, 1 frees, 56 bytes allocated
+      ==26687==
+      ==26687== LEAK SUMMARY:
+      # se perdieron 16 bytes en 1 bloque de memoria
+      ==26687==    definitely lost: 16 bytes in 1 blocks
+      ==26687==    indirectly lost: 0 bytes in 0 blocks
+      ==26687==      possibly lost: 0 bytes in 0 blocks
+      ==26687==    still reachable: 0 bytes in 0 blocks
+      ==26687==         suppressed: 0 bytes in 0 blocks
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a entero
+        // y reservamos espacio en memoria para 4 enteros
+        // (nos quedaría como un arreglo de enteros,
+        //  con capacidad para 4 elementos de indice 0,1,2,3)
+        int* a = malloc(sizeof(int)*4);
+
+        // - pisamos la referencia anterior
+        // en la que habiamos reservado memoria para 4 enteros
+        // y.. ya NO se puede recuperar
+        // - ese bloque de memoria que ocupa el programa, queda ocupado por este programa
+        // y el sistema operativo NO lo puede utilizar para asignarselo a otro programa
+        a = malloc(sizeof(int)*10);
+        // solo estamos liberando este último bloque de memoria del programa
+        free(a);
+
+        return 0;
+      }
+    #+END_SRC
+*** Ejemplo 2 - No liberar memoria reservada
+    #+BEGIN_SRC shell
+      # Este es el error que debería de arrojar valgrind..
+
+      ==27094== HEAP SUMMARY:
+      ==27094==     in use at exit: 4 bytes in 1 blocks
+      # se reservó 1 vez memoria dinámica, y cero veces se liberó
+      # (Cada vez que reservamos memoria, debemos liberarla cuando ya no la usamos)
+      ==27094==   total heap usage: 1 allocs, 0 frees, 4 bytes allocated
+      ==27094==
+      ==27094== LEAK SUMMARY:
+      # se perdieron 4 bytes en 1 bloque de memoria
+      # (recordemos que un int equivale a 4 Bytes, aunque depende de la arquitectura
+      #  del ordenador)
+      ==27094==    definitely lost: 4 bytes in 1 blocks
+      ==27094==    indirectly lost: 0 bytes in 0 blocks
+      ==27094==      possibly lost: 0 bytes in 0 blocks
+      ==27094==    still reachable: 0 bytes in 0 blocks
+      ==27094==         suppressed: 0 bytes in 0 blocks
+    #+END_SRC
+
+    #+BEGIN_SRC C
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(){
+        // declaramos un puntero a entero
+        // y reservamos espacio en memoria sólo para un entero
+        // (que son 4 bytes aprox. según la arquitectura del ordenador)
+        int *a = malloc(sizeof(int));
+
+        // acá habrá problemas..
+        // no hay un free
+
+        return 0;
+      }
+    #+END_SRC
+** Curiosidades
+   La función ~printf()~ reserva memoria, imprime lo q tiene q imprimir y luego libera memoria,
+   por eso en *valgrind* veremos aparte de nuestros ~malloc~ un par más, que serán esos printf...
+** Referencias
+   1. https://www.usna.edu/Users/cs/roche/courses/s19ic221/lab05.html
+   2. https://www.cprogramming.com/debugging/valgrind.html
+   3. https://www.parasoft.com/finding-memory-leaks-in-c-or-c/
+   4. https://iq.opengenus.org/memory-leaks-in-c/

@@ -1,0 +1,957 @@
+#+TITLE: Concurrencia y Sincronización
+* parcial
+  - no entra el tema *deadlock*
+* conceptos q dijo nano (utnianos)
+semaforos-> se usan para coordinar los hilos
+tipos: binario (0 y 1) que funciona entre procesos
+mutex(0,1) funciona en el mismo proceso
+contador(0 hasta n recursos) puede ser compartido entre procesos
+* repaso clase anterior
+** monohilo
+** multhilo
+** pcb 
+   imagen, pila, stack, datos, pcb
+** multihilo
+** tcb
+   bloque de control del hilo
+   informacion sobre ese hilo en particular
+   se podia compartir entre los distintos hilos
+** estados y planificacion de hilos
+** ventajas hilos
+   los hilos no dependen de otros hilos
+   para seguir ejecutandose
+   
+   un proceso con muchos hilos
+   ocupa menos espacio
+
+   un proceso con muchos procesos
+   ocupa mas espacio xq se comparten
+
+   cada hilo tiene su propio estado
+** ult y klt
+*** ult
+    ult son hilos a nivel usuario
+    administrado por una biblioteca de usuarios
+    (no es una biblioteca estandar)
+    permiten planificar los hilos de una manera dif.
+    a como lo hace el SO (usar prioridades diferentes)
+
+    permitian *portabilidad* para pasar a cualquier SO
+    y funcione de la misma forma
+
+    desventajas..
+    si uno se bloquea, el proceso se bloquea
+*** klt
+    hilos del SO,
+    el SO es el encargado de administrar los hilos
+    (por el planificador del SO)
+    
+    cuando un hilo se bloquea, los otros se pueden
+    seguir  ejecutando porque el SO los conoce
+** arquitecturas de kernel
+*** microkernel
+    se saca toda la funcionalidad que no esté
+    relacionada con el kernel
+
+    mas facil de administrar, menos eficientes,
+    mas estables
+*** estructura monolitica
+    los SO la suelen usar por eficiencia
+* Sincronización
+** ejercicio q dió
+   el resultado no era correcto cuando hizo 
+   que muchos hilos operen y den un resultado
+
+  problema de la sección critica
+
+  cuando varios hilos usan el mismo recurso
+  (Ej. una variable)
+  y ese recurso se vuelve inconsistente
+** Condición de carrera
+*** Conceptos
+   cuando varios procesos/hilos usan el mismo recurso
+   (datos compartidos concurrentemente)
+
+   interviene la *velocidad relativa* (de los procesos)
+   en algun momento funcionaba ok y avcs mal 
+   
+   el orden en que se ejecutan depende del *planificador*
+
+   #+BEGIN_EXAMPLE
+   Un ejemplo sería cuando en un proceso, varios hilos
+   intentan modificar el valor de una variable
+   (uno la decrementa, otra la decrementa, o hacen la misma operación)
+   y en un momento el resultado NO es el esperado
+   #+END_EXAMPLE
+*** Solución
+    Hay que *sincronizarlos*, para asegurar que solo UN proceso/hilo 
+    pueda acceder a esos datos compartidos (recursos)
+** Sección critica
+*** Conceptos
+   Es el problema que presenta la [[Condición de Carrera]]
+   (varios procesos/hilos usan el mismo recurso, y este se vuelve inconsistente)
+  
+  #+BEGIN_EXAMPLE
+  Un ejemplo de recurso podría ser una variable global
+  #+END_EXAMPLE
+*** Como debe ser
+    La sección crítica debería 
+    + ser _lo más chica_ posible
+    + ejecutarse en forma *atómica*
+      (Similar al concepto de las *transacciones* de GDD,
+       que todas las operaciones se ejecuten como una sola) 
+*** Protocolo para acceder
+    Para evitar problemas en la sección crítica, se podría seguir el siguiente orden
+    
+   |-------+--------------------+--------------------------------------------------------------|
+   | ORDEN |                    |                                                              |
+   |  <c>  |                    |                                                              |
+   |-------+--------------------+--------------------------------------------------------------|
+   |   1   | SECCION DE ENTRADA | _Pedimos permiso para acceder_ a la sección crítica          |
+   |-------+--------------------+--------------------------------------------------------------|
+   |       |                    |                                                              |
+   |   2   | SECCION CRITICA    | Solo _un proceso por vez_ puede acceder a su sección crítica |
+   |       |                    |                                                              |
+   |-------+--------------------+--------------------------------------------------------------|
+   |   3   | SECCION DE SALIDA  | _Se libera_ la sección crítica                               |
+   |       |                    | y permitimos a los otros procesos entrar                     |
+   |-------+--------------------+--------------------------------------------------------------|
+*** Cuando sucede
+    + Más de un proceso/hilo usa el mismo recurso
+      (y _alguno lo está modificando_)
+    + Los accesos al recurso son de *forma concurrente*
+*** Condiciones de Bernstein
+    + Herramienta para saber _cuando conviene sincronizar los procesos_
+    + Utiliza *teoria de conjuntos* con las operaciones ~(R)ead~ y ~(W)rite~
+    + Evalúan el resultado de la intersección entre esas dos operaciones
+      * Si es { } (conjunto vacío): NO necesitamos sincronizar los procesos
+      * si NO  es { }, se aplica lo de codigo de entrada/salida
+*** Requerimientos para la solución
+**** Exclusión Mutua 
+     Que solo pueda haber 1 proceso ejecutando en un recurso
+     (esto aplica tanto para lectura/escritura)  
+
+     #+BEGIN_EXAMPLE
+     Digamos que si un hilo está insertando nodos, que solo ese lo haga y punto
+     
+     Si un proceso está haciendo una lectura, y otro escritura
+     ambos en "concurrente" también podría haber problemas
+     deberían realizar esas operaciones de "forma sincronizada"
+     #+END_EXAMPLE
+**** Progreso
+     Si la sección está disponible, que cualquier proceso ó hilo pueda acceder
+**** Espera limitada
+     Que un proceso no deba esperar tanto tiempo evita la *inanición* 
+**** Velocidad Relativa
+     No se sabe en que orden se ejecutaran los procesos, ó cuando se cortara un proceso
+     NO hacer suposiciones,
+*** Soluciones a esos requerimientos
+**** de Software
+***** Conceptos
+      Son "intentos" de soluciones desarrolladas por programadores para
+      resolver la entrada/salida a la *sección crítica* (asegurarla)
+      e "intentaban" cumplir con los [[Requerimientos para la solución]]
+***** Primer intento de solución
+      #+NAME: validacion-requerimientos 
+      |-----------------+---------+----------------------------------------------------------|
+      | Requerimiento   | Cumple? | Motivo                                                   |
+      |-----------------+---------+----------------------------------------------------------|
+      | Exclusión Mutua | SI      |                                                          |
+      |-----------------+---------+----------------------------------------------------------|
+      | Progreso        | NO      | - La variable ~turno~ BLOQUEA a alguno de los procesos   |
+      |                 |         | - Impide que uno se pueda ejecutar varias veces seguidas |
+      |                 |         | - Uno de los procesos espera que se cambie a 0 ó 1       |
+      |                 |         | para ser usado. Sólo uno puede ejecutarse por vez.       |
+      |-----------------+---------+----------------------------------------------------------|
+      | Espera Activa   | SI      | Se trata de evitar, porque consume CPU/procesamiento     |
+      |-----------------+---------+----------------------------------------------------------|
+
+      + *Ventaja*: Hay prioridad, de quien se ejecutará primero o después
+      + *Desventaja:* Si otro proceso está interesado en ejecutar no puede, hasta que termine 
+        el que está ejecutando
+
+      *IMPORTANTE..!*
+      La *sección entrada* en esta solución abarca 
+      tanto el ~while(true)~ y ~turno=1~ 
+      porque es TODO lo que estoy tratando de hacer poder ingresar a la 
+      [[Sección Crítica]]
+        
+      #+BEGIN_SRC C
+        int turno = 0; // recurso que van a compartir el proceso 0 y 1
+
+        // proceso 0
+        while(true){
+          while(turno != 0); // esto es "espera activa" loopea no haciendo nada mientras se cumple
+          // seccion critica
+          turno = 1; // codigo de salida
+
+          // sección restante
+        }
+        /***** cuando finaliza el proceso anterior => el otro continua  *****/
+
+        // proceso 1
+        while(true){
+          while(turno != 1); // esto es "espera activa" loopea no haciendo nada mientras se cumple
+          // seccion critica
+          turno = 0; // codigo de salida
+
+          // sección restante
+        }
+      #+END_SRC
+***** Segundo intento de solución
+      <<DUDA 1>>: En clase DAN dijo que este NO cumplia con exclusión mutua,
+      pero si con progreso (???), osea sería un """si"" entre muchas comillas,
+      siempre y en cuando ambos no estén interesados al mismo tiempo, no?
+
+      #+NAME: validacion-requerimientos 
+      |-----------------+---------+-------------------------------------------------------------|
+      | Requerimiento   | Cumple? | Motivo                                                      |
+      |-----------------+---------+-------------------------------------------------------------|
+      | Exclusión Mutua | SI      |                                                             |
+      |-----------------+---------+-------------------------------------------------------------|
+      | Progreso        | NO      | Puede generar que NINGUNO de los dos procesos pueda         |
+      |                 |         | acceder a la *sección crítica* y se quedan en el ~while(1)~ |
+      |                 |         | (si ambos estan interesados, NO sabe cual priorizar)        |
+      |-----------------+---------+-------------------------------------------------------------|
+      | Espera Activa   | SI      | Se trata de evitar, porque consume CPU/procesamiento        |
+      |-----------------+---------+-------------------------------------------------------------|
+
+      + *Ventaja*: Si un proceso está ejecutando, y otro también quiere entonces uno se detiene y sigue el otro
+      + *Desventaja:* NO hay prioridad, si ambos están interesados en ejecutar
+      
+      *IMPORTANTE..!*
+      La *sección entrada* en esta solución abarca 
+      tanto el ~while(true)~ y ~interesado[0]=true~ 
+      porque es TODO lo que estoy tratando de hacer poder ingresar a la 
+      [[Sección Crítica]]
+      
+      #+BEGIN_SRC C
+        int interesado[] = {false, false};
+
+        // Proceso 0
+        //
+        while(true){
+          interesado[0] = true;
+          while(interesado[1]); // pregunta si otro está interesado, permite que el otro siga
+          // seccion critica
+          interesado[0] = false;
+          // seccion restante
+        }
+
+        /***** cuando finaliza el proceso anterior => el otro continúa ******/
+
+        // Proceso 1
+        //
+        while(true){
+          interesado[1] = true;
+          while(interesado[0]); // pregunta si hay alguien interesado, permite que el otro siga
+          // seccion critica
+          interesado[1] = false;
+          // seccion restante
+        }
+      #+END_SRC
+***** [TODO] tercer intento
+***** [TODO] cuarto intento
+***** Soluciones que SI funcionan
+      ambos tienen *espera activa* que es algo NO deseable, pero resuelven el problema
+****** Algoritmo de Dekker
+****** Algoritmo de Peterson
+       
+      |-----------------+---------+------------------------------------------------------|
+      | Requerimiento   | Cumple? | Motivo                                               |
+      |-----------------+---------+------------------------------------------------------|
+      | Exclusión Mutua | SI      |                                                      |
+      |-----------------+---------+------------------------------------------------------|
+      | Progreso        | SI      |                                                      |
+      |-----------------+---------+------------------------------------------------------|
+      | Espera Activa   | SI      | Se trata de evitar, porque consume CPU/procesamiento |
+      |-----------------+---------+------------------------------------------------------|
+
+      *IMPORTANTE...!*
+      La *sección entrada* en esta solución abarca 
+      tanto el ~while(true)~ como ~interesado[0]=true~ y también ~turno=1~
+      porque es TODO lo que estoy tratando de hacer poder ingresar a la 
+      [[Sección Crítica]]
+
+      #+BEGIN_SRC C
+        int interesado[] = {false, false};
+
+        // Proceso 0
+        //
+        while(true){
+          interesado[0] = true;               // Seccion entrada
+          turno = 1;                          // Seccion Entrada
+          while(interesado[1] && turno == 1); // Seccion entrada
+
+          // Si el otro proceso está interesado y tiene igual prioridad (turno = 1)
+          // entonces se queda loopeando "no haciendo nada" hasta
+          // que ese otro cambie su prioridad (turno = 0)
+  
+          // seccion critica
+          interesado[0] = false;
+          // seccion restante
+        }
+
+        // Proceso 1
+        //
+        while(true){
+          interesado[1] = true;
+          turno = 0;
+
+          // Si el otro proceso está interesado y tiene igual prioridad (turno = 0)
+          // entonces se queda loopeando "no haciendo nada" hasta...
+          // que ese otro cambie su prioridad
+          while(interesado[0] && turno == 0);
+          // seccion critica
+          interesado[1] = false;
+          // seccion restante
+        }
+      #+END_SRC
+**** de Hardware
+***** Deshabilitar Interrupciones
+      Evita que las instrucciones de la [[Sección Crítica]] sean *interrumpidas*
+      con las de otros procesos.
+      Son *instrucciones privilegiadas*
+       
+      *Ventajas:*
+      NO permite que se cambie de proceso una vez que esta en la Sección Crítica
+
+      *Desventajas:*
+       - Desactivar las interrupciones en todos los procesadores, genera overhead
+       - NO es bueno para sistemas con *multiprocesadores*
+***** Instrucciones Atómicas
+      + Soluciona el problema del *deshabilitar interrupciones*
+      + El preguntar si poder ingresar en la sección critica se hará en una instrucción
+         en un *ciclo de instrucción* que nos asegura que NO se va a interumpir
+         (es atómica, como una transacción de SQL)
+      + Son sencillos de usa, y sirven para sistemas con multiprocesadores
+      + Los ~while~ de ambos procesos generan *espera activa*
+      
+      #+BEGIN_SRC C
+        // SET_AND_TEST: funcion provista por el PROCESADOR
+        //
+          BTS(*lock){ // test_and_set
+            // lock es el RECURSO COMPARTIDO
+            if (*lock == false){
+              ,*lock = true;
+              return true;
+            }else
+              return false;
+          }
+
+          lock = false; // ARRANCA ASI
+          // Obs: no interesa por cual proceso empieza
+
+          // Proceso (0)
+          //
+          while(!BTS(&lock)); // mientras ningun proceso lo esté utilizando
+          // Sección critica
+          lock = false;
+          // Sección restante
+
+          /******************************************/
+
+          // Proceso (1)
+          //
+          lock = true;
+          while(!BTS(&lock)); // mientras ningun proceso lo esté utilizando
+          // Sección critica
+          lock = false;
+          // Sección restante
+      #+END_SRC
+**** de Sistema Operativo
+     semaforos
+* Concurrencia
+** interacción entre procesos
+*** comunicación entre procesos
+*** competencia de los procesos por los recursos
+    independientemente entre los procesos que hayan alrededor
+*** cooperacion de los procesos
+    + via compartición
+      * es lo que sucedia en el ej. de clase
+        (hilos que compartian recurso para 
+        operaciones arimeticas, y a veces era 
+        inconsistente en el resultado para 
+        valores grandes)
+    + via comunicación
+      * mandarse mensaje entre si,
+        para sincronizarse
+** seccion critica
+   un proceso debe estar en esta sección lo menos posible,
+*** soluciones
+    se utiliza un concepto de *fifo* se van encolando los hilos que quieren acceder
+    y se turnan para modificar
+**** codigo de entrada (en seccion critica)
+     - 
+**** codigo de salida (en seccion critica)
+     - 
+** Semáforos (solucion de SO)
+*** Conceptos
+    + Se llaman *mutex* a los semáforos que solucionan el problema de la [[Sección Crítica]]
+    + Permite *exclusión mutua* entr varios procesos
+    + Permite *Sincronizar* (u ordenar) varios procesos
+    + Pemite *controla acceso* a recursos
+    + Utilizados mediante las syscalls ~wait~ y ~signal~ (son funciones atómicas)
+      - ~signal~ como salida
+      - ~wait~ como entrada
+    + Se pueden implementar
+      1. con *espera activa*
+      2. sin *espera activa*
+
+    |------------------|
+    | SEM = 1          |
+    | ...              |
+    |                  |
+    | ~WAIT(SEM)~      |
+    |                  |
+    | SECCIÓN CRITICA  |
+    |                  |
+    | ~SIGNAL(SEM)~    |
+    |                  |
+    | SECCION RESTANTE |
+    |------------------|
+
+    *Observación:*
+    Se inicializar con valor positivo o cero, pero NUNCA pueden inicializarse en valor negativo
+*** Estructura
+    - un valor entero
+    - una lista de procesos bloqueado
+*** Funciones
+**** wait
+      - decrementa en 1 el valor del semaforo
+**** signal
+     - incrementa en 1 el valor del semaforo
+**** Ejemplo - Con espera activa
+     #+BEGIN_SRC C
+       // va  estar inicializado en 1, sem = 1
+       wait(sem){
+         // siempre que esté en cero, es porque alguien ya lo tomó
+         // y se queda loopeando sin hacer nada mientras
+         while(sem == 0);
+
+         sem--;
+       }
+
+       signal(sem){
+         sem++;
+       }
+     #+END_SRC
+**** Ejemplo - Con bloqueo
+     #+BEGIN_SRC C
+       wait (S){
+         valor--;
+
+         // si se cumple, alguien lo está utilizando
+         if(valor < 0){
+           // entonces bloqueamos el acceso
+           //
+           // - cola de espera del semáforo
+           block();
+         }
+       }
+
+       signal (S){
+         valor++;
+
+         // si se cumple, alguno proceso estaba bloqueado
+         if(valor <= 0){
+           // entonces, lo volvemos a poner en Ready
+           // pero cuando el "planificador" decida
+           // avanzará a la "sección crítica"
+           //
+           // - se despierta al primero que se bloqueó
+           wakeup(pid);
+         }
+       }
+     #+END_SRC
+**** Ejemplo 1
+     + cuando el valor es negativo..
+     + cuando es positivo..
+
+     #+BEGIN_SRC C
+       // s = semaforo
+
+       // no genera espera activa
+       wait(s){ // 
+         // al valor del semaforo
+         x->valor--; //
+         if(s->valor < 0)
+           bloquear(pid, s->lista);
+       }
+
+       // no genera espera activa
+       signal(s){
+         x->valor++; // al valor del semaforo
+
+         if(s->valor <= 0)
+           pid = despertar(pid, s->lista); // desbloqueo cualquier proceso
+       }
+     #+END_SRC
+*** Cuando implementar - con Espera activa
+    Las situaciones que pueden ser mas eficiente usar ~spinlocks~ serían
+    + Cuando hay más de 1 CPU
+    + Cuando la *Sección Crítica* es chica
+
+    #+BEGIN_QUOTE
+    El proceso en "espera activa" continúa su ejecución más rápido,
+    nos ahoramos el bloqueo/desbloqueo y los cambios de contexto
+    #+END_QUOTE
+*** Tipos de semáforos
+**** General o Contador
+     - se inicializan _con un valor positivo_
+     - permite _controlar el acceso_ a una cantidad de recursos
+     - para *proteger recursos*
+**** Binario
+      + garantiza un _orden de ejecución_
+      + similar al anterior, pero NO sabemos cuantos 
+        recursos podemos tener asignados
+      + se puede usar para *sincroniza*
+      + entre los valores 0 y 1
+      + representa a dos estados
+        1. estado libre
+        2. estado ocupado
+**** Mutex
+     - SOLO puede _inicializarse en 1_
+       (dan dijo en cero)
+     - Solicita el problema de *Exclusión Mutua*
+     - es un tipo del binario
+*** Inicialización de un semáforo
+    Suelen iniciarse en 0 o positivos
+    
+    Si inicializamos en 0 (cero), es porque _estamos esperando un evento_
+    que haga ~signal~ para que pueda avanzar
+
+    Si lo inicializams con un valor n > 0, seria porque es una
+    *semaforo contador* y que tiene n cantidad de recursos disponibles
+    
+    NO se puede inicializar con un valor negativo
+*** Valores de un semaforo
+    |--------------------+------------------------------------------------------------|
+    | Valor del semaforo | Indica                                                     |
+    |--------------------+------------------------------------------------------------|
+    | positivo (> 0)     | cantidad de recursos disponibles de un *Semáforo contador* |
+    |--------------------+------------------------------------------------------------|
+    | negativo (< 0)     | - cantidad de procesos bloqueados esperando                |
+    |                    | - la *sección crítica* está en uso                         |
+    |--------------------+------------------------------------------------------------|
+*** Implementación - Problemas del semaforos
+    - que existe una *variable compartida* (Ej. s)
+    - requiere *exclusión mutua*
+      - soluciones de software
+      - soluciones de hardware
+*** Implementación - Biblioteca Pthreads
+     + Con espera activa =>  phtreads_spinlock_t
+     + Con bloqueo => phtreads_mutex_t
+
+     Ambos utilizan el concepto de ~lock(wait)~ y ~unlock(signal)~
+*** Utilidad
+**** Exclusion mutua
+     Definimos un *mutex* (semáforo) para cada uno de los *recursos compartidos*
+     si hay un posible problema de [[Condición de carrera]]
+     y accedemos a él de forma [[Sincronización][Sincronizada]]
+
+     #+BEGIN_SRC C
+       semVar = 1;
+
+       // Proceso (1)
+       wait(semVar);      // 1. lo pedimos
+       var++;             // 2. lo usamos
+       signal(semVar);    // 3. lo liberamos
+
+
+       // Proceso (2)
+       wait(semVar);
+       var--;
+       signal(semVar);
+     #+END_SRC
+**** Limitar Acceso a recursos (N instancias)
+     Definimos un *semáforo contador* limitando el acceso a la cant. de instancias
+
+     #+BEGIN_SRC C
+       // lo inicializamos en N
+       semContado = N; // cant. total de recursos
+
+       // Proceso (1)
+       wait(semContador);   // 1. pedimos el recurso  (entrada)
+       usarRecurso();       // 2. lo usamos
+       signal(semContador); // 3. lo liberamos (salida)
+
+
+       // Proceso (2)
+       wait(semContador);
+       usarRecurso();
+       signal(semContador);
+     #+END_SRC
+**** Ordenar ejecución (Sincronizar)
+     Utilizamos los *semáforos binarios*
+     + cuando tenemos varios semaforos
+     + puede no haber *sección crítica*
+     + aparecen los *semaforos cruzados*
+
+     En este caso los ~signal()~ los cruzamos,
+     uno de los procesos espera al otro
+
+     #+BEGIN_SRC C
+       semP1 = 1;
+       semP2 = 0; // Alguno de esos debe inicializarse en 0 (cero) para que uno comience, y active al otro
+
+       // Proceso (1)
+
+       while(1){
+         wait(semP1); // espera a este semaforo para avanzar
+
+         printf("hola");
+
+         signal(semP2);
+       }
+
+       /*******************************/
+
+       // Proceso (2)
+
+       while(1){
+         wait(semP2); // espera a este semaforo para avanzar
+
+         printf("hola");
+
+         signal(semP1);
+        }
+     #+END_SRC
+*** Productor - Consumidor
+**** Conceptos
+     Aparecen 
+     - productor
+     - consumidor
+     - buffer compartido
+**** Ejemplo 1 - Semaforo Mutex - Condición de Carrera - Problema de Exclusión Mutua
+     Tenemos dos procesos 
+     1. *Productor* que genera tareas
+     2. *Consumidor* que consume las tareas
+
+     *Observaciones:*
+     + Recordemos que aparece el concepto de [[Condición de Carrera]] cuando
+       dos o más *procesos* intentan acceder al mismo recurso,
+       osea que tienen un recurso compartido, tanto para lectura/escritura
+       (ej. una variable).
+     + Ese recurso compartido entre los procesos que intentan modificar
+       se conoce por [[Sección Crítica]] porque puede tener comportamientos inesperados
+       (Ej. que varios incrementen su valor varias veces, y el resultado final sea otro)
+     + El problema del resultado inesperado se debe a que NO están sincronizados,
+       y según el *Planificador* puede hacer que uno se ejecute antes o después que el otro,
+       que es el concepto de [[Velocidad Relativa]]
+     + Con el uso de los *semáforos* evitamos esos problemas
+
+     *Problema Actual:*
+     El problema es que ambos leen/modifican un recurso compartido ~listaTareas~ 
+     de forma *concurrente* y NO están sincronizados.
+     Si los dos trabajan sobre un mismo recurso, este recurso se convierte en
+     una *sección crítica*
+     Además también puede suceder el concepto de [[Condición de Carrera]]
+
+     *Solución:*
+     Implementamos un ~Semáforo Mutex~ para que sólo uno de los procesos pueda leer ó modificar
+     ese recurso ~listaTareas~, que NO puedan hacerlo ambos al mismo tiempo 
+     y se vayan alternando.
+    
+     Este sería la implementación con problemas de [[Exclusión mutua]]
+
+     #+BEGIN_SRC C
+       // Proceso (1) - Consumidor
+       while(1){
+         tarea = obtenerTarea(listaTareas);
+
+         ejecutarTarea(tarea);
+       }
+
+
+       // Proceso (2) - Productor
+       while(1){
+         nuevaTarea = crearTarea();
+
+         agregarTarea(nuevaTarea, listaTareas);
+       }
+     #+END_SRC
+     
+     Este sería la implementación sin problemas de [[Exclusión mutua]]
+     solo agregamos un *semáforo mutex*
+
+     #+BEGIN_SRC C
+       // Semáforo Mutex
+       // - Lo inicializamos en 1
+       // para que alguno de los procesos se active, y se empiecen a alternando 
+       mutexLista = 1;
+
+       // Proceso (1) - Consumidor
+       // - Ahora tiene un "semaforo Mutex" para leer la listaTareas
+       // solo si el proceso (2) NO lo está usando
+       while(1){
+
+         wait(mutexLista);                   // 1. pedimos el recurso (por si otro proceso lo usa)
+         tarea = obtenerTarea(listaTareas); //  2. lo utilizamos (hacemos una lectura de los datos)
+         signal(mutexLista);                //  3. lo liberamos (xq ya no lo usamos)
+
+         ejecutarTarea(tarea);
+       }
+
+
+       // Proceso (2) - Productor
+       while(1){
+         nuevaTarea = crearTarea();
+
+         wait(mutexLista);                    // 1. lo pedimos al recurso (por si otro proceso lo usa)
+         agregarTarea(nuevaTarea, listaTareas);    // 2. lo utilizamos (agregamos datos)
+         signal(mutexLista);                       // 3. lo liberamos (xq ya no lo usamos)
+       }
+     #+END_SRC
+**** Ejemplo 2 - Semaforo Contador - Problema de Orden de ejecución
+     Retomamos el ejemplo (1) que tenía problemas de *exclusión mutua*
+     pero sigue teniendo problemas...
+
+     *Problema actual:*
+     + Un consumidor puede tratar de obtener tareas que aún no tiene disponibles.
+     + Al pedir el recurso sin tareas disponibles, estamos bloqueando a los dos procesos
+       - El consumidor trata de usar tareas que no tiene
+       - El productor no puede agregar tareas porque el consumidor lo bloquea
+
+     *Solución:*
+     + Agregamos un [[Semáforo Contador]] para que el proceso *consumidor* lo utilice
+        sólo si hay tareas pendientes
+     + Este *semáforo contador* resuelve el problema del orden de ejecución
+
+     *Observación:*
+     Es importante el orden entre ~wait(tareasPendientes)~ y ~wait(mutexLista)~
+     porque sino se van a bloquear entre ellos. 
+     Si primero habilitamos el acceso al recurso con ~wait(mutexLista)~ entonces
+     se va a quedar bloqueado tratando de usar tareas que NO tiene
+
+     #+BEGIN_SRC C
+       // Proceso (1) - Consumidor
+       // Ahora tiene un "semaforo contador" para pedir tareas, solo si las hay
+
+       // Semáforo Mutex
+       // - Lo inicializamos en 1
+       // para que alguno de los procesos se active, y se empiecen a alternando 
+       mutexLista = 1;
+       // Semáforo Contador
+       // - lo inicializamos en 0,
+       // para que el "consumidor" no trate de consumir tareas que no hay
+       tareasPendientes = 0;
+
+       while(1){
+         // 1. "Semáforo Contador"
+         // - preguntamos si hay tareas pendientes
+         wait(tareasPendientes);
+         // 2. "Semáforo Mutex"
+         // - pedimos el recurso (por si otro proceso lo usa)
+         wait(mutexLista);
+         //  3. lo utilizamos (hacemos una lectura de los datos)
+         tarea = obtenerTarea(listaTareas);
+         //  4. lo liberamos (xq ya usamos lo que necesitabamos, guardamos los datos)
+         signal(mutexLista);
+
+         ejecutarTarea(tarea);
+       }
+
+       // Proceso (2) - Productor
+       while(1){
+         nuevaTarea = crearTarea();
+
+         // 1. "Semáforo Mutex"
+         // - pedimos al recurso (por si el otro proceso lo está usando)
+         wait(mutexLista);
+         // 2. lo utilizamos (agregamos datos)
+         agregarTarea(nuevaTarea, listaTareas);
+         // 3. "Semáforo Mutex"
+         // - lo liberamos (xq ya no lo usamos, así lo usa el otro proceso)
+         signal(mutexLista);
+         // 4. "Semáforo Contador"
+         // - liberamos el recurso (le avisamos al otro proceso que ya hay tareas cargadas)
+         signal(tareasPendientes);
+       }
+     #+END_SRC
+**** Ejemplo 3 - Semáforo Contador - Limitar Cantidad de Accesos
+     En el ejemplo (2) teniamos problemas de que no podiamos limitar la cantidad de tareas
+
+     *Problema actual:*
+     - El productor puede generar infinita cantidad de tareas
+
+     *Solución:*
+     - Agregamos otro [[Semáforo Contador]] que para limitar la cantidad de accesos
+       al recurso de ~listaTareas~
+
+     *Observación:*
+     + Recordemos que un *semáforo contador* se inicializa en N,
+        y es la cantidad de procesos pendientes a ejecutar
+
+     #+BEGIN_SRC C
+       // Proceso (1) - Consumidor
+       // - Ahora tiene un "semaforo contador" para pedir tareas, solo si las hay
+
+       // Semáforo Mutex
+       // - Lo inicializamos en 1
+       // para que alguno de los procesos se active, y se empiecen a alternando
+       mutexLista = 1;
+       // Semáforo Contador (1)
+       // - lo inicializamos en 0,
+       // para que el "consumidor" no trate de consumir tareas que no hay
+       tareasPendientes = 0;
+       // Semaforo Contador (2)
+       // - Lo inicializamos en 20,
+       // para limitar la cantidad
+       lugarEnLista = 20;
+
+       while(1){
+         // 1. "Semáforo Contador"
+         // - preguntamos si hay tareas pendientes
+         wait(tareasPendientes);
+         // 2. "Semáforo Mutex"
+         // - pedimos el recurso (por si otro proceso lo usa)
+         wait(mutexLista);
+         //  3. lo utilizamos (hacemos una lectura de los datos)
+         tarea = obtenerTarea(listaTareas);
+         //  4. lo liberamos (xq ya usamos lo que necesitabamos, guardamos los datos)
+         signal(mutexLista);
+         // 5. Avisamos que ya consumimos una tarea, que hay una menos
+         // para que el "Productor" pueda agregar nuevas
+         signal(lugarEnLista);
+
+         ejecutarTarea(tarea);
+       }
+
+       // Proceso (2) - Productor
+       while(1){
+         nuevaTarea = crearTarea();
+
+         // 1. "Semáforo Contador" (1)
+         // - limitamos la cantidad de accesos
+         wait(lugarEnLista);
+         // 2. "Semáforo Mutex"
+         // - pedimos al recurso (por si el otro proceso lo está usando)
+         wait(mutexLista);
+         // 3. lo utilizamos (agregamos datos)
+         agregarTarea(nuevaTarea, listaTareas);
+         // 4. "Semáforo Mutex"
+         // - lo liberamos (xq ya no lo usamos, así lo usa el otro proceso)
+         signal(mutexLista);
+         // 5. "Semáforo Contador" (2)
+         // - liberamos el recurso (le avisamos al otro proceso que ya hay tareas cargadas)
+         // - Es otro semaforo contador, no confundir con el que usa el recurso lugarEnLista
+         signal(tareasPendientes);
+       }
+     #+END_SRC
+**** Ejemplos 1-2-3
+     En este ejemplo es *IMPORTANTE* el orden de los ~wait()~ en *CONSUMIDOR*es decir
+     1. ~wait(tareasPendientes)~ (espera que hayan tareas, para utilizar el recurso)
+     2. ~wait(mutexLista)~ (como está inicializado en 1, el proceso se va a bloquear
+     y usará el recurso)
+    
+     Si lo hacemos al revés, se van a BLOQUEAR entre ellos, porque
+     1. Si primero hiciera ~wait(mutexLista)~ el proceso *CONSUMIDOR*
+        se bloquearia, tratando de usar el recurso de ~listaTareas~ que está vacío,
+     2. y el proceso *PRODUCTOR* trataría de acceder al recurso ~listaTareas~
+        esperando con ~wait(mutexLista)~ pero NO podría, porque está siendo
+        bloqueado por el *CONSUMIDOR*
+
+     *Observación:*
+     _Solo UNO DE LOS PROCESOS puede usar el recurso_ en un instante
+     de tiempo, ambos a la vez NO PUEDEN ..!
+ 
+     #+BEGIN_SRC C
+       mutexLista = 1; // lo inicializamos
+
+       // lo ira incrementando por el productor (con nuevas tareas)
+       // y decrementando por el consumidor (mientras las utiliza)
+       tareasPendientes = 0;
+
+       lugarEnLista = 20;
+
+       // Proceso (1) - CONSUMIDOR
+       //
+       // Obs: Es importante el orden 1) tareasPendientes 2) mutexLista,
+       // xq si es al revés sen van a bloquear entre ellos.
+       while(1){
+         // 1. tareasPendientes
+         // - el consumidor puede esperar, quedarse bloqueado
+         // hasta que generen más tareas
+         // - para evitar que no obtenga una tarea de una lista vacia
+         wait(tareasPendientes);
+
+         // 2. mutexLista
+         // - verificar si la lista disponible, si otro no lo está usando
+         // - por si aparece el concepto de "condición de carrera"
+         wait(mutexLista);
+
+         // 3. usamos el recurso (lectura de los datos)
+         tarea = obtenerTarea(listaTareas);
+
+         // 4. liberamos el recurso
+         // - NO importa el orden de los signal
+         signal(mutexLista);
+         signal(lugarEnLista)
+
+         ejecutarTarea(tarea);
+       }
+
+
+       // Proceso (2) - PRODUCTOR
+       //
+       while(1){
+         nuevaTarea = crearTarea();
+
+         // 1. lugarEnLista:
+         // - podriamos limitar la cantidad de tareas
+         // - el producto se bloquearía, hasta que se liberen
+         //   (por el consumidor) las tareas
+         // usariamos un semaforo contador
+         wait(lugaEnLista);
+
+         // 2. mutexLista
+         // - verificar si la lista disponible, si otro no lo está usando
+         // - por si aparece el concepto de "condición de carrera"
+         wait(mutexLista);
+
+         // 3. Usamos el recurso "listaTareas"
+         agregarTarea(nuevaTarea, listaTareas);
+
+         // 4. liberamos el recurso
+         // - NO importa el orden de los signal
+
+         // liberamos el recurso, porque ya NO lo necesitamos
+         signal(mutexLista);
+         // libera cada tarea
+         signal(tareasPendientes);
+        }
+     #+END_SRC
+**** Ejemplo - 4
+     NO puede haber mas de un proceso utilizando el buffer
+
+     #+BEGIN_SRC C
+       Productor(){
+         X=producir();
+
+         wait(s_buffer);
+         agregar(X, buffer);
+         signal(s_buffer);
+       }
+
+       Consumidor(){
+         wait(s_buffer);
+         Y=extraer(X, buffer);
+         signal(s_buffer);
+
+         consumir(Y);
+       }
+     #+END_SRC
+** [TODO] Inversión de prioridades
+   + Utilizando *planificadores* con prioridad, para _desalojar procesos menos prioritarios_
+   + Evita que un *proceso* con baja prioridad tome el control de un *semaforo mutex*
+     (si uno con menor prioridad lo está usando, el SO lo desaloja, si otro de mayor prioridad lo necesita) 
+** Monitores
+   + Solo UN proceso/hilo puede estar activo en el monitor
+   + Es un mecanismo que ofrece [[Mutua exclusión]] 
+     (para evitar el concepto de [[Condición de Carrera]] )
+  
+   *Ventajas:*
+   - No accedemos a la variable (sección crítica),
+   - Invocamos una función para ese recurso compartido
+   - encapsula la lógica, evitando agregar a cada rato el ~wait()~ y ~signal()~

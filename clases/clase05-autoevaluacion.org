@@ -1,0 +1,387 @@
+* Cuestionario Natasha
+** Pregunta 1
+   En que momento se atienden las interrupciones?
+   (Suponiendo que NO están deshabilitadas)
+   
+   *Respuesta:*
+   Al finalizar de atender la instrucción en curso
+** Pregunta 2
+   Cual seria la info basica que siempre se debe guardar
+   antes de atender una interrupción?
+
+   *Respuesta:*
+   El (PC, Program Counter) porque guarda la dirección de memoria
+   de la siguiente instrucción a ejecutar, para continuar el 
+   ciclo de la instrucción
+
+   y el (PSW, Program Status Word) porque guarda el bit que
+   representa el modo (usuario/kernel)
+** Pregunta 3
+   CLI es una instrucción que lo que hace es deshabilitar las
+   interrupciones. ¿QUe debería ocurrir si se ejecuta la misma?
+
+   *Respuesta:*
+   Depende de en que momento se ejecute,
+
+   Si estaba en Modo Usuario, _lanzaría una excepción_
+   Si estaba en Modo Kernel, cambiaria el bit del IF (INterrupt Flag)
+   en el PSW e _iba a poder ejecutar_
+** [TODO] Pregunta 4
+   Cual de las sig. son interupciones sincrónicas?
+   1. Acceder a una dirección de memoria NO permitida
+   2. FIN de quantum
+   3. FIN de entrada salida
+   4. División por cero
+   5. Error de un dispositivo
+   6. Llamado explícito a lanzar una interrupción
+
+   *Observación:*
+   - Una ~interrupción sincrónica~ es el resultado de la ejecución de la CPU
+     en ese momento
+
+   *Respuesta:*
+   la 1) 4) 6) son Sincrónicas
+   Las otras 2) 3) 5) son asíncronas
+** Pregunta 5
+   Cuales son las ventajas de los microkernels?
+   
+   *Respuesta:*
+   - Robustez, flexibilidad, tolerencia a fallas
+   - Facilidad de intercambiar un módulo con otro
+  
+   *Respuestas INCORRECTAS:*
+   - Es el más utilizado
+   - Buena comunicación entre módulos
+** Pregunta 6
+   Cual seria la forma correcta de acceder a un dispositivo desde un
+   proceso de usuario? (Ej. leer de disco)
+
+   *Respuesta:*
+   - Llamar a una función wraper que luego llama a una syscall
+   - Llamar a la syscall por el SO
+   
+   *Respuestas INCORRECTAS:*
+   1. Llamar a una instrucció para realizar la IO
+   2. Lanzar una interrupción para lograr un modo kernel, y luego
+     la instrucción requerida
+** Pregunta 7
+   CUales de las siguientes afirmaciones son correctas?
+   1. SI ocurre un cambio de proceso => va ocurrir mas de un cambio de modo
+   2. Si ocurre un cambio de contexto => va a ocurir un cambio de proceso
+   3. SI ocurre un cambio de modo => va a ocurrir un cabio de contexto
+
+   *Respuesta:*
+   La 1) 
+
+   La 3)
+
+   *Respuestas INCORRECTAS:*
+   la 2) porque puede haber una ~interrupcion~ y sigue ejecutando el mismo
+   ó también si hubo una ~syscall~
+** Pregunta 8
+   Cuales de las sig. afirmaciones sobre procesos son FALSAS?
+   1. Al finalizar se liberan los recursos que tenia asignados
+   2. Por default comparten memoria con su proceso padre parapoder comunicarse
+   3. Posee un PCB que SIEMPRE debe esta en la RAM
+   4. Son menos estables y seguros que los hilos KLTs
+   5. Es la minima unidad de planificación para el SO
+   6. Pueden comunicarse con otros procesos con otros procesos con paso de mensajes
+
+   *Respuesta:*
+   La 2) solo comparten 
+
+   la 4)
+   
+   la 5) suponiendo que el sistema soporte hilos
+   
+   la 6) 
+
+   *Respuestas INCORRECTAS:*
+   La 1) 
+
+   la 3) porque si NO estuviera en RAM, y el proceso estuviese suspendido
+   osea está en disco, NO podriamos despertarlo
+** Pregunta 9
+   Tanto los procesos como los KLTs y ULTs son creados a través de ~syscalls~
+   brindadas por el SO. Es V/F?
+
+   *Respuesta:*
+   Es FALSO,
+   poque las ULTs se crean a partir de una *biblioteca de usuario*
+   y el SO no las conoce
+** Pregunta 10
+   La creación y switcheo entre ULTs del mismo KLT/proceso es más liviano
+   que la gestión de KLTs. Es V/F?
+
+   *Respuesta:*
+   Es VERDADERO, 
+   porque el switcheo no hay *cambio de contexto* ni *cambio de modo*
+
+* Cuestionario (2) Natasha
+** Pregunta 1
+   Cual de los sig. podrian ser sintomas de que esta ocurriendo
+   una *Condición de carrera*?
+   a) Los procesos estan bloqueados y no pueden ejecutar
+   b) Los procesos siguen ejecutando peo no pueden finalizar
+   c) Los procesos pueden ejecutar pero tienen resultados
+      erráticos (cambia según el orden de ejecución)
+*** Respuesta correcta
+   c) Los procesos pueden ejecutar pero tienen resultados
+      erráticos (cambia según el orden de ejecución)
+*** Observaciones
+** Pregunta 2
+   Que condiciones son necesarias para que exista una *condicion de carrera* ?
+   
+   a) dos o mas procesos/hilos accediendo al un mismo recurso comun
+   b) dos o mas procesos/hilos accediendo a un recurso comun, ambos en modo lectura
+   c) dos o mas procesos/hilos accediendo a un recurso comun, ambos en modo escritura
+   d) dos o mas pocesos/hilos accediendo a un recurso comun en *forma concurrente*
+*** Respuesta correcta
+   a) dos o mas procesos/hilos accediendo al un mismo recurso comun
+   d) dos o mas pocesos/hilos accediendo a un recurso comun en *forma concurrente*
+
+   Para ambos casos es necesario *Sincronizar*
+*** Respuestas INCORRECTAS
+    la b) y c) estaría mal, se cumple con que uno esté en modo escritura
+*** Observaciones
+** Pregunta 3
+   Cual de las sig. afirmacones son corectas sobre la *Región Crítica* ?
+
+   a) Dentro de la misma se suele aprovechar paraacceder a varios recursos
+      compartidos para ser más eficientes
+   b) debe ser lo más chica posible
+   c) la misma debe estar rodeada por unprotocolo de seccion de entrada/salida
+   d) segun como este construida la seccion de entrada podria dejar entrar a uno
+      o mas procesos a la región crítica
+*** Respuesta correcta
+   b) debe ser lo más chica posible
+   c) la misma debe estar rodeada por unprotocolo de seccion de entrada/salida
+*** Respuestas INCORRECTAS
+    la a) estaría mal, porque se trata siempre de acceder a algo muy puntual
+    como un solo recurso (ej. una variable), no a muchos recursos
+
+    la d) estaría MAL, porque la idea es que cumpla con la *Mutua Exclusión*
+    es decir solo un proceso por vez
+*** Observaciones
+** Pregunta 4
+   Que condiciones deberia cumplir una buena solución a la *Condición de Carrera* ?
+   
+   a) permitir que un proceso pueda ingresar a la SC eventualmente,
+      que tarde mas o menos pero que NO genere *Starvation* (inanición)
+   b) Sin importar cuantas veces un proceso necesite ingresa a la SC, pueda hacerlo
+      sin problemas
+   c) No debe condicionar el ingreso a la SC a otros procesos que no estén en la 
+      sección de entrada
+   d) Garantizar que solo un poceso pueda ingresar a la vez en la SC
+*** Respuesta correcta
+    Todas..
+    la a) hace referencia a la "espera limitada"
+    la b) hace referencia a la "velocidad relativa" de los procesos
+    la d) hace referencia a la *muta exclusión*
+    al c) hace referencia al *progreso* (recorda el ejemplo de turnos, en el que uno
+    quería acceder y no podia, y debia esperar al otro que quizas no hacia nada
+    relacionado a la SC, y lo LIMITA a progresar)
+*** Observaciones
+** Pregunta 5
+   CUales de las sig. son opciones para garantizar *mutua exclusión* ?
+   a) solucion de peterson
+   b) semaforo mutex
+   c) test_and_set
+   d) monitores
+   e) deshabilitar interrupciones
+*** Respuesta correcta
+    todas..
+*** Observaciones
+    recordar que la c) de test_and_set es a nivel de hardware
+** Pregunta 6
+   V o F?
+   *Swap and Exchange* y *deshabilitar interrupciones* son opciones validas
+   para solucionar el problema de la *condicion de carrera*.
+   Sin embargo la 2da opcion NO siempre es recomendada
+*** Respuesta correcta
+    Verdadero,
+    porque el de *deshabilitar interrupciones* NO se recomienda para un sistema
+    con multiprocesadores, sino para uno.
+*** Observaciones
+** Pregunta 7
+   Cual de los sig. valores de inicialización de *semaforos* son correctos?
+
+   a) 1
+   b) 10
+   c) -1
+   d) 0
+*** Respuesta correcta
+   a) 1, 
+   en el caso que usemos un *semáforo mutex* (para que uno de los proceso se active,
+   y empiecen a alternarse entre los procesos)
+   ó un *semáforo binario* que esté inicialmente habilitado
+
+
+   b) 10
+   en el caso de que usemos un *semaforo contador*,
+
+   d) 0
+   en el caso que esperemos alguna condición
+*** Observaciones
+** Pregunta 8
+   V o F?
+   Las funciones de acceso al *Mutex* pueden ser implementadas 
+   *con bloqueo* y *sin bloqueo* (espera activa).
+   Sin embargo, *con bloqueo* es la forma más recomendada para
+   favorecer la performance.
+*** Respuesta correcta
+    Falso,
+    Si se tratase de un sistema con un esquema de *monoprocesador*
+    sería recomendado *con bloqueo*
+
+    En la actualidad, NO se recomienda *con bloqueo*, 
+    porque todos los sistemas son con *multiprocesadores*
+    y no es eficiente en esos.
+*** Observaciones
+** [TODO] Pregunta 9
+   Si en un momento miramos el estado de los semaforos, y vemos que uno
+   tiene un valor -4. Que podriamos deducir?
+
+   a) Los semaforos se estan usando con una implementacion con *espera activa*
+   b) Los semaforos se estan usando con una implementacion *con bloqueo*
+   c) Hay un error con ese semaforo
+   d) Hay 4 pocesos en *estado bloqueado* en general en el sistema
+   e) hay 4 procesos en *estado bloqueado* por ese semaforo
+*** Respuesta correcta
+   b) Los semaforos se estan usando con una implementacion *con bloqueo*
+   e) hay 4 procesos en *estado bloqueado* por ese semaforo
+*** Respuesta INCORRECTAS
+    la a) porque con *espera activa* NUNCA tiene valores negativos
+*** Observaciones
+** Pregunta 10
+   V ó F ?
+   El problema de *inversión de prioridads* podria ocurrir siempre que
+   en un sistema que utilice *mutex* sobre sus recursos?
+*** Respuesta correcta
+    Falso,
+    recordar que las condiciones que generan este problema eran 
+    1. estemos usando recursos con *mutua exclusión*
+    2. tener *planificador* que elije el más prioritario
+*** Observaciones
+* Cuestionario Dan 
+** Pregunta N
+*** Respuesta elegida
+*** Respuesta correcta
+*** Observaciones
+** Pregunta 1
+   Multiprocesamiento implica:
+   a) Procesamiento Distribuido 
+   b) NS/NC
+   c) Ninguna de las anteriores
+   d) Multiprogramación.
+*** Respuesta elegida
+   a) Procesamiento Distribuido 
+*** Respuesta correcta
+   d) Multiprogramación.
+*** Observaciones
+** Pregunta 2
+   Si los procesos interactúan compartiendo recursos del sistema, entonces:
+
+   a. Es necesario sincronizar su uso, porque el SO no lo hace. 
+   b. No es necesario sincronizar su uso, porque el SO los administra
+   c. Ninguna de las anteriores
+   d. NS/NC
+*** Respuesta elegida
+   a. Es necesario sincronizar su uso, porque el SO no lo hace. 
+*** Respuesta correcta
+   a. Es necesario sincronizar su uso, porque el SO no lo hace. 
+*** Observaciones
+** Pregunta 3
+   En el ejemplo de los incrementos de una misma variable entre dos 
+   o más hilos visto en clase :
+
+   a. Ninguna de las anteriores
+   b. Puede haber problemas debido al uso de variables del stack (pila)
+   c. El comportamiendo es indefinido porque siempre se corromperán datos internos 
+   d. NS/NC
+*** Respuesta elegida
+   c. El comportamiendo es indefinido porque siempre se corromperán datos internos 
+*** Respuesta correcta
+   a. Ninguna de las anteriores
+*** Observaciones
+** [TODO] Pregunta 4
+   En la mutua exclusión:
+
+   a. Se pierde algo de la performance obtenida de la concurrencia
+   b. Ninguna de las anteriores
+   c. NS/NC
+   d. Es obligatorio que dentro de la región crítica el proceso esté un tiempo reducido 
+
+   <<DUDA 1>>: Porque estaria mal la d) ???
+*** Respuesta elegida
+   d. Es obligatorio que dentro de la región crítica el proceso esté un tiempo reducido 
+*** Respuesta correcta
+   a. Se pierde algo de la performance obtenida de la concurrencia
+*** Observaciones
+** Pregunta 5
+   En las soluciones de software para garantizar mutua exclusión:
+
+   Seleccione una:
+   a. La performance es un factor clave que les juega en contra
+   b. NS/NC
+   c. Ninguna de las anteriores
+   d. No existen algoritmos que garanticen la mutua exclusión en un 100% 
+
+   <<DUDA 2>>: La d estaria mal porque en realidad, ninguno garantiza el tema
+   de la *espera activa* (?
+*** Respuesta elegida
+   d. No existen algoritmos que garanticen la mutua exclusión en un 100% 
+*** Respuesta correcta
+   a. La performance es un factor clave que les juega en contra
+*** Observaciones
+** Pregunta 6
+   En las soluciones de mutua exclusión por hardware:
+
+   a. Ninguna de las anteriores
+   b. Las instrucciones como «test and set» pueden ser igualmente interrumpidas 
+   c. NS/NC
+   d. La deshabilitación de las interrupciones es un mecanismo ineficiente pero seguro
+
+   <<DUDA 3>>: NO pueden ser interrumpidas porque son a nivel hardware?
+*** Respuesta elegida
+   b. Las instrucciones como «test and set» pueden ser igualmente interrumpidas 
+*** Respuesta correcta
+   d. La deshabilitación de las interrupciones es un mecanismo ineficiente pero seguro
+*** Observaciones
+** Pregunta 7
+   Al usar semáforos:
+
+   a. Al llamar a signal(s), se despierta un proceso si el semáforo no quedó positivo
+   b. Al llamar a signal(s), se despierta a un proceso si el semáforo quedó positivo
+   c. Ninguna de las anteriores 
+   d. NS/NC
+*** Respuesta elegida
+   c. Ninguna de las anteriores 
+*** Respuesta correcta
+   a. Al llamar a signal(s), se despierta un proceso si el semáforo no quedó positivo
+*** Observaciones
+** Pregunta 8
+   La «atomicidad» de las funciones de manejo de semáforos se logra:
+
+   a. Ninguna de las anteriores
+   b. Usando otros semáforos
+   c. NS/NC
+   d. Mediante el hecho de que dichas funciones son instrucciones de procesador
+   e. Mediante alguna solución de software o hardware 
+*** Respuesta elegida
+   e. Mediante alguna solución de software o hardware 
+*** Respuesta correcta
+   e. Mediante alguna solución de software o hardware 
+*** Observaciones
+** Pregunta 9
+   En los monitores:
+
+   a. Ninguna de las anteriores 
+   b. Se pueden resolver problemas de coordinación, pero no de mutua exclusión
+   c. Se pueden resolver problemas de mutua exclusión, pero no de coordinación
+   d. NS/NC
+*** Respuesta elegida
+   a. Ninguna de las anteriores 
+*** Respuesta correcta
+   a. Ninguna de las anteriores 
+*** Observaciones

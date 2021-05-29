@@ -1,0 +1,17 @@
+#+TITLE: TIPS En los GANTT
+
+Por marquitos :)
+
+* Planificador a largo plazo
+  cuando llegan nuevos procesos o termina algun procesos
+* Planificador a mediano plazo
+  es el que hace swapping, eso no se muestra en los GANTT asi que no aparece salvo que lo aclare
+* Planificador a corto plazo
+  cada vez que se debe replanificar, esto depende del algoritmo 
+  (ej:llegada de un proceso nuevo, puesta en ready de un proceso,finalización de un proceso)
+
+* Cambios de Modo
+  cada vez que replanifico (depende del algoritmo) o termino un proceso. 
+  entro o salgo de IO(en este caso también replanificaría), proceso nuevo, timer en RR, proceso en ready, etc
+* Cambios de Contexto
+  cada vez que hay un cambio de modo, o cuando una interrupcion pisa a otra interrupcion

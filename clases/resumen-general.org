@@ -1,0 +1,19 @@
+La idea es integrar lo fundamental de cada resumen
+
+* DMA
+El DMA es fundamental para la parte de *planificación*
+porque es quien el avisa al procesador (CPU) que un proceso está 
+cargado en memoria (RAM)
+recordando que es como otro procesador, pero que no ejecuta instrucciones
+* Registros de CPU
+Los registros importantes del procesador (CPU) son el
+Program Counter (PC) que guarda la próxima instrucción a ejecutar
+para los *Cambios de contexto*
+
+y tambień otro registro importante del CPU es el [[(PSW) Program Status Word]]
+para saber en que *modo de ejecución* está la CPU
+además que tiene un *bit* para saber si estan _habilitadas las interupciones_
+* Interrupt Handler
+Es a nivel software, es un modulo del Sistema operativo para manejar las interrupciones
+según cual crea más importante
+

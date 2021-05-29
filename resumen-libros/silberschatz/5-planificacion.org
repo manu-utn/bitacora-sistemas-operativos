@@ -1,0 +1,19 @@
+#+TITLE: Capítulo 05 - Planificación
+
+Quedaste pag. 276
+"No te olvides de leer lo de serializado q pusiste en jira"
+
+* Vocabulary
+** idle
+   - spend time doing nothing
+   - not working or being used
+   - if an engine idles, it runs slowly while the vehicule is not moving
+** burst
+   - a short sudden period of activity or noise
+** pre-empt
+   - appropiate
+   - prevent
+** release
+   - to allow sb to be free after you have kept them somewhere
+** throughput
+   - rendimiento

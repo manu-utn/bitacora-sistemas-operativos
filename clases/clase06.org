@@ -1,0 +1,140 @@
+#+TITLE: Clase 06 - Interbloqueo - Deadlock
+* Repaso clase anterior
+** Sistemas multiprogramados
+** Recursos compartidos
+** Interacción de Procesos
+** Muta-Exclusión
+** Soluciones de Software
+   + Todas tenian de problema el ~while()~ que actua como *espera activa*
+** Soluciones de Hardware
+   * Deshabilitar las interrupciones
+     * provoca un gran problema, bloquea "todos" los procesos
+     * un costo muy grande para sistemas con multiprocesadores
+   * soluciones
+     * set_and_   : no solucionaba lo de *espera activa*
+** Semáforos
+*** syscalls
+    wait: decrementaba un valor
+    signal: incrementaba un valor
+*** valores 
+    - se pueden inicializar solo en 0 o valores positivos, (NUNCA NEGATIVOS)
+    - si se inicializa en N, es la cant. de procesos q estan bloqueados por ese semaforo
+*** thread safes
+    nos aseguran que no tendremos problemas de 
+    - mutua exclusión
+    - 
+** Sincronización
+* Deadlock
+** Intro
+   + recursos limitados (cpu, memoria, dispositivos, ...)
+   + procesos
+     1. solicitan (ej. fopen, wait, malloc)
+     2. usan
+     3. liberan (ej. fclose, signal, free)
+*** Ejemplo
+** [TODO] Concepto
+   bloqueo permanente de un conjunto de procesos...
+** Tipos de recursos
+*** reutilizables
+    ej. 
+*** consumibles
+    ej. un mensaje a traves de un socket
+** Grafo de asignacion de recursos
+   - por cada arista indica la cant. de recursos que un proceso solicitan
+   - los recursos se representan con cuadrados
+   - los procesos se representan con circulos
+*** ciclos
+   - una instancia es cuando a un recurso, es solicitado por un proceso
+     (Ej. si dos procesos solicitan a R, entonces el recurso R tiene dos instancias)
+   - si hay un ciclo
+     - y además hay solo una instancia, habrá *deadlock*
+     - si hay 2 o mas instancias, puede o no haber *deadlock* 
+** Condiciones necesarias y suficienes
+   Las 3 primeras, son las causas que implican que haya *espera circular*
+*** mutua exclusión
+    es necesaria
+*** retencion y espera
+    cuando usamos el ~wait(semaforo)~
+*** sin desalojo de recursos
+    xq el SO no puede sacarle los recursos a un proceso, y darselo a otro
+    si se diera, habria inconsistencia xq 
+*** [TODO] espera circular
+    porque varios procesos tratan de usar el mismo recurso
+** tratamiento del deadlock
+*** prevencion de deadlock
+    - garantiza que NUNCA ocurra
+    - impide que ocurra alguna de las 4 condiciones de la existencia de un deadllock
+**** condición 1 - retencion y espera
+     - solicita todos los recursos al mismo tiempo
+       (nos asegura que no se va a bloquear)
+     - solicitar recursos de a uno o varios, utilizarlos y liberarlos
+       (solicitar recursos sin bloquearse, )
+
+     puede producirse *starvation* 
+**** condición 2 - sin desalojo de recursos
+     - Si un proceso que tiene recursos asignados
+       solicita uno que NO está disponible,
+       debe liberar sus recursos
+     - si un proceso A solicita un recurso que está asignado
+       a otro proceso B, que está a la espera de más recursos.
+       el recurso asignado al proceso B puede asignarse al proceso A
+
+     es posible, pero NO se puede con cualquie tipo de recursos,
+     tipico ejemplo de la impresora
+**** condición 4 - espera circular
+     - asignar un numero de orden a los recursos.
+     - los recursos solo pueden solicitarse en orden creciente
+*** evasión o predicción de deadlock
+    - garantiza que NO habrá deadlock
+**** tecnicas
+     1. denegar el inicio de un proceso
+     2. denegar la asignacion de un recurso (algoritmo del banquero)
+**** Algoritmo del banquero (ó de seguridad)
+     - no le puedo dar todos los recursos a un proceso
+     - tener una reserva de recursos
+     - la idea es tener siempre un "estado seguro"
+     - simula ...
+     - tiene un alto costo de procesamiento (CPU)
+       por el tema de operar las matrices
+***** estado seguro-inseguro
+      estado seguro => NO HABRA DEADLOCK
+      (se asigna el recurso al proceso)
+     
+      estado inseguro => podria existir DEADLOCK
+      (no se asigna el recurso al proceso)
+
+***** estado del sistema
+      + vectores de recursos
+        1. totales de sistema
+        2. 
+      + una matriz
+        - de necesidades maximas
+        - de recursos
+          1. asignados
+          2. totales
+          3. disponibles (los que no tengo asignados)
+
+      necesidades_pendientes = necesidades_maximas - recursos_asignados
+
+*** deteccion y recuperacion de deadlock
+    - puede ocurrir *deadlock*
+    - _NO hay restricciones_ para asignar recursos disponibles
+    - _se ejecuta periodicamente_ el Algoritmo de Deteccion
+**** Opciones de recuperacion
+     - terminar procesos involucrados
+     - retroceder el proceso a un estado anterior
+     - terminar algun proceso involucado hasta que deje de existir
+       el deadlock
+     - expropiar recursos hasta que no exista deadlock
+**** criterios de seleccion de procesos para terminar
+     - menor tiempo de procesador consumido
+     - menor cant. de salida producida
+     - menor numero de total de recursos asignados
+     - menor prioridad
+*** no tratarlo
+*** estrategia integrada
+    - agrupacion de recursos
+    - a cada grupo se le aplica alguna de las tecnicas
+
+    la simulacion de fin de cada proceso es:
+    recurso disponible+ recurso asignados

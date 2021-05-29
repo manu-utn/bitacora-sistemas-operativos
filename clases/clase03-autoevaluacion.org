@@ -1,0 +1,132 @@
+* Dudas
+  - [[DUDA 1]]
+* Template
+** Pregunta
+   texto
+*** Respuesta elegida
+*** Respuesta correcta
+*** Observaciones
+* Preguntas
+** Los planificadores de largo y mediano plazo pueden afectar el orden de los procesos
+   a. En la lista de procesos suspendidos.
+   b. En lista de procesos listos para ejecutar.
+   c. En la lista de procesos nuevos. 
+*** Respuesta elegida
+   c. En la lista de procesos nuevos. 
+*** Respuesta correcta
+   b. En lista de procesos listos para ejecutar.
+*** Observaciones
+    - El *planificador de largo plazo*, al momento de admitir un proceso nuevo, 
+      puede afectar el orden de los procesos de Listos.
+    - El *planificador de medio plazo*, puede afectar el orden de los procesos listos 
+      cuando un proceso es pasado de disco a memoria.
+** El planificador de corto plazo es invocado cuando
+   a. Se realiza una llamada al sistema o una interrupción. 
+   b. Se realiza una llamada al sistema y una interrupción.
+   c. Ninguna de las anteriores.
+*** Respuesta elegida
+   a. Se realiza una llamada al sistema o una interrupción. 
+*** Respuesta elegida
+   a. Se realiza una llamada al sistema o una interrupción. 
+*** Respuesta correcta
+   a. Se realiza una llamada al sistema o una interrupción. 
+*** Observaciones
+    - Cuando un proceso realiza una *llamada al sistema*, podría cambiar su estado a *Bloqueado*.
+    - Una *interrupción* puede provocar que un proceso se desbloquee y
+      quede en *estado Listo* o que cambie de estado *Ejecutando a Listo*.
+ 
+    <<DUDA 1>>: Ejemplo de Ejecutando a Listo?
+
+** El Response Time es un criterio de planificación
+   a. Ninguna de las anteriores.
+   b. Orientado al sistema.
+   c. Orientado al usuario. 
+*** Respuesta elegida
+   c. Orientado al usuario. 
+*** Respuesta correcta
+   c. Orientado al usuario. 
+*** Observaciones
+    Es el tiempo que el usuario espera desde que realiza una operación hasta recibe alguna respuesta del sistema.
+
+
+** Al utilizar el algoritmo Round Robin, el quantum
+   a. Ninguna de las anteriores. 
+   b. Debería ser lo más grande posible.
+   c. Debería ser lo más chico posible.
+*** Respuesta elegida
+   a. Ninguna de las anteriores. 
+*** Respuesta correcta
+   a. Ninguna de las anteriores. 
+*** Observaciones
+    - Si el *quantum es muy grande*, el algoritmo degenera en FIFO.
+    - Si el *quantum es muy chico*, el algoritmo se vuelve más justo porque los procesos avanzan 
+    de manera más pareja, pero genera mucho *Overhead* por todas las intervenciones necesarias del sistema operativo.
+** La interrupción de Clock permite
+   a. Que el procesador realice un cambio de proceso. 
+   b. Ninguna de las anteriores.
+   c. Que un proceso pueda realizar una llamada al sistema.
+*** Respuesta elegida
+   a. Que el procesador realice un cambio de proceso. 
+*** Respuesta correcta
+   b. Ninguna de las anteriores.
+*** Observaciones
+    La *interrupción de Clock* permite que el SO, tome el control del procesador 
+    para que realice alguna tarea.
+    Esa tarea puede ser realizar un cambio de proceso, o no.
+    El procesador no realiza cambios de proceso.
+** [TODO] Para algoritmos que usan la próxima ráfaga de CPU, como el SJF
+   a. Generalmente solo se pueden implementar con un estimador de ráfagas.
+   b. Generalmente se pueden implementar «de una», porque los procesos proveen esa información.
+   c. Ninguna de las anteriores. 
+*** Respuesta elegida
+   c. Ninguna de las anteriores. 
+*** Respuesta correcta
+   a. Generalmente solo se pueden implementar con un estimador de ráfagas.
+*** Observaciones
+    El SO no conoce de antemano cuál será el tiempo de cada ráfaga.
+    Por lo tanto es necesario estimarla.
+** Starvation (inanición) es una problemática que
+   a. Ocurrirá siempre que se utilizen algoritmos como SJF.
+   b. Ninguna de las anteriores. 
+   c. Podría nunca ocurrir, independientemente del algoritmo utilizado.
+*** Respuesta elegida
+   b. Ninguna de las anteriores. 
+*** Respuesta correcta
+   c. Podría nunca ocurrir, independientemente del algoritmo utilizado.
+*** Observaciones
+    Algunos algoritmos no sufren inanición. Otros algoritmos PODRÍAN sufrirla, 
+    pero tienen que darse ciertas condiciones. 
+    Por ejemplo SJF puede sufrir inanición, pero si todas las ráfagas de 
+    los procesos son iguales, entonces no habrá inanición.
+** En un algoritmo multinivel realimentado (Feedback Multinivel)
+   a. La prioridad de los procesos es estática.
+   b. Ninguna de las anteriores.
+   c. La prioridad de los procesos es dinámica. 
+*** Respuesta elegida
+   c. La prioridad de los procesos es dinámica. 
+*** Respuesta correcta
+   c. La prioridad de los procesos es dinámica. 
+*** Observaciones
+    Cuando se utiliza "feedback multinivel", durante el ciclo de vida de un proceso, 
+    este puede moverse entre las diferentes listas de "ready" que pueden tener 
+    diferentes prioridades entre sí. 
+    El sistema operativo seleccionará los procesos de la lista más prioritaria. 
+    En caso que esta última lista este vacía, se continúa por la siguiente en orden de prioridad.
+** En un SO con RR y procesos CPU-Bound y I/O-Bound se verían perjudicados
+   a. Ninguna de las anteriores.
+   b. Los procesos CPU Bound.
+   c. Los procesos I/O Bound. 
+*** Respuesta elegida
+   c. Los procesos I/O Bound. 
+*** Respuesta correcta
+   c. Los procesos I/O Bound. 
+*** Observaciones
+    Los I/O Bound (o Limitados por E/S) serán perjudicados porque sus ráfagas de CPU son cortas.
+    Por lo tanto, no suelen aprovechar todo el quantum asignado.
+    Además estarán compitiendo por el uso del procesador, con otros procesos que podrían estar 
+    aprovechando más tiempo el procesador. Para atenuar este problema está el algoritmo Virtual Round Robin.
+** Pregunta
+   texto
+*** Respuesta elegida
+*** Respuesta correcta
+*** Observaciones

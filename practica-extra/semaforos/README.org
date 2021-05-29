@@ -1,0 +1,46 @@
+#+TITLE: Hilos && Semáforos
+* Conceptos
+  + Las bibliotecas standard que necesitaremos serán
+    1) Para los hilos a ~pthread.h~
+    2) Para los semáforos a ~semaphore.h~
+  + Las funciones utiles
+    1) Para inicializar el semáforo usamos ~sem_init~
+    2) Para bloquear el acceso al recurso compartido usamos ~sem_wait~
+    3) Para desbloquear un recurso compartido invocamos ~sem_post~
+
+  *Observación:*
+  Relación con la materia, el ~sem_wait~ funciona como un ~wait(s)~
+  y el ~sem_post~ como el ~sign(s)~
+
+  #+BEGIN_SRC C
+    // para inicializar el semaforo
+    int sem_init(
+                 sem_t *sem,
+                 int pshared,
+                 unsigned int value
+                 );
+
+    // - decrementar en una unidad el semáforo
+    // - bloquear el acceso al recurso compartido con otro hilo
+    int sem_wait(sem_t *sem);
+
+    // - incrementar en una unidad el semáforo
+    // - desbloquear el acceso el recurso compartido
+    int sem_post(sem_t *sem);
+  #+END_SRC
+* Compilar
+  + Para compilar ejecutamos ~gcc programa.c -pthread -lm Wall~
+  + Para comprobar si hay *Deadlock* utilizamos la herramienta *helgrind* que viene 
+    por defecto en *Valgrind* ejecutando ~valgrind --tool=helgrind ./a.out~
+
+  #+BEGIN_SRC shell
+    # para compilar y analizar si hay deadlock
+    gcc mutex-deadlock.c -pthread -g -Wall && # compila
+        valgrind --tool=helgrind ./a.out # luego lo analiza
+  #+END_SRC
+* Referencias
+  1. https://docs.oracle.com/cd/E19683-01/806-6867/sync-12/index.html
+  2. https://www.geeksforgeeks.org/mutex-lock-for-linux-thread-synchronization/
+  3. http://profesores.elo.utfsm.cl/~agv/elo330/2s06/lectures/POSIX_threads/POSIX_Threads_Synchronization.html
+  4. https://stackoverflow.com/questions/23400097/c-confused-on-how-to-initialize-and-implement-a-pthread-mutex-and-condition-vari
+
