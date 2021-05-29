@@ -1,5 +1,5 @@
 #+TITLE: Funciones Básicas de C
-* inputs
+* Inputs
   Esto no es de C, sólo lo pongo a modo de interactuar con la entrada estandar
   e ingresar datos
 
