@@ -1,4 +1,4 @@
-#+TITLE: Valgrind - Perfilador de Memoria
+#+TITLE: Funciones de Gestión de Memoria - Valgrind Perfilador de Memoria
 * Memset
 ** Conceptos
    Para completar un bloque de memoria con un valor particular
@@ -97,6 +97,145 @@
   #+RESULTS:
   | before | jojo   |
   | after  | oaaaaa |
+* Malloc y Calloc
+** Conceptos
+   + Para reservar espacio de memoria para variables ó estructuras/vectores dinámicos
+   + La función ~malloc~ y ~calloc~ reservan espacio en memoria
+   + El valor de retorno de ambos
+     1. Si la operación falló, retornan ~NULL~
+     2. Si la operación tuvo exito, retornan un *puntero* al comienzo del bloque de memoria
+
+   #+name: funciones-malloc-calloc
+   #+BEGIN_SRC C
+     void* malloc(size_t size);
+
+     void* calloc(size_t num, size_t size);
+   #+END_SRC
+
+   #+BEGIN_QUOTE
+   Cuando definimos una variable, estructura ó vector de manera estática, se alloca
+   ó se le asigna un espacio en memoria fijo (en el *Stack*) y este NO puede variar,
+   esto se realiza en *tiempo de compilación*.
+   (Ej. si definimos un vector de enteros de longitud 4, este ocupará 4*4 bytes y punto)
+   
+   Si sabemos que fluctúa el tamaño en memoria que ocupa un arreglo, porque desconocemos
+   la cantidad de elementos que pueda tener, podemos reservar un bloque de memoria de 
+   manera dinámica (en el *Heap*) en *tiempo de ejecución* utilizando las 
+   funciones ~malloc~ y ~calloc~
+   #+END_QUOTE
+** Diferencias
+   + ~malloc~ NO inicializa la zona de memoria reservada, pero lo hace rápido
+   + ~calloc~ inicializa la zona de memoria reservada con el valor 0 (cero), lo hace más lento que ~malloc~
+
+   *Obsevación:*
+   Si el bloque de memoria NO está inicializado, si intentamos acceder nos podemos encontrar con 
+   un error de ~segmentation fault~ ó quizás sólo valores basura.
+** Ejemplos
+   #+BEGIN_SRC C
+     #include <stdio.h>
+     #include <stdlib.h> // malloc() y calloc()
+     #include <string.h> // memset()
+
+     int main(void){
+       int* arr;
+
+       /******************************* MALLOC ****************************************************/
+       // Reservamos memoria con malloc() pero no inicializamos el bloque de memoria
+
+       arr = (int *)malloc(5* sizeof(int)); // 5 * 4 = 20 Bytes = int arr[5]
+
+       if(arr != NULL){
+         /* printf("Pudimos reservar espacio en memoria para 5 enteros en un puntero a enteros\n"); */
+       }
+
+       arr[0] = 2;   // podemos manejarnos con indices
+       ,*(arr+1) = 5; // ó podemos manejarnos con la arimética de punteros
+       ,*(arr+2) = 7;
+
+       printf("Malloc: ");
+       for(int i=0; i < 5; i++){
+         printf("arr[%d]=%d ", i, arr[i]);
+       }
+       printf("\n");
+
+       free(arr);
+
+       /******************************* CALLOC ****************************************************/
+       // Reservamos memoria con calloc() e inicializamos el bloque de memoria con 0 (cero)
+
+       arr = (int *)calloc(5, sizeof(int));
+       ,*(arr+2) = 7;
+
+       printf("Calloc: ");
+       for(int i=0; i < 5; i++){
+         printf("arr[%d]=%d ", i, arr[i]);
+       }
+       printf("\n");
+
+       free(arr);
+
+       /******************************* MALLOC+MEMSET+REALLOC ************************************************/
+       // - Podemos liberar el espacio en memoria que ocupamos, utilizano realloc() en vez de free()
+       // - Reservamos memoria con malloc() y con memset() inicializamos el bloque de memoria con 0 (cero)
+
+       arr = (int *)malloc(5* sizeof(int));
+       memset(arr, 0, 5*sizeof(int)); // 5*4 = 20 bytes
+
+       printf("Malloc+Memset: ");
+       for(int i=0; i < 5; i++)
+         printf("arr[%d]=%d ", i, arr[i]);
+       printf("\n");
+
+       realloc(arr, 0);
+       // ya no necesitamos usar free en este caso
+       //free(arr);
+
+       return 0;
+     }
+   #+END_SRC
+** Referencias
+   1. https://www.geeksforgeeks.org/dynamic-memory-allocation-in-c-using-malloc-calloc-free-and-realloc/
+* Realloc
+** Conceptos
+   + Para redimensionar el tamaño del *bloque de memoria* al que hace referencia un *puntero* ~*ptr~
+     (ese espacio en memoria fue previamente reservado con ~malloc~ ó ~calloc~)
+   + Podemos usarlo para liberar memoria que fue reservada, como si hicieramos un ~free~
+
+   #+BEGIN_SRC C
+     void *realloc(void *ptr, size_t size);
+   #+END_SRC
+** Ejemplos
+   #+BEGIN_SRC C
+     #include <stdio.h>
+     #include <stdlib.h>
+     #include <string.h>
+
+     int main(){
+       char *buffer;
+
+       buffer = (char *) malloc(sizeof(char)*5);
+       strcpy(buffer, "hola");
+       printf("string: %s, address=%u\n", buffer, buffer);
+
+       buffer = (char *) realloc(buffer, 20);
+       // con strcat() concatenamos el string que ya contiene el buffer
+       // con el string del segundo parámeto
+       strcat(buffer, " que tal?");
+
+       printf("string: %s, address=%u\n", buffer, buffer);
+
+       // Si solo quisieramos mostrar los datos sin formatear, usemos fputs() ó puts()
+       // fputs(buffer, stdout);
+       // puts(buffer);
+
+       // lo colocamos a modo de que NO finalice el programa, y quede en ejecución
+       getchar();
+
+       free(buffer);
+
+       return 0;
+     }
+   #+END_SRC
 * Valgrind - Memcheck
 ** Conceptos
    Cuando estamos analizando los errores de memoria con *valgrind*
