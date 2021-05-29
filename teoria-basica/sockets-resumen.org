@@ -1,5 +1,4 @@
 #+TITLE: Resumen - Sockets
-
 * Ejemplos Cliente-Servidor
   1. https://www.binarytides.com/server-client-example-c-sockets-linux/
 * Introducción Sockets
