@@ -1,6 +1,27 @@
-hola_mundo: hola-mundo.c
-	gcc -g -Wall -Wextra -o hola-mundo -pthread hola-mundo.c
+CC=gcc
+CFLAGS=-g -Wall #-Wextra
+CLIBS=-pthread
+SOURCES=$(wildcard *.c)
+OBJECTS=$(SOURCES:.c=.o)
+EXECS=$(SOURCES:%.c=%)
+
+.PHONY: all gitignore
+all: $(EXECS)
+# all: $(OBJECTS) $(EXECS)
+
+%: %.c
+	$(CC) $(CFLAGS) $< -o $@ $(CLIBS)
+
+# .c.o:
+# 	$(CC) $(CFLAGS) -c $< -o $@ $(CLIBS)
+# .o.:
+# 	$(CC) $^ $(CFLAGS) -o $@ $(CLIBS)
+
+.PHONY: gitignore
+gitignore:
+	echo $(EXECS) > .gitignore
 
 .PHONY: clean
 clean:
-	rm -f hola-mundo
+	-@ rm -f *.o
+	-@ rm $(EXECS)
