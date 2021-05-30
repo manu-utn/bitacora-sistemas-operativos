@@ -1,0 +1,2 @@
+int jugadoresEnLinea;
+int limiteDeUsuarios;

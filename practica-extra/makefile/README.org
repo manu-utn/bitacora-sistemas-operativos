@@ -1,0 +1,91 @@
+#+TITLE: Makefile
+* Conceptos
+  - Se utiliza ~make~ para cualquier proyecto con *dependencias* entre archivos (no solo para ejecutar ~gcc~)
+  - En ~C~ la relación de dependencia es
+    1. Los ejecutables dependen de los archivos ~.o~
+    2. Los  ~.o~ dependen de su ~.c~ y de los ~.h~ que incluyan los ~.c~
+
+  *Observaciones:*
+  - Los archivos ~.o~ se conocen por *objetos*
+  - Los ~.h~ como archivos cabecera, se incluyen declaraciones de estructuras, variables globales y funciones (prototipos/firmas)
+  - Los ~.c~ son el código fuente, el que tiene la lógica del programa
+* Reglas
+** Conceptos
+   + Si una regla tiene archivos en las [[Dependencias]] que también son [[Target]] de otras reglas
+     1. Se ejecuta la regla donde aparece como ~target~
+     2. Luego la regla donde aparece como ~dependencia~
+
+  #+BEGIN_SRC makefile
+    # La forma general de cada regla es de la forma
+    target: dependencias
+      comando1
+      comando2
+  #+END_SRC
+* Target
+** Conceptos
+   - Cada *target* representa el nombre del archivo que se genera, luego de cumplirse la regla
+   - Debe ser recompilado cuando cambien las dependencias
+** Target Final
+   - Es la primera regla del makefile y tiende a ser el ejecutable
+   - Es el último *target* en el *árbol de dependencias* por tanto el último que se ejecuta
+* Dependencias
+* Comandos
+  - Los *comandos* se ejecutan cuando se cumple la regla
+  - Deben empezar por *tabulador* (si nos olvidamos, habrán errores)
+* Ejemplos
+** Expresividad - Lineas muy extensas
+   Si tenemos lineas muy extensas podemos usar el carácter ~\~ al igual que en ~bash~
+   
+   #+BEGIN_SRC makefile
+     main.o: main.c players.h monsters.h items.h \
+     configs.h events.h messages.h
+   #+END_SRC
+** Generar varios ejecutables
+   - Podemos usar ~all~ (se considea un *falso target*) cuando tenemos reglas para varios ejecutables,
+   - Si no agregamos este target, sólo se ejecutará la regla 1
+     (porque es el target final, y la regla 2 no es una dependencia de ella)
+
+   *Observación:*
+   El ~make~ siempre considera la primera regla como el [[Target Final]] (el ejecutable),
+   y si la "regla 2" NO es una *dependencia* de esa primera regla, entonces no lo ejecutará.
+
+   #+BEGIN_SRC makefile
+     # hacemos que se ejecuten ambos por separado
+     # porque no dependen entre ellos
+     all: programa1 programa2
+
+     # regla 1
+     programa1: main.o players.o items.o
+       gcc -o programa1 main.o players.o items.o
+
+     # regla 2
+     programa2: server.o configs.o
+       gcc -o programa2 server.o configs.o
+   #+END_SRC
+** Comandos en Shell diferentes
+   Cada comando se ejecuta en una ~shell~ diferente
+   
+   #+BEGIN_SRC makefile
+     programa: players/items.c
+       cd players;\   # se ejecuta en una shell
+       gcc -c items.c # se ejecuta en otra shell
+   #+END_SRC
+** Prioridad entre target y dependencia
+  - Los *targets* son main.o, players.o, monsters.o
+  - El ~main.o~ aparece en dos reglas
+    1. En la primera regla aparece como *dependencia*
+    2. En la segunda regla aparece como *target* (esta se ejecutará primero)
+
+ #+BEGIN_SRC makefile
+   juegito: main.o players.o monsters.o
+     gcc -o juegito main.o players.o monsters.o
+
+   main.o: main.c players.h players.c monsters.o
+     gcc -c main.c
+
+   players.o: players.c players.h
+     gcc -c players.c
+
+   monsters.o: monsters.c monsters.h
+     gcc -c monsters.c
+ #+END_SRC
