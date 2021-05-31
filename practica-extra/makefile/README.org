@@ -26,8 +26,60 @@
    - Cada *target* representa el nombre del archivo que se genera, luego de cumplirse la regla
    - Debe ser recompilado cuando cambien las dependencias
 ** Target Final
-   - Es la primera regla del makefile y tiende a ser el ejecutable
-   - Es el último *target* en el *árbol de dependencias* por tanto el último que se ejecuta
+   + Es la primera regla del makefile y tiende a ser el ejecutable
+   + Es el último *target* en el *árbol de dependencias* por tanto el último que se ejecuta
+** Falso target
+*** Conceptos
+    + No se les suele agregar [[Dependencias]]
+    + Cuando queremos que la regla se ejecute siempre
+    + Es un target que no existe (porque un target tiende a representar un archivo existente)
+    + El ~make~ nota que no existe el archivo, y ejecuta los comandos que generan la regla
+
+    #+BEGIN_QUOTE
+    Un posible problema sería si agregamos un *falso target* y en el directorio existe un 
+    fichero con ese nombre.
+    Porque al no tener *dependencias* el ~make~ interpretará que el archivo está actualizado,
+    y no ejecutará los *comandos* de la *regla*
+    La solución a esto es utilizar ~PHONY~ (representa a un *target ficticio*)
+    #+END_QUOTE
+*** Ejemplos
+    #+BEGIN_SRC makefile
+      # este es un ejemplo típico de un "falso target", que borra los archivos .o de fichero c compilado
+      # - porque "clean" no es un archivo en si (no debería)
+      # - la regla tampoco tiene dependencia (lo que se agrega seguido de los dos puntos)
+      clean:
+        rm *.o
+
+      # Podemos usar .PHONY
+      # para evitar problemas si llegase a existir un archivo "clean"
+      .PHONY: clean
+      clean:
+        rm *.o
+    #+END_SRC
+** Target Ficticio - Phony
+*** Conceptos
+   - Con ~PHONY~ se soluciona el problema de los *falsos target* si llegase a existir un archivo 
+     con el mismo nombre que el target
+*** Ejemplo 1 - Limpiar archivos compilados
+    #+BEGIN_SRC makefile
+      # Si usamos .PHONY
+      # evitamos problemas si llegase a existir un archivo "clean"
+      # (osea que un fichero con el mismo nombre que el "falso target")
+      .PHONY: clean
+      clean:
+        rm *.o
+    #+END_SRC
+*** Ejemplo 2 - Compilar programas
+    #+BEGIN_SRC makefile
+      .PHONY: all
+      all: programa1, programa2
+
+      programa1: main.o archivo1.o archivo2.o
+        gcc -o programa1 main.o archivo1.o archivo2.o
+
+      programa2: main.o archivo1.o archivo3.o
+        gcc -o programa2 main.o archivo1.o archivo3.o
+    #+END_SRC
 * Dependencias
 * Comandos
   - Los *comandos* se ejecutan cuando se cumple la regla
