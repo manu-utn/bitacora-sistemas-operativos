@@ -1,0 +1,217 @@
+* D Parcial 1C2019 TM
+** Enunciado
+** Solución
+  #+BEGIN_SRC C
+    m_caja = 1 // mutex (para recurso compartido)
+
+    // (2) semaforos contadores
+    cajas_disponibles = 400, productos_en_caja = 20
+    etiquetado_disponible = 4
+
+    // semaforo binario (controla prioridad de ejecución)
+    productos_en_caja_ok = 0
+
+    // (3) vectores de semaforos
+    pedido_etiquetado[4] = [0,0,0,0]
+    etiquetado_ok[4] = [0,0,0,0]
+    // vector de semaforos contadores, no es necesario validar si superan el valor 80
+    despachado[5] = [0,0,0,0, 0]
+
+    // Almacen (N instancias)
+    while(1) {
+      // - verificamos que hayan cajas para cargar los productos
+      // - chequeamos que su valor sea 0 < x < 400, si no, bloqueamos
+      wait(cajas_disponibles)
+      producto = tomar_producto()
+
+      // - evaluamos que haya capacidad en la caja
+      // - verificamos que su valor sea 0 < x < 20, si no, bloqueamos
+      wait(productos_en_caja)
+
+      // protejemos el recurso compartido entre almacen y distribucion
+      wait(m_caja)
+      depositar(producto, caja) // recurso compartido, protejido por mutex
+      signal(m_caja)
+
+      // - concepto de proceso productor-consumidor
+      // - usamos un "semáforo binario" para controlar el orden de ejecución
+      // - este seria el "proceso productor" avisando al "poceso consumidor"
+      // que ya terminó su tarea
+      // (en este caso, este cargan los productos en las cajas)
+      signal(productos_en_caja_ok)
+    }
+
+    // Distribucion (M Instancias)
+    while(1) {
+      // - concepto de proceso productor-consumidor
+      // - usamos un "semáforo binario" para controlar el orden de ejecución
+      // - este sería "proceso consumidor", aguarda que el "proceso productor" termine
+      // (en este caso, este retira los productos de las cajas)
+      wait(productos_en_caja_ok)
+
+      // protejemos el recurso compartido entre almacen y distribucion
+      wait(m_caja)
+      producto = retirar(caja) // recurso compartido
+      wait(m_caja)
+
+      // avisamos que terminamos de retirar los productos
+      signal(productos_en_caja_ok)
+
+      wait(etiquetado_disponible)           // lo solicito por si alguno está etiquetando
+      posicionarse_etiquetado(id_etiq())
+
+      signal(pedido_etiquetado[id_etiq()])  // solicito que algun robot lo etiquete
+      wait(etiquetado_ok[id_etiq()])        // aguardo respuesta de confirmacion
+
+      despachar(producto, producto.destino)  // luego que esté etiquetado, despacho
+      signal(despachado[producto.destino])   // notifico que se despachó
+    }
+
+    // Etiquetado (4 instancias)
+    while(1) {
+      // como todos los semaforos del vector están inicializados en cero
+      // se quedará esperando que alguien lo active con un signal()
+      wait(pedido_etiquetado[get_id()]) // aguardo que alguien me solicite etiquetar
+      etiquetar()
+
+      signal(etiquetado_ok[get_id()]) // notifico que terminé de etiquetar
+      signal(etiquetado_disponible) // libero recurso, para que otro siga
+    }
+
+    // Avión (5 instancias)
+
+    // - aguardamos que todos los productos a destino estén despachados
+    // - el segundo parámetro indica el valor que debe tener el semáforo contador
+    // acumulado para que luego ejecute despegar()
+    wait(despachado[producto.destino], 80)
+    despegar()
+  #+END_SRC
+* Parcial 1C2019 TM
+** Enunciado
+   Peter suele ir al Super a hacer las compras. Al llegar, lo primero que hace es buscar un canasto para sus
+   productos. Si hay uno disponible comenzará a usarlo, en caso contrario, deberá esperar hasta que otro
+   cliente se retire y devuelva el suyo. El Super cuenta con un máximo de 20 canastos.
+   
+   Una vez que agarra todos sus productos se dirige a la zona de los cajeros. Dentro del Super hay dos cajeros
+   que atienden en simultáneo a los clientes siempre que haya alguien esperando para ser atendido. La
+   atención de un cliente consiste en pasar los productos por la lectora de códigos, luego entregar el ticket y
+   finalmente procesar el pago. Si el monto en su caja supera un valor, el cajero llevará la plata hasta la caja
+   fuerte (compartida por ambos)
+   
+   Teniendo en cuenta el pseudocódigo presentado, sincronice únicamente con semáforos
+   
+   *NOTAS:*
+   - La función recibir_llamado_cajero() devuelve 0 o 1 dependiendo del cajero que realizó el llamado al cliente.
+   - El proceso “Cajero” cuenta con la función get_id() que devuelve 0 o 1 dependiendo del número de cajero.
+- 
+   #+BEGIN_SRC C
+     // Cliente (N instancias)
+     dirigirse_al_super()
+     agarrar_canasto()
+     cargar_canasto()
+     esperar_en_cola()
+     id_cajero = recibir_llamado_cajero()
+     entregar_productos()
+     recibir_ticket()
+     pagar()
+
+     // Cajero (2 instancias)
+     while(1){
+       llamar_cliente()
+       pasar_productos_por_lectora()
+       entregar_ticket()
+       saldo_actual += recibir_dinero()
+
+       if(saldo_actual > 10000){
+         depositar_en_caja_fuerte(saldo_actual)
+       }
+     }
+   #+END_SRC
+** Solución
+   #+BEGIN_SRC C
+     // (1) semaforo contador 
+     // (necesario para limitar la cant. de instancias, es decir de procesos que se ejecutan concurrentemente
+     //  para utilizar los recursos, y compiten por usar el CPU)
+     CANASTOS_DISPONIBLES = 20
+
+     // (2) semaforos binarios (útil cuando interviene el problema de procesos productor-consumidor)
+     solicitar_atencion = 0
+     confirmar_atencion = 0
+
+     // (3) vectores de semaforos binarios (manejan orden de ejecución entre procesos)
+     productos_entregados[2] = [0, 0]
+     ticket_entregado[2] = [0,0]
+     pago_realizado[2] = [0, 0]
+
+     // (1) semaforo mutex (proteje recurso compartido)
+     m_saldo = 1
+
+     /*************************************************************/
+
+     // Cliente (N instancias)
+     dirigirse_al_super()
+
+     // - por cada llamado se decrementa en 1 el "semáforo contador"
+     // - si x == 0, se bloquea (esperando que hayan canastos)
+     wait(CANASTOS_DISPONIBLES)
+     agarrar_canasto()
+     cargar_canasto()
+
+     esperar_en_cola()
+     // - incrementa el "semaforo binario" en 1
+     // - desbloquea a un proceso que esté esperando con wait(solicitar_atencion)
+     signal(solicitar_atencion)
+     // - está bloqueado, esperando que otro proceso lo habilite
+     // porque el valor de este "semaforo binario" está inicializado en 0
+     wait(confirmar_atencion)
+
+     id_cajero = recibir_llamado_cajero()
+
+     entregar_productos()
+     // - incrementamos en 1 uno de los "semáforos binarios" (porque están inicializados en 0)
+     // - desbloquea a otro proceso que esté esperando con wait(productos_entregados[id_cajero])
+     signal(productos_entregados[id_cajero])
+
+     // - se bloquea el proceso esperando que algun otro lo habilite al "semaforo binario" del vector
+     wait(ticket_entregado[id_cajero])
+     recibir_ticket()
+
+     pagar()
+     // - incrementa en 1 el "semáforo binario" del vector
+     // - desbloquea a otro proceso que estaba esperando que este semáforo cambiase a 1 (esperaba con wait)
+     signal(pago_realizado[id_cajero])
+     // - liberamos el recurso (porque estamos limitando la cant. de instancias)
+     // - cuando cada proceso cliente hizo wait(CANASTOS_DISPONIBLES) se decrementó en 1 este "semáforo contador"
+     // diciendo que ese proceso lo estaba utilizando
+     // - cuando el valor del semáforo llegase a 0, los procesos que lo soliciten con wait() se quedarán
+     // bloqueados hasta que otro lo libere con signal()
+     signal(CANASTOS_DISPONIBLES)
+
+     /*************************************************************/
+
+     // Cajero (2 instancias)
+     while(1){
+       wait(solicitar_atencion)
+
+       llamar_cliente()
+       signal(confirmar_atencion)
+
+       wait(productos_entregados[get_id()])
+       pasar_productos_por_lectora()
+
+       entregar_ticket()
+       signal(ticket_entregado[get_id()])
+
+       wait(pago_realizado[get_id()])
+
+       wait(m_saldo)
+       saldo_actual += recibir_dinero()
+       signal(m_saldo)
+
+       if(saldo_actual > 10000){
+         wait(m_saldo)
+         depositar_en_caja_fuerte(saldo_actual)
+         signal(m_saldo)
+       }
+     }
+   #+END_SRC
