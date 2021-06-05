@@ -1,5 +1,6 @@
+#+TITLE: Parciales - Sincronización
 * Parciales 2019
-** D TM
+** D Turno Mañana
 *** Enunciado
 *** Solución
    #+BEGIN_SRC C
@@ -87,7 +88,7 @@
      wait(despachado[producto.destino], 80)
      despegar()
    #+END_SRC
-** TM
+** Turno Mañana
 *** Enunciado
     Peter suele ir al Super a hacer las compras. Al llegar, lo primero que hace es buscar un canasto para sus
     productos. Si hay uno disponible comenzará a usarlo, en caso contrario, deberá esperar hasta que otro
@@ -104,7 +105,7 @@
     *NOTAS:*
     - La función recibir_llamado_cajero() devuelve 0 o 1 dependiendo del cajero que realizó el llamado al cliente.
     - El proceso “Cajero” cuenta con la función get_id() que devuelve 0 o 1 dependiendo del número de cajero.
- - 
+  
     #+BEGIN_SRC C
       // Cliente (N instancias)
       dirigirse_al_super()
@@ -216,7 +217,7 @@
         }
       }
     #+END_SRC
-** TT
+** Turno Tarde
 *** Enunciado
     Peter quiere tomarse unos buenos mates. Para ello, saca yerba de un frasco de la cocina, la coloca
     en su despolvillador homologado, y luego de agitarlo sirve la yerba limpia en el mate.
@@ -334,7 +335,7 @@
       }
     #+END_SRC
 * Parciales 2018
-** TM
+** Turno Mañana
 *** Enunciado
     En estudio profundo del lenguaje español, un conjunto de científicos decide modelar 
     con procesos la generación de una palabra del diccionario: “ALABAR”
@@ -402,7 +403,7 @@
       signal(s_A)
       signal(s_B)
     #+END_SRC
-** TT
+** Turno Tarde
 *** Enunciado (A)
     Un conjunto de científicos decide modelar la melodía de una canción perteneciente a una popular
     banda de rock argentino, con el objetivo de entender la magnitud de su calidad musical.
@@ -505,5 +506,42 @@
 
     inicializando cada semáforo con el valor que indique la cant. 
     de instancias de acceso que se desea limitar
+* Parciales 2017
+** Turno Tarde
+*** Enunciado
+    El​ ​siguiente​ ​simulador,​ ​desarrollado​ ​por​ ​“La​ ​Yamaha​ ​que​ ​Yamaha”​ ​Records,​ ​pretende​ ​simular​ ​una
+    banda​ ​tocando:
+    
+    Dicha​ ​simulación​ ​consiste​ ​en​ ​cinco​ ​saxos​ ​altos,​ ​un​ ​bajo,​ ​una​ ​guitarra​ ​y​ ​un​ ​piano.​ ​Las​ ​reglas​ ​de​ ​la
+    improvisación​ ​consisten​ ​en​ ​que​ ​se​ ​debería​ ​primero​ ​sonar​ ​algún​ ​saxo.​ ​Por​ ​cada​ ​melodía​ ​tocada​ ​por
+    un​ ​saxo,​ ​el​ ​bajo​ ​responde​ ​con​ ​otra​ ​melodía.​ ​Luego,​ ​el​ ​bajo​ ​le​ ​da​ ​el​ ​pie​ ​a​ ​la​ ​guitarra​ ​o​ ​el​ ​piano,​ ​quienes
+    deben​ ​turnarse​ ​cada​ ​vez​ ​porque​ ​les​ ​toca​ ​improvisar.
+    No​ ​les​ ​importa​ ​demasiado​ ​solaparse​ ​entre​ ​distintos​ ​instrumentos,​ ​siempre​ ​y​ ​cuando​ ​se​ ​respeten​ ​las
+    reglas​ ​establecidas​ ​(y​ ​considerando​ ​también​ ​que​ ​los​ ​saxos,​ ​como​ ​son​ ​muchos,​ ​prefieren​ ​no​ ​tocar
+    más​ ​de​ ​tres​ ​melodías​ ​seguidas​ ​sin​ ​que​ ​aparezca​ ​el​ ​bajo).
+    
+    Utilizando​ ​solamente​ ​semáforos,​ ​permita​ ​que​ ​la​ ​simulación​ ​respete​ ​las​ ​reglas​ ​establecidas.
 
+    #+BEGIN_SRC C
+      // Saxo​ ​(5​ ​instancias)
+      while(true){
+        tocar_una_melodia()
+      }
+
+      // Bajo​ ​(1​ ​instancia)
+      while(true){
+        responder_melodia()
+      }
+
+      // Guitarra​ ​(1​ ​instancia)
+      while(true){
+        improvisar()
+      }
+
+      // Piano​ ​(1​ ​instancia)
+      while(true){
+        improvisar()
+      }
+    #+END_SRC
+*** Solución
 
