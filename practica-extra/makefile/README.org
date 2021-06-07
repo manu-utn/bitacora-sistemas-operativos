@@ -26,12 +26,297 @@
    - Cada *target* representa el nombre del archivo que se genera, luego de cumplirse la regla
    - Debe ser recompilado cuando cambien las dependencias
 ** Target Final
-   - Es la primera regla del makefile y tiende a ser el ejecutable
-   - Es el último *target* en el *árbol de dependencias* por tanto el último que se ejecuta
+   + Es la primera regla del makefile y tiende a ser el ejecutable
+   + Es el último *target* en el *árbol de dependencias* por tanto el último que se ejecuta
+** Falso target
+*** Conceptos
+    + No se les suele agregar [[Dependencias]]
+    + Cuando queremos que la regla se ejecute siempre
+    + Es un target que no existe (porque un target tiende a representar un archivo existente)
+    + El ~make~ nota que no existe el archivo, y ejecuta los comandos que generan la regla
+
+    #+BEGIN_QUOTE
+    Un posible problema sería si agregamos un *falso target* y en el directorio existe un 
+    fichero con ese nombre.
+    Porque al no tener *dependencias* el ~make~ interpretará que el archivo está actualizado,
+    y no ejecutará los *comandos* de la *regla*
+    La solución a esto es utilizar ~PHONY~ (representa a un *target ficticio*)
+    #+END_QUOTE
+*** Ejemplos
+    #+BEGIN_SRC makefile
+      # este es un ejemplo típico de un "falso target", que borra los archivos .o de fichero c compilado
+      # - porque "clean" no es un archivo en si (no debería)
+      # - la regla tampoco tiene dependencia (lo que se agrega seguido de los dos puntos)
+      clean:
+        rm *.o
+
+      # Podemos usar .PHONY
+      # para evitar problemas si llegase a existir un archivo "clean"
+      .PHONY: clean
+      clean:
+        rm *.o
+    #+END_SRC
+** Target Ficticio - Phony
+*** Conceptos
+    Con ~PHONY~ se soluciona el problema de los *falsos target* si llegase a existir un archivo 
+    con el mismo nombre que el target
+
+    #+BEGIN_QUOTE
+    Cuando a un *falso target* le agregamos como dependencia otro *falso target*
+    la regla siempre se cumple. Por tanto podemos usar los *falsos targets*
+    como subrutinas a ejecutar.
+    #+END_QUOTE
+*** Ejemplo 1 - Limpiar archivos compilados
+    #+BEGIN_SRC makefile
+      # Si usamos .PHONY
+      # evitamos problemas si llegase a existir un archivo "clean"
+      # (osea que un fichero con el mismo nombre que el "falso target")
+      .PHONY: clean
+      clean:
+        rm *.o
+    #+END_SRC
+*** Ejemplo 2 - Compilar programas
+    #+BEGIN_SRC makefile
+      .PHONY: all
+      all: programa1, programa2
+
+      programa1: main.o archivo1.o archivo2.o
+        gcc -o programa1 main.o archivo1.o archivo2.o
+
+      programa2: main.o archivo1.o archivo3.o
+        gcc -o programa2 main.o archivo1.o archivo3.o
+    #+END_SRC
+*** Ejemplo 3 - Subrutinas
+    Este ejemplo lo podemos ejecutar con ~makefile cleanall~
+    donde se ejecutarán las subrutinas de borrar los archivos de tipo object
+    y luego los de texto
+
+    #+BEGIN_SRC makefile
+      .PHONY: cleanall cleanobj cleantxt
+      cleanall: cleanobj cleantxt
+        rm miprograma
+
+      cleanobj:
+        rm *.o
+
+      cleantxt:
+        rm *.txt
+    #+END_SRC
+** Target de Seguimiento
+*** Conceptos
+    - Representan *depedencias* pero de archivos reales, contienen la fecha y hora de creación (timestamp)
+    - El ~$?~ se *expande* por las *dependencias* (osea archivos) cuyo *timestamp* sea más reciente
+*** Ejemplo
+    Suponiendo que ya habiamos creado los archivos main.c, jugadores.c, items.c
+    1. Ejecutamos el make imprime_actualizados y se construirá el ejecutable imprime_actualizados
+    2. Si modificamos alguno de los .c y volvemos a ejecutar el comando anterior, se imprimirá sólo aquellos modificados
+       y se volverá a crear el ejecutable imprime_actualizados
+
+    *Observación:*
+    En este ejemplo el ~$?~ se expande por los archivos más recientes que ~imprime_actualizados~
+
+    #+BEGIN_SRC makefile
+      # - con "cat" imprimimos contenido de un archivo
+      # - el $? se expande con los archivos de timestamp mas reciente que imprime_actualizados
+      # - imprimimos el contenido de los archivos actualizados/modificados
+      # es decir su timestamp es más reciente que el del archivo imprime_actualizados
+      imprime_actualizados: main.c jugadores.c items.c
+        cat $?
+        touch imprime_actualizados
+    #+END_SRC
 * Dependencias
+** Conceptos
+   - Representa a uno o varios archivos cuyo *timestamp* (fecha y hora de creación) se debe
+     comprobar para ver si son más modernos (porque fue actualizado/modificado) que el archivo a construir
+   - Si se cumple que el *timestamp* es más moderno que el archivo a construir
+     entonces se construye ó reconstruye
 * Comandos
+** Conceptos
   - Los *comandos* se ejecutan cuando se cumple la regla
   - Deben empezar por *tabulador* (si nos olvidamos, habrán errores)
+** Tener varios makefiles
+   Por lo general se puede tener sólo un archivo *Makefile* pero podemos utilizar el 
+   parámetro ~-f~ ó ~--file~ para ejecutar un archivo *Makefile2* ó *Makefile2*
+
+   #+BEGIN_SRC shell
+     # suponiendo que tenemos un segundo makefile
+     make -f Makefile2
+
+     # la otra alternativa es
+     make --file=Makefile3
+   #+END_SRC
+** Ejecutar ignorando errores
+   Si alguno de los comandos falla, también falla la construcción del make.
+   Para evitar esto podemos agregar el guión ~-~ previo al comando a ejecutar.
+   De esta manera si falla y lanza algún error el comando, se sigue ejecutando.
+
+   #+BEGIN_SRC makefile
+     # este era el caso típico que solíamos hacer
+     # si por algún motivo falla el rm, no continúa borrando
+     # (Ej. no encuentra algún archivo .o)
+     .PHONY: clean
+       clean:
+       rm *.o
+
+     # SOLUCION HERE..!
+     # Si falla el rm por mismos motivos que el de arriba
+     # no importa, seguirá ejecutandose borrando los que falten
+     .PHONY: clean
+       clean:
+       -rm *.o	# acá estamos agregando el guión.. :)
+   #+END_SRC
+** Simular ejecución
+   Si queremos sólo mostrar que comandos ejecutaría el comando ~make~
+   podemos pasarle el parámetro ~-n~ quedando.. ~make -n~
+   Esto nos imprimirá los comandos que ejecutaría, pero sin hacerlo realmente.
+
+   Un ejemplo de esto podría ser compilar un programa de C
+
+   #+BEGIN_EXAMPLE
+   > make -n
+   gcc -c jugadores.c
+   gcc -c main.c
+   gcc -o programa main.o jugadores.o
+   #+END_EXAMPLE
+** Imprimir mensajes
+   Si usamos el comando ~echo~ para imprimir mensaje por la *shell* se imprimirá dos veces.
+   Una será toda la sentencia, incluyendo el comando ~echo~, y la segunda será la ejecución de ese comando.
+   Para evitar esto podemos anteponer un ~@~ arroba antes de ese comando.
+
+   #+BEGIN_SRC makefile
+     # - esto sólo imprimira en la shell un "hola mundo"
+     # - si no anteponemos el arroba, lo hará dos veces
+     # y la primera será con el comando echo seguido del string
+     programa:
+       @echo hola mundo
+   #+END_SRC
+* Macros
+** Conceptos
+   - Las *macros* ó *variables* son *identificadores* que se sustituyen por su valor
+     (al parsear el archivo ~Makefile~)
+   - Se *expanden* (sustituyen por su valor) cuando se usa con el ~$~ Ej. ~$(macro)~
+
+   #+BEGIN_SRC makefile
+     unamacro = unvalor
+
+     otramacro = otrovalor
+   #+END_SRC
+** Convenciones de Macros
+*** Conceptos
+    La mayoría de los ~Makefiles~ tienden a seguir estas convenciones al crear *macros*
+
+    |------------+-----------+--------------------------------------------------------------|
+    | Nombre     | Expansión | Descripcion                                                  |
+    |------------+-----------+--------------------------------------------------------------|
+    | OBJS       |           | Representa todos los archivos .o                             |
+    |            |           | Nos evita repetir cada .o como dependencia en varias reglas  |
+    |------------+-----------+--------------------------------------------------------------|
+    | INSTALLDIR |           | Para indicar la ruta donde estará el ejecutable del programa |
+    |            |           | Se tiende a utilizar en un target ~INSTALL~ que creemos      |
+    |------------+-----------+--------------------------------------------------------------|
+    | INCLUDE    |           | Para indicar una o varias rutas de archivos a incluir        |
+    |            |           | (por lo general archivos de cabecera ~.h~)                   |
+    |------------+-----------+--------------------------------------------------------------|
+*** Ejemplo 1 - Sin usar la macro OBJS
+    La ventaja de usar esta macro (podriamos ponerle cualquier otro nombre, es sólo una convención)
+    es que sólo la nombramos usando el ~$~ y listo :)
+    
+    Pero.. si NO la usamos y.. hay muchas reglas que usen los mismos archivos ~.o~ habrán reglas redundantes
+    que repitan dependencias, y en caso que llegase a dejar de usa alguno de los archivos o cambiase
+    el nombre de alguno de ellos deberiamos modificar uno por uno... :(
+
+    #+BEGIN_SRC makefile
+      OBJS=main.o jugadores.c items.c
+
+      unprograma: main.o jugadores.c items.c
+        $(CC) $(CFLAGS) -o unprograma main.o jugadores.c items.c
+    #+END_SRC
+*** Ejemplo 1 - Usando la macro OBJS
+    #+BEGIN_SRC makefile
+      OBJS=main.o jugadores.c items.c
+
+      unprograma: $(OBJS)
+        $(CC) $(CFLAGS) -o unprograma $(OBJS)
+    #+END_SRC
+** Macros predefinidas
+   Hay más variedad de *macros predefinidas* listo aquellas que me resultan útiles.
+
+   *Observación:*
+   Cuando las escribimos dentro del *Makefile* las estamos sobreescribiendo.
+
+   |----------+-----------+--------------------------------------|
+   | Nombre   | Expansión | Descripcion                          |
+   |----------+-----------+--------------------------------------|
+   | MAKE     | make      | Programa que gestiona los ~Makefile~ |
+   |----------+-----------+--------------------------------------|
+   | LDFLAGS  |           | Flags del *enlazador* ~ld~           |
+   |----------+-----------+--------------------------------------|
+   | CC       | gcc       | Compilador predefinido de C          |
+   |----------+-----------+--------------------------------------|
+   | CXX      | g++       | Compilador predefinido de C++        |
+   |----------+-----------+--------------------------------------|
+   | CFLAGS   |           | Flags del compilador de C            |
+   |----------+-----------+--------------------------------------|
+   | CXXFLAGS |           | Flags del compilador de C++          |
+   |----------+-----------+--------------------------------------|
+** Macros automáticas
+*** Conceptos
+    Las *macros automáticas* son macros *internas* cuyo valor depende de la regla
+    que esstemos ejecutando.
+
+    |-------+--------------------------------------------------------------------|
+    | Macro | Expansión                                                          |
+    |-------+--------------------------------------------------------------------|
+    | $@    | Target de la regla que se está ejecutando                          |
+    |-------+--------------------------------------------------------------------|
+    | $*    | Target con el sufijo eliminado                                     |
+    |-------+--------------------------------------------------------------------|
+    | $<    | Primer archivo de dependencia que permitió que la regla se ejecute |
+    |-------+--------------------------------------------------------------------|
+    | $?    | Lista de los archivos de dependencias ás recientes que el target   |
+    |       | (recordemos lo del timestamp más reciente)                         |
+    |-------+--------------------------------------------------------------------|
+    | $^    | Lista todas las dependencias                                       |
+    |-------+--------------------------------------------------------------------|
+** Macros de expansión única y expansión recursiva
+*** Conceptos
+   - Las *macros* NO se *expanden* (sustituyen por su valor) durante la asignación
+     (es decir podemos tener asignaciones a macros en distinto orden, y no afectará)
+   - Las macros se *expanden* durante su *evaluación* en alguna de las *reglas*
+
+   #+BEGIN_QUOTE
+   En caso de utilizar una *macro de expansión recursiva* (que se llama a si misma)
+   utilizamos el operador ~:=~ para indica que se expanda una única vez por cada asignación
+   si no lo utilizamos el ~make~ da warning y detiene la recursividad.
+   #+END_QUOTE
+*** Ejemplo 1 - Expansión de una macro
+    Podemos observar que la macro ~UNO~ le estamos asignando el valor de ~OTRO~
+    pero.. ese ~OTRO~ el *parser* de *make* NO lo conoce. Quizás podemos suponer
+    que ese ~OTRO~ debería estar al principio, pero NO.
+    
+    #+BEGIN_SRC makefile
+      UNO  = $(ESE)  # acá no se expande esta macro ESE
+      ESE  = $(OTRO) # acá tampoco se expande la macro OTRO
+      OTRO = Pepito
+
+      # las macros se expanden en el momento de evaluación de la regla
+      culpable:
+        @echo $(UNO) # acá SI se expande esta macro
+    #+END_SRC
+*** Ejemplo 2 - Expansión única y expansión recursiva
+    El siguiente programa nos imprimirá por pantalla ~-O -Wall~
+    
+    #+BEGIN_SRC makefile
+      # - debajo tenemos dos "macros de expansión recursivas" porque se llaman asi mismas
+      # - usamos el operador := para evitar que se detenga la ejecución del programa
+      # con ese operador salvamos la recursividad haciendo q sean "macros de expansión única"
+      # y se expanden una sola vez en cada asignación (es como ponerle un tope)
+      CFLAGS := $(CFLAGS) -O
+      CFLAGS := $(CFLAGS) -Wall
+
+      programa:
+        @echo $(CFLAGS)
+    #+END_SRC
 * Ejemplos
 ** Expresividad - Lineas muy extensas
    Si tenemos lineas muy extensas podemos usar el carácter ~\~ al igual que en ~bash~
@@ -89,3 +374,6 @@
    monsters.o: monsters.c monsters.h
      gcc -c monsters.c
  #+END_SRC
+* Referencias
+  1. http://profesores.elo.utfsm.cl/~agv/elo320/makefile/makefile.html
+  2. https://www.zator.com/Cpp/E1_4_0a.htm
