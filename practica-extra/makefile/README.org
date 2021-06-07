@@ -58,8 +58,14 @@
     #+END_SRC
 ** Target Ficticio - Phony
 *** Conceptos
-   - Con ~PHONY~ se soluciona el problema de los *falsos target* si llegase a existir un archivo 
-     con el mismo nombre que el target
+    Con ~PHONY~ se soluciona el problema de los *falsos target* si llegase a existir un archivo 
+    con el mismo nombre que el target
+
+    #+BEGIN_QUOTE
+    Cuando a un *falso target* le agregamos como dependencia otro *falso target*
+    la regla siempre se cumple. Por tanto podemos usar los *falsos targets*
+    como subrutinas a ejecutar.
+    #+END_QUOTE
 *** Ejemplo 1 - Limpiar archivos compilados
     #+BEGIN_SRC makefile
       # Si usamos .PHONY
@@ -80,7 +86,50 @@
       programa2: main.o archivo1.o archivo3.o
         gcc -o programa2 main.o archivo1.o archivo3.o
     #+END_SRC
+*** Ejemplo 3 - Subrutinas
+    Este ejemplo lo podemos ejecutar con ~makefile cleanall~
+    donde se ejecutarán las subrutinas de borrar los archivos de tipo object
+    y luego los de texto
+
+    #+BEGIN_SRC makefile
+      .PHONY: cleanall cleanobj cleantxt
+      cleanall: cleanobj cleantxt
+        rm miprograma
+
+      cleanobj:
+        rm *.o
+
+      cleantxt:
+        rm *.txt
+    #+END_SRC
+** Target de Seguimiento
+*** Conceptos
+    - Representan *depedencias* pero de archivos reales, contienen la fecha y hora de creación (timestamp)
+    - El ~$?~ se *expande* por las *dependencias* (osea archivos) cuyo *timestamp* sea más reciente
+*** Ejemplo
+    Suponiendo que ya habiamos creado los archivos main.c, jugadores.c, items.c
+    1. Ejecutamos el make imprime_actualizados y se construirá el ejecutable imprime_actualizados
+    2. Si modificamos alguno de los .c y volvemos a ejecutar el comando anterior, se imprimirá sólo aquellos modificados
+       y se volverá a crear el ejecutable imprime_actualizados
+
+    *Observación:*
+    En este ejemplo el ~$?~ se expande por los archivos más recientes que ~imprime_actualizados~
+
+    #+BEGIN_SRC makefile
+      # - con "cat" imprimimos contenido de un archivo
+      # - el $? se expande con los archivos de timestamp mas reciente que imprime_actualizados
+      # - imprimimos el contenido de los archivos actualizados/modificados
+      # es decir su timestamp es más reciente que el del archivo imprime_actualizados
+      imprime_actualizados: main.c jugadores.c items.c
+        cat $?
+        touch imprime_actualizados
+    #+END_SRC
 * Dependencias
+** Conceptos
+   - Representa a uno o varios archivos cuyo *timestamp* (fecha y hora de creación) se debe
+     comprobar para ver si son más modernos (porque fue actualizado/modificado) que el archivo a construir
+   - Si se cumple que el *timestamp* es más moderno que el archivo a construir
+     entonces se construye ó reconstruye
 * Comandos
   - Los *comandos* se ejecutan cuando se cumple la regla
   - Deben empezar por *tabulador* (si nos olvidamos, habrán errores)
@@ -141,3 +190,6 @@
    monsters.o: monsters.c monsters.h
      gcc -c monsters.c
  #+END_SRC
+* Referencias
+  1. http://profesores.elo.utfsm.cl/~agv/elo320/makefile/makefile.html
+  2. https://www.zator.com/Cpp/E1_4_0a.htm
