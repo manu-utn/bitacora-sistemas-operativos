@@ -178,11 +178,29 @@
    gcc -c main.c
    gcc -o programa main.o jugadores.o
    #+END_EXAMPLE
+** Imprimir mensajes
+   Si usamos el comando ~echo~ para imprimir mensaje por la *shell* se imprimirá dos veces.
+   Una será toda la sentencia, incluyendo el comando ~echo~, y la segunda será la ejecución de ese comando.
+   Para evitar esto podemos anteponer un ~@~ arroba antes de ese comando.
+
+   #+BEGIN_SRC makefile
+     # - esto sólo imprimira en la shell un "hola mundo"
+     # - si no anteponemos el arroba, lo hará dos veces
+     # y la primera será con el comando echo seguido del string
+     programa:
+       @echo hola mundo
+   #+END_SRC
 * Macros
 ** Conceptos
    - Las *macros* ó *variables* son *identificadores* que se sustituyen por su valor
      (al parsear el archivo ~Makefile~)
    - Se *expanden* (sustituyen por su valor) cuando se usa con el ~$~ Ej. ~$(macro)~
+
+   #+BEGIN_SRC makefile
+     unamacro = unvalor
+
+     otramacro = otrovalor
+   #+END_SRC
 ** Convenciones de Macros
 *** Conceptos
     La mayoría de los ~Makefiles~ tienden a seguir estas convenciones al crear *macros*
