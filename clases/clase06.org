@@ -121,7 +121,7 @@
     Que no interese cuantas veces un proceso quiera entrar
     a la sección critica, que no tenga problemas
 * Recursos del Sistema
-** Procesos piden Recursos 
+** Procesos piden Recursos
 *** Conceptos
    Cuando los *procesos* necesitan *recursos* deben 
    1. Solicitan
@@ -266,6 +266,16 @@
     |     de los recursos      | la estrategia de solución elegida |   puede evitar asignar   | en caso de desalojos frecuentes  |
     |                          | (/ej. pedir todos los recursos/)  |        un recurso        |                                  |
     |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+*** Cuando aplicar las tecnicas
+    |------------+---------------------------------------------------------------------------------------------|
+    | Técnica    | Cuando aplicar la técnica                                                                   |
+    |------------+---------------------------------------------------------------------------------------------|
+    | PREVENCION | Durante las *peticiones* de asignación de recursos de los procesos (condiciones necesarias) |
+    |------------+---------------------------------------------------------------------------------------------|
+    | EVASION    | Durante la *asignación* de recursos (se analiza con el algoritmo del banquero)              |
+    |------------+---------------------------------------------------------------------------------------------|
+    | DETECCION  | Cuando ya hay *deadlock*                                                                    |
+    |------------+---------------------------------------------------------------------------------------------|
 *** Prevención de deadlock
     - garantiza que NUNCA ocurra
     - impide que ocurra alguna de las 4 condiciones de la existencia de un deadllock
@@ -291,7 +301,7 @@
 **** Condición 4 - Espera circular
      - asignar un numero de orden a los recursos
      - los recursos solo pueden solicitarse en orden creciente
-*** Evasión o predicción de deadlock
+*** Evasión de deadlock
 **** Conceptos
     - garantiza que NO habrá deadlock
      - se lo considera como pesimista, porque evalúa el peor peor de los casos
@@ -458,6 +468,10 @@
     }
     @enduml
   #+END_SRC
+
+  #+RESULTS:
+  [[file:img/deadlock-ejemplo-prevencion1.png]]
+
 **** Ejemplo 2
      Supongamos que (P2) pide 2 del recurso (R2).. puedo asignarselo inmediatamente?
      
