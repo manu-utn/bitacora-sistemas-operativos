@@ -409,6 +409,55 @@
      |-------------------+----+----+----+------------------------------------------------------------------------|
      | estado resultante |  2 |  3 |  2 | <--- la secuencia P3,P2,P1 deja al sistema queda en un *estado seguro* |
      |-------------------+----+----+----+------------------------------------------------------------------------|
+
+
+  #+BEGIN_SRC plantuml :exports results :file img/deadlock-ejemplo-prevencion1.png
+    @startuml
+
+    title Ejemplo de Prevención de Deadlock
+
+    rectangle matrices_vectores #lightblue{
+
+            note as m1
+            Matriz de recursos asignados
+            |    |= R1 |= R2 |= R3 |
+            | P1 |  1 |  0 |  0 |
+            | P2 |  0 |  1 |  1 |
+            | P3 |  1 |  1 |  0 |
+            endnote
+
+            note as m2
+            Matriz de necesidad
+            |    |= R1 |= R2 |= R3 |
+            | P1 |  1 |  0 |  1 |
+            | P2 |  1 |  2 |  0 |
+            | P3 |  0 |  0 |  1 |
+            endnote
+
+            note as m3
+            vector de recursos disponibles
+            |= R1 |= R2 |= R3 |
+            |  0 |  1 |  1 |
+            endnote
+    }
+
+
+    rectangle secuencia #lightgreen{
+            note as m4
+            evaluando posible secuencia segura
+            |                   |= R1 |= R2 |= R3 |
+            | Inicial           |  0 |  1 |  1 |
+            | Elijo P3          |  0 |  1 |  0 |
+            | Finaliza P3       |  1 |  2 |  1 |
+            | Elijo P2          |  0 |  0 |  1 |
+            | Finaliza P2       |  1 |  3 |  2 |
+            | Elijo P1          |  0 |  3 |  1 |
+            | Finaliza P1       |  2 |  3 |  2 |
+            | estado resultante |  2 |  3 |  2 |
+            endnote
+    }
+    @enduml
+  #+END_SRC
 **** Ejemplo 2
      Supongamos que (P2) pide 2 del recurso (R2).. puedo asignarselo inmediatamente?
      
@@ -484,93 +533,3 @@
     - Varios procesos NO pueden ejecutar su trabajo, pero se siguen ejecutando
     - COmo los procesos *NO están bloqueados*, resulta más dificil/complejo su detección
 
-* probando algo
-     #+name: matriz-de-recursos-asignados
-     |----+----+----+----|
-     |    | R1 | R2 | R3 |
-     |----+----+----+----|
-     | P1 |  1 |  0 |  0 |
-     | P2 |  0 |  1 |  1 |
-     | P3 |  1 |  1 |  0 |
-     |----+----+----+----|
-
-     #+name: matriz-de-necesidad
-     |----+----+----+----|
-     |    | R1 | R2 | R3 |
-     |----+----+----+----|
-     | P1 |  1 |  0 |  1 |
-     | P2 |  1 |  2 |  0 |
-     | P3 |  0 |  0 |  1 |
-     |----+----+----+----|
-
-     #+name: recursos-disponibles
-     |----+----+----|
-     | R1 | R2 | R3 |
-     |----+----+----|
-     |  0 |  1 |  1 |
-     |----+----+----|
-
-     La secuencia de la siguiente tabla donde evaluamos si esta *secuencia es segura*,
-     de si lo deja al sistema en un *estado seguro* es: P3 - P2 - P1
-
-     #+name: buscamos-posible-secuencia-segura
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-     |                   | R1 | R2 | R3 |                                                                        |
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-     | Inicial           |  0 |  1 |  1 |                                                                        |
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-     | Elijo P3          |  0 |  1 |  0 | <--- necesitaba [0 0 1] lo resto al inicial                            |
-     | Finaliza P3       |  1 |  2 |  1 | <--- tenia asignados [1 1 0] los libero y los sumo al anterior         |
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-     | Elijo P2          |  0 |  0 |  1 | <--- necesitaba [1 2 0] lo resto al anterior [1 2 1]                   |
-     | Finaliza P2       |  1 |  3 |  2 | <--- tenia asignados [0 1 1] lo sumo al anterior [0 0 1]               |
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-     | Elijo P1          |  0 |  3 |  1 | <--- necesitaba [1 0 1] lo resto al anterior [1 3 2]                   |
-     | Finaliza P1       |  2 |  3 |  2 | <--- tenia asignados [1 0 0], los libero y los sumo al anterior        |
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-     | estado resultante |  2 |  3 |  2 | <--- la secuencia P3,P2,P1 deja al sistema queda en un *estado seguro* |
-     |-------------------+----+----+----+------------------------------------------------------------------------|
-
-  #+BEGIN_SRC plantuml :file img/test1.png
-    @startuml
-
-    'matrices -d- secuencia
-    title esta es un grafico
-
-    rectangle matrices #lightblue{
-
-            note as m1
-            esta es una matriz
-            |    |= R1 |= R2 |= R3 |
-            | P1 |  1 |  0 |  0 |
-            | P2 |  0 |  1 |  1 |
-            | P3 |  1 |  1 |  0 |
-            endnote
-
-            note as m2
-            esta es otra matriz
-            |    |= R1 |= R2 |= R3 |
-            | P1 |  1 |  0 |  1 |
-            | P2 |  1 |  2 |  0 |
-            | P3 |  0 |  0 |  1 |
-    endnote
-    }
-
-    rectangle secuencia #lightgreen{
-            note as m3
-            |                   |= R1 |= R2 |= R3 |
-            | Inicial           |  0 |  1 |  1 |
-            | Elijo P3          |  0 |  1 |  0 |
-            | Finaliza P3       |  1 |  2 |  1 |
-            | Elijo P2          |  0 |  0 |  1 |
-            | Finaliza P2       |  1 |  3 |  2 |
-            | Elijo P1          |  0 |  3 |  1 |
-            | Finaliza P1       |  2 |  3 |  2 |
-            | estado resultante |  2 |  3 |  2 |
-            endnote
-    }
-    @enduml
-  #+END_SRC
-
-  #+RESULTS:
-  [[file:img/test1.png]]
