@@ -1,0 +1,434 @@
+#+TITLE: Guia Ejercicios - Deadlock
+#+STARTUP: inlineimages
+* Tips
+  + En todos los ejercicios se asume que todos los recursos son del tipo *reusables*  (usar,liberar, ..)
+  + En *detección* NUNCA se hablará de *estado seguro*, es un concepto que aplica sólo en *evasión*
+* Ejercicio 1
+** Enunciado
+   #+BEGIN_QUOTE
+   Dada las siguientes matrices, y vectores determine si el estado
+   actual del sistema es seguro. Justifique
+   #+END_QUOTE
+
+   #+name: matriz-peticiones-maximas
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  3 |  2 |  2 |  2 |
+   | P2 |  3 |  4 |  1 |  1 |
+   | P3 |  9 |  5 |  3 |  5 |
+   | P4 |  3 |  4 |  1 |  3 |
+
+   #+name: matriz-recursos-asignados
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  2 |  1 |  2 |  1 |
+   | P2 |  3 |  0 |  0 |  1 |
+   | P3 |  1 |  0 |  0 |  1 |
+   | P4 |  2 |  3 |  0 |  1 |
+
+   #+name: vector-recursos-disponibles
+   | R1 | R2 | R3 | R4 |
+   |  1 |  1 |  1 |  1 |
+
+   #+name: vector-recursos-totales
+   | R1 | R2 | R3 | R4 |
+   |  9 |  5 |  3 |  5 |
+
+   #+BEGIN_SRC plantuml :exports none :file img/ejercicio1.png
+     @startuml
+     note as m1
+     peticiones maximas
+     |    | R1 | R2 | R3 | R4 |
+     | P1 |  3 |  2 |  2 |  2 |
+     | P2 |  3 |  4 |  1 |  1 |
+     | P3 |  9 |  5 |  3 |  5 |
+     | P4 |  3 |  4 |  1 |  3 |
+     endnote
+
+     note as m2
+     recursos asignados
+     |    | R1 | R2 | R3 | R4 |
+     | P1 |  2 |  1 |  2 |  1 |
+     | P2 |  3 |  0 |  0 |  1 |
+     | P3 |  1 |  0 |  0 |  1 |
+     | P4 |  2 |  3 |  0 |  1 |
+     endnote
+
+     note as m3
+     recursos disponibles
+     | R1 | R2 | R3 | R4 |
+     |  1 |  1 |  1 |  1 |
+     endnote
+
+     note as m4
+     recursos totales
+     | R1 | R2 | R3 | R4 |
+     |  9 |  5 |  3 |  5 |
+     endnote
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/ejercicio1.png]]
+
+** Solución
+   1. Armamos la matriz de necesidades haciendo ~NECESIDADES = PETICIONES_MAXIMAS - RECURSOS_ASIGNADOS~
+
+   #+name: matriz-necesidades
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  1 |  1 |  0 |  1 |
+   | P2 |  0 |  4 |  1 |  0 |
+   | P3 |  8 |  5 |  3 |  4 |
+   | P4 |  1 |  1 |  1 |  2 |
+
+   Buscamos si existe alguna *secuencia segura* que asegure que se podran ejecutar todos
+   los procesos (/si hay disponible la cant. de recursos que cada uno necesita/), si se cumple con cada uno
+   entonces el sistema quedará en un *estado seguro*.
+
+   Describimos lo que hace nuestra tabla de posible *secuencia segura*,
+   recordando que durante la simulación de asignación de recursos a cada proceso
+   1. iniciamos con los recursos que tenemos disponibles (del vector)
+   2. sumamos a los *recursos disponibles* los que tenian asignados cada proceso
+   3. cuando termine ese proceso, este los libera (voluntariamente) y el siguiente recurso los podrá usar
+   y asi con cada uno, repitiendo los pasos 2,3,2,3,...
+   Si el resultado del estado final coincide con el vector de *recursos totales* entonces,
+   la secuencia elegida de asignación de recursos deja al sistema en un *estado seguro*
+
+   Por tanto la secuencia planteada es
+   1. *P1* necesitaba [1 1 0 1] al sumar los que tenia asignados, quedan disponibles [3 2 3 2], usa los que necesita y los libera
+   2. *P4* necesitaba [1 1 1 2] al sumar los que tenia asignados, quedan disponibles [5 5 3 3], usa los que necesita y los libera
+   3. *P2* necesitaba [0 4 1 0] idem arriba [8 5 3 4], idem arriba
+   4. *P3* necesitaba [8 5 3 4] idem arriba [9 5 3 5], idem arriba
+
+   Elegimos los procesos en desorden, para la secuencia y a medida que avanzamos, comparamos con la *matriz de necesidad*
+   para chequear si la cant. de *instancias* si satisface lo que necesitaba cada recurso, y se avanza al siguiente.
+   
+   #+name: secuencia
+   |          | R1 | R2 | R3 | R4 |                                               |
+   |          |  1 |  1 |  1 |  1 | <--- iniciamos con los *recursos disponibles* |
+   | Elijo P1 |  3 |  2 |  3 |  2 | <--- le sumamos los recursos asignados de P1  |
+   | Elijo P4 |  5 |  5 |  3 |  3 | <--- idem pero de P4                          |
+   | Elijo P2 |  8 |  5 |  3 |  4 | <--- idem pero de P2                          |
+   | Elijo P3 |  9 |  5 |  3 |  5 | <--- idem pero de p3                          |
+   |          |  9 |  5 |  3 |  5 | <--- OK! xq no supera los recursos totales    |
+   
+* Ejercicio 2
+** Enunciado
+   #+BEGIN_QUOTE
+   Se encuentran N procesos compartiendo distintos recursos, de los cuales existe una sola instancia de cada uno,
+   ejecutando el siguiente código:
+   #+END_QUOTE
+
+   #+BEGIN_SRC C
+     while(true){
+       t_buffer rec_id[3] = get_recursos(); // devuelve aleatoriamente tres IDs de recursos
+         syscall_pedir(rec_id[0]); // Bloqueante si el recurso no se encuentra disponible.
+         syscall_pedir(rec_id[1]);
+         syscall_pedir(rec_id[2]);
+         usar_recursos(rec_id);
+         syscall_devolver(rec_id[0]);
+         syscall_devolver(rec_id[1]);
+         syscall_devolver(rec_id[2]);
+     }
+   #+END_SRC
+
+   1. Demueste que dichos procesos podrían quedar en deadlock.
+   2. Proponga una solución para prevenir el deadlock, usando semáforos.
+   3. Proponga una solución para prevenir el deadlock, sin usar soporte alguno
+      del sistema operativo (ni tampoco hacerle modificaciones al pseudo­código del 
+      recuadro).
+** Solución
+* Ejercicio 3
+** Enunciado
+   #+BEGIN_QUOTE
+   Suponga que se tiene un sistema que tiene como estrategia para tratar el deadlock 
+   la evasión mediante el *algoritmo del banquero*.
+   Siendo el estado de los recursos el siguiente:   
+   #+END_QUOTE
+
+   #+name: matriz-peticiones-maximas
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  3 |  2 |  0 |  2 |
+   | P2 |  3 |  4 |  1 |  1 |
+   | P3 |  9 |  5 |  1 |  3 |
+   | P4 |  3 |  4 |  1 |  3 |
+
+   #+name: matriz-recursos-asignados
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  0 |  1 |  0 |  0 |
+   | P2 |  1 |  1 |  1 |  1 |
+   | P3 |  1 |  0 |  0 |  0 |
+   | P4 |  2 |  1 |  0 |  0 |
+   |    |  4 |  3 |  1 |  1 |
+
+   #+name: vector-recursos-totales
+   | R1 | R2 | R3 | R4 |
+   |  9 |  5 |  1 |  3 |
+   
+   #+name: vector-recursos-disponibles
+   | R1 | R2 | R3 | R4 |
+   |  5 |  2 |  0 |  2 |
+
+   #+BEGIN_QUOTE
+   *IMPORTANTE..!:*
+   Si NO nos dan el vector de *recursos disponibles*.. (necesario para evaluar si existe alguna secuencia segura)
+   hacemos la diferencia entre.. *recursos totales* (del vector) y la sumatoria de los *recursos asignados* a cada proceso (de la matriz)
+   quedando  ~[9 5 1 3] - [4 3 1 1]~ nos da ~[5 2 0 2]~
+   #+END_QUOTE
+** Enunciado - Parte (A)
+   Indique cuál de los siguientes pedidos serían satisfechos inmediatamente,
+   suponiendo que cada uno se efectuaría sobre el estado presentado inicialmente:
+   ­ P1: dos instancia de R1
+   ­ P3: una instancia de R3
+   ­ P3: una instancia de R2 y una instancia de R1
+** Enunciado - Parte (B)
+   ¿Qué debe hacer el sistema operativo con los procesos cuyos pedidos no pueden ser satisfechos?
+** Solución (1)
+   Actualizamos las matrices y vectores simulando la asignación de recursos
+   a ~P1~ quien pide dos instancias de ~R1~
+
+   #+name: matriz-peticiones-maximas
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  3 |  2 |  0 |  2 |
+   | P2 |  3 |  4 |  1 |  1 |
+   | P3 |  9 |  5 |  1 |  3 |
+   | P4 |  3 |  4 |  1 |  3 |
+
+   #+name: matriz-recursos-asignados
+   |    |  R1 | R2 | R3 | R4 |
+   | P1 | ~2~ |  1 |  0 |  0 |
+   | P2 |   1 |  1 |  1 |  1 |
+   | P3 |   1 |  0 |  0 |  0 |
+   | P4 |   2 |  1 |  0 |  0 |
+   |    |   6 |  3 |  1 |  1 |
+
+   #+name: vector-recursos-totales
+   | R1 | R2 | R3 | R4 |
+   |  9 |  5 |  1 |  3 |
+
+   Calculamos el *vector de recursos disponibles*
+   ~RECURSOS_DISPONIBLES = RECURSOS_TOTALES - RECURSOS_ASIGNADOS~
+
+   #+name: vector-recursos-disponibles
+   | R1 | R2 | R3 | R4 |
+   |  3 |  2 |  0 | 2  |
+
+   Como tenemos recursos disponibles, calculamos la *matriz de necesidad*
+   ~NECESIDAD = PETICIONES_MAXIMAS - RECURSOS_ASIGNADOS~
+
+   #+name: matriz-necesidad
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  1 |  1 |  0 |  2 |
+   | P2 |  2 |  3 |  0 |  0 |
+   | P3 |  8 |  5 |  1 |  3 |
+   | P4 |  1 |  3 |  1 |  3 |
+
+   Analizamos si existe alguna *secuencia segura* partiendo del *vector de recursos disponibles*
+   
+   #+name: posible-secuencia
+   |             | R1 | R2 | R3 | R4 |
+   |             |  3 |  2 |  0 |  2 |
+   | Elegimos P1 |  2 |  1 |  0 |  0 |
+   | Finaliza P1 |  4 |  2 |  0 |  0 |
+   |             |    |    |    |    |
+
+   No podemos seguir asignando recursos después de que finaliza ~P1~ poque no quedan *instancias*
+   suficientes de R2 para el resto de los procesos.
+
+   *Conclusión final:*
+   - NO existe una secuencia segura
+   - NO se le puede asignar los recursos a P1
+** Solucion (2)
+   Actualizamos las matrices y vectores simulando la asignación de recursos
+   a ~P3~ quien pide una instancia de ~R3~
+
+   #+name: matriz-peticiones-maximas
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  3 |  2 |  0 |  2 |
+   | P2 |  3 |  4 |  1 |  1 |
+   | P3 |  9 |  5 |  1 |  3 |
+   | P4 |  3 |  4 |  1 |  3 |
+
+   #+name: matriz-recursos-asignados
+   |    | R1 | R2 |  R3 | R4 |
+   | P1 |  0 |  1 |   0 |  0 |
+   | P2 |  1 |  1 |   1 |  1 |
+   | P3 |  1 |  0 | ~1~ |  0 |
+   | P4 |  2 |  1 |   0 |  0 |
+   |    |  4 |  3 |   2 | 1  |
+
+   #+name: vector-recursos-totales
+   | R1 | R2 | R3 | R4 |
+   |  9 |  5 |  1 |  3 |
+
+   Actualizamos la cant. de recursos disponibles, haciendo la diferencia entre RE - RA
+    ~recursos_disponibles = recursos_totales - recursos_asignados~
+
+   Vemos que NO tenemos recursos disponibles para atender la solicitud de ~P3~
+   por tanto NI ejecutamos el *algoritmo del banquero*
+
+   #+name: vector-recursos-disponibles
+   | R1 | R2 | R3   | R4 |
+   |  5 |  2 | ~-1~ |  2 |
+** Solucion (3)
+   Actualizamos las matrices y vectores simulando la asignación de recursos
+   a ~P3~ quien pide una instancia de ~R2~ y otra de ~R1~
+
+   #+name: matriz-peticiones-maximas
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  3 |  2 |  0 |  2 |
+   | P2 |  3 |  4 |  1 |  1 |
+   | P3 |  9 |  5 |  1 |  3 |
+   | P4 |  3 |  4 |  1 |  3 |
+
+   #+name: matriz-recursos-asignados
+   |    |  R1 |  R2 | R3 | R4 |
+   | P1 |   0 |   1 |  0 |  0 |
+   | P2 |   1 |   1 |  1 |  1 |
+   | P3 | ~2~ | ~1~ |  0 |  0 |
+   | P4 |   2 |   1 |  0 |  0 |
+   |    |   5 |   4 |  1 |  1 |
+
+   #+name: vector-recursos-totales
+   | R1 | R2 | R3 | R4 |
+   |  9 |  5 |  1 |  3 |
+  
+   Actualizamos la cant. de recursos disponibles, haciendo la diferencia entre RE - RA
+   ~recursos_disponibles = recursos_totales - recursos_asignados~
+   
+   Como vemos que tenemos recursos disponibles, calculamos la *matriz de necesidad*
+   y luego ejecutamos el *algoritmo del banquero* para simular la asignación de recursos,
+   y ver si existe alguna *secuencia segura* que deje al sistema en un *estado seguro*
+   (partiendo de las instancias del vector de recursos disponibles, liberando los recursos
+   de los procesos segun la *matiz de recursos asignados* y comparando con la 
+   *matriz de necesidad* que haremos.
+
+   #+name: vector-recursos-disponibles
+   | R1 | R2 | R3 | R4 |
+   |  4 |  1 |  0 | 2  |
+
+   Recordemos que ~NECESIDAD = PETICIONES_MAXIMAS - RECURSOS_ASIGNADOS~
+
+   #+name: matriz-necesidad
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  3 |  1 |  0 |  2 |
+   | P2 |  2 |  3 |  0 |  0 |
+   | P3 |  7 |  4 |  1 |  3 |
+   | P4 |  1 |  3 |  1 |  3 |
+  
+   #+name: posible-secuencia
+   |              | R1 | R2 | R3 | R4 |                                              |
+   |              |  4 |  1 |  0 |  2 | <--- iniciamos con los recusos disponibles   |
+   | Elegimos P1  |  1 |  0 |  0 |  0 | <--- restamos los recursos que necesita P1   |
+   | Finaliza  P1 |  4 |  2 |  0 |  2 | <---  P1 libera voluntariamente los recursos |
+
+   *Conclusión final:*
+   _NO existe una secuencia segura_, porque luego de finalizar ~P1~ no quedan instancias 
+   suficientes del recurso R2 para los demás procesos.
+   Se le niega la asignación de recursos a P3
+* Ejercicio 4
+** Enunciado
+   Dadas las siguientes matrices, determine si existe deadlock, y en caso afirmativo indique 
+   qué procesos están involucrados.
+
+   #+name: matriz-peticiones-actuales
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  1 |  1 |  1 |  1 |
+   | P2 |  2 |  0 |  0 |  2 |
+   | P3 |  1 |  1 |  0 |  0 |
+   | P4 |  0 |  0 |  0 |  2 |
+
+   #+name: matriz-recursos-asignados
+   |    | R1 | R2 | R3 | R4 |
+   | P1 |  1 |  1 |  0 |  0 |
+   | P2 |  0 |  0 |  0 |  0 |
+   | P3 |  1 |  1 |  0 |  0 |
+   | P4 |  0 |  0 |  1 |  0 |
+   |    |  2 |  2 |  1 |  0 |
+
+   #+name: vector-recursos-totales
+   | R1 | R2 | R3 | R4 |
+   |  2 |  2 |  1 |  2 |
+
+   #+name: vector-recursos-disponibles
+   | R1 | R2 | R3 | R4 |
+   |  0 |  0 |  0 |  2 |
+** Solución
+   <<DUDA 1>>: La matriz de "peticiones actuales" suplantaria a la de "necesidades" ...?
+   <<DUDA 2>>: Porque cuando se elije P4 usa las unicas dos instancias de R4
+   y cuando lo libero, queda una instancia de R3? difiere del excel de nano
+   
+   #+name: posible-secuencia
+  |             | R1 | R2 | R3 | R4 |
+  |             |  0 |  0 |  0 |  2 |
+  | Elegimos P4 |  0 |  0 |  0 | 0? |
+  | Finaliza P4 |  0 |  0 |  1 |  0 |
+
+  *Conclusión final:*
+   1. Cuando se le asigna los recursos al unico posible que es ~P4~ y este finaliza, NO quedan recursos disponibles para ningún proceso
+   2. El ~P2~ pide recursos que NUNCA le fueron asignados, sufre *Starvation*
+   3. ~P1~ y ~P3~ hay *deadlock* porque hay *espera circular*
+      1. piden y retienen los mismos recursos (espera y retención)
+      2. y ninguno puede finalizar
+
+   #+BEGIN_SRC plantuml :exports none :file img/ejercicio4.png
+     @startuml
+     skinparam componentStyle rectangle
+
+     '(proceso) -> [recurso]
+
+     rectangle deadlock{
+     (P1) -> [R1]
+     [R1] -> (P3)
+
+     (P3) -> [R2]
+     [R2] -> (P1)
+     }
+
+     (P2) -u-> [R1]
+     (P2) -u-> [R1]
+
+     note right of (P2): Starvation
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/ejercicio4.png]]
+
+* [TODO] Ejercicio 5
+** Enunciado
+   #+BEGIN_QUOTE
+   Indique la (o las) mejor(es) estrategia(s) contra la posible ocurrencia de deadlock para cada caso. Justifique cada
+   decisión, ya sea por ser la mejor opción o por descarte de las otras.
+   #+END_QUOTE
+
+   a) Sistema usado en un puesto administrativo de una empresa, donde el operador usa planillas de cálculo, imprime
+   documentos y navega por internet.
+   b) Sistema computarizado de vuelo de aeronaves que tiene un grado alto de overhead debido a que el procesador
+   no es muy potente.
+   c) Base de datos transaccional usada en un sistema web de redes sociales, con cientos de usuarios programando
+   aplicaciones para dicho sistema y una alta carga de transacciones en horas pico.
+   d) Servidor de juegos online no gratuito con baja carga de usuarios, donde se desea no tener que devolverle el
+   dinero a los mismos a causa de un deadlock, pero al mismo tiempo se desea que los programadores de juegos
+   para dicho servidor tengan alta flexibilidad en la solicitud de los recursos del sistema.
+** Solución
+* [TODO] Ejercicio 6
+** Enunciado
+   #+BEGIN_QUOTE
+    Suponga que siendo el administrador de un sistema financiero, lo llaman a las 3 a.m. para decirle que un conjunto “A”
+    de procesos lleva ejecutando demasiado tiempo (mucho más que de costumbre), y se sospecha que los mismos se
+    encuentran ante algún tipo de bloqueo. La persona que lo llamó, que trabaja para “Operaciones”, le comenta que pronto
+    deberán empezar a ejecutar otro conjunto “B” de procesos y cree que existe el riesgo que este segundo conjunto (cuyo
+    resultado debe estar listo a primera hora de la mañana) se vea afectado por este problema. El diálogo continúa de la
+    siguiente manera:
+   #+END_QUOTE
+   
+   1. Usted: ¿El conjunto “B” usa los mismos recursos que el conjunto “A”?
+   2. Operador: A ver... no, más allá del único procesador que tiene el sistema, usan distintos recursos.
+   3. Usted: ¿El resultado de la ejecución del conjunto “A” también tiene que estar listo sí o sí para mañana?
+   4. Operador: No, por lo que veo dicho resultado se utilizará recién la semana que viene.
+   5. Usted: Ajá.., ¿Y podrías confirmarme si es un deadlock o un livelock?
+   6. Operador: Esteeee, dejame ver... (consulta a su carpeta de sistemas operativos) … al parecer es un XXXX.
+   7. Usted: Ok, entonces no hay nada para preocuparse, mañana lo arreglamos, me voy a dormir!
+
+   ¿Cuál fué la respuesta final del Operador? Justifique.
+** Solución
+
