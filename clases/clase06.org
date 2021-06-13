@@ -1,4 +1,5 @@
 #+TITLE: Clase 06 - Interbloqueo - Deadlock
+#+STARTUP: inlineimages
 * Repaso clase anterior
 ** Soluciones de Software
 *** Conceptos
