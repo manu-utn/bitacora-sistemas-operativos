@@ -399,6 +399,28 @@
       clean:
         -rm *.{c,h}
     #+END_SRC
+*** Macro @(F) y @(D) - Obtener directorio y archivo de un target
+**** Ejemplo
+     #+BEGIN_SRC makefile
+       ho/player/player.o: player/items.c player/account.c
+         @echo "Carpeta:" $(@D)
+         @echo "Archivo:" $(@F)
+
+       # el codigo de abajo no cuenta para el ejemplo
+       .PHONY: init
+       init: crearDirectorios crearArchivos
+         @echo "Terminamos de ejecutar las dependencias :)"
+
+       crearArchivos:
+         touch player/items.c player/account.c
+       crearDirectorios:
+         mkdir player
+
+       .PHONY: clean
+       clean:
+         -rm player/*.{c,o}
+     #+END_SRC
+** Macros con comodines
 ** Macros de expansión única y expansión recursiva
 *** Conceptos
    - Las *macros* NO se *expanden* (sustituyen por su valor) durante la asignación
