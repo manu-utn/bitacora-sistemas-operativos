@@ -21,6 +21,8 @@
       comando1
       comando2
   #+END_SRC
+** Reglas Implícitas
+   - Utiliza el concepto de *implicit pattern rules* (patrón de reglas implícitas)
 * Target
 ** Conceptos
    - Cada *target* representa el nombre del archivo que se genera, luego de cumplirse la regla
@@ -521,5 +523,7 @@
   1. https://www.gnu.org/software/make/manual/make.html
   2. http://profesores.elo.utfsm.cl/~agv/elo320/makefile/makefile.html
   3. https://www.zator.com/Cpp/E1_4_0a.htm
+  4. https://makefiletutorial.com/
 * Otras Referencias
   1. https://www.islabit.com/94440/comando-ar-de-linux-usalo-para-crear-bibliotecas-estaticas.html
+  2. https://www.thegeekstuff.com/2012/10/gcc-compiler-options/
