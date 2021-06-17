@@ -21,6 +21,8 @@
       comando1
       comando2
   #+END_SRC
+** Reglas Implícitas
+   - Utiliza el concepto de *implicit pattern rules* (patrón de reglas implícitas)
 * Target
 ** Conceptos
    - Cada *target* representa el nombre del archivo que se genera, luego de cumplirse la regla
@@ -261,9 +263,23 @@
    |----------+-----------+--------------------------------------|
 ** Macros automáticas
 *** Conceptos
-    Las *macros automáticas* son macros *internas* cuyo valor depende de la regla
-    que esstemos ejecutando.
+   - Las *macros automáticas* son macros *internas* cuyo valor depende de la regla que estemos ejecutando.
+   - Estas *macros* previo a ejecutar un *comando* evalúan el *timestamp* del *target* y de sus *dependencias*
 
+   #+BEGIN_QUOTE
+   Para ver algunos de los ejemplos, luego de ejecutar el target ~init~ que hicimos para simular un programa
+   deberemos actualizar los archivos que se creen. Porque estas macros evalúan las *dependencias*
+   que sean más recientes que el *target*.
+
+   Es decir si tratamos de ejecutarlos luego de usar ~init~ puede que en algunos solo diga
+   "tal archivo está actualizado" y es porque las *dependencias* tienen la misma fecha/hora de 
+   modificación que el *target*.
+   
+   Por tanto.. repito, debemos modificar los archivos, para ver funcionar algunos de los ejemplos,
+   si no dirá solo el mensaje que dijimos antes.
+   #+END_QUOTE
+
+    #+name: macros-automaticas
     |-------+--------------------------------------------------------------------|
     | Macro | Expansión                                                          |
     |-------+--------------------------------------------------------------------|
@@ -273,11 +289,140 @@
     |-------+--------------------------------------------------------------------|
     | $<    | Primer archivo de dependencia que permitió que la regla se ejecute |
     |-------+--------------------------------------------------------------------|
-    | $?    | Lista de los archivos de dependencias ás recientes que el target   |
+    | $?    | Lista de los archivos de dependencias más recientes que el target  |
     |       | (recordemos lo del timestamp más reciente)                         |
     |-------+--------------------------------------------------------------------|
     | $^    | Lista todas las dependencias                                       |
     |-------+--------------------------------------------------------------------|
+*** Macro ($@) - Obtener target
+    La macro ~$@~ nos permite obtener el nombre del *target*
+
+**** Ejemplo 1 - Crear y nombrar un ejecutable de C
+     #+BEGIN_SRC makefile
+       # 1. "supongamos" que ya tenemos los targets OBJS, CC, ...
+       # 2. El -o es un parámetro de gcc para definir el nombre de ejecutable
+       # en este caso se llamará "unprograma" osea tal cual al target
+       unprograma: $(OBJS)
+         $(CC) $(CFLAGS) -o $@ $(OBJS)
+     #+END_SRC
+**** Ejemplo 2 - Imprimir con el comando echo
+     #+BEGIN_SRC makefile
+       # - imprimirá por pantalla el nombre del target!
+       # - el @ antes del echo es para no imprimir el comando echo,
+       # permite que se imprima solo el mensaje que el echo quiere imprimir
+       # - el $@ es la MACRO AUTOMATICA :) obtendrá el nombre del target
+       # es decir "unprograma"
+       unprograma:
+         @echo "el target se llama: " $@
+     #+END_SRC
+
+     #+RESULTS:
+     : unprograma:
+     :   @echo $@
+*** Macro ($<) - Obtener primer dependencia
+    La macro ~$<~ obtiene el primer archivo de dependencia que permitió que se ejecute la regla
+    (es decir elige la primer *dependencia*, la que esté más a la izquierda)
+**** Ejemplo 1 - Imprimir primer dependencia
+     #+BEGIN_SRC makefile
+       # - Siempre va a imprimir el nombe "main.o" porque es la primer dependencia
+       # - La macro $< elige la primer dependencia que hizo que se ejecutara
+       # la regla (la regla está formada por el target+dependencias+comando)
+       unprograma.c: main.o players.o items.o
+         @echo $<
+     #+END_SRC
+**** Ejemplo 2 - Compilar programa C
+     Recordemos que las *dependencias* van seguido del *target*,
+     en este caso se va a compilar un programa que usará sólo el archivo ~players.c~
+
+     #+BEGIN_SRC makefile
+       # - Se compilará un archivo llamado "programa.o"
+       # - La macro $< obtendrá unicamente la primer dependencia (players.c)
+       # - La segunda dependencia (players.h) nunca será usada por $<
+       # - La macro $@ obtiene el nombre del target (programa.o)
+       programa.o: players.c players.h
+         gcc -c $< -o $@
+
+       # codigo de abajo no cuenta para el ejemplo
+       init:
+         touch players.c players.h
+
+       .PHONY: clean
+       clean:
+         -rm *.{c,h}
+     #+END_SRC
+*** Macro ($?) - Obtener las dependencias más recientes/actualizadas
+    La macro ~$?~ obtiene la *dependencia* más reciente/actualizada.
+    (mas reciente respecto comparado con el target de la regla)
+    Si recordamos que una dependencia representa un archivo, y tenemos varias dependencias
+    entonces ~$?~ obtendrá el último archivo modificado, el que alteramos recientemente.
+
+    *Observaciones:*
+    - La macro ~$?~ se *expande* cuando hay archivos más recientes que el target
+    - Cada vez que compilemos el programa del ejemplo, el *timestamp* del target se actualizará
+**** Ejemplo 1 
+     Si modificamos solo dos achivos luego del ~make init~ se mostrarán los nombe de esos archivos,
+     (si cambiaramos el ~$?~ por ~$^~ mostraría todas las dependencias/archivos)
+
+    #+BEGIN_SRC makefile
+      # - La macro $? obtendrá sólo las dependencias más recientes
+      # - Se intentará compilar un archivo con los últimos .c modificados
+      main.o: main.c players.h players.c
+        gcc $? -c $@
+        @echo "Se compilaron los archivos" $?
+
+      # el codigo de abajo no cuenta para el ejemplo
+      init:
+        touch main.o main.c players.c players.h
+
+      .PHONY: clean
+      clean:
+        -rm *.{c,h}
+    #+END_SRC
+*** Macro ($^) - Obtener TODAS las dependencias
+    La macro ~$^~ obtiene todas las dependencias, no le interesa si fue la más reciente o no
+
+**** Ejemplo 1 
+     Si modificamos solo dos archivos luego del ~make init~ se mostrarán todos los nombre de los archivos,
+     no solo los recientemente modificados. 
+     Si queremos sólo los más recientes respecto al *target* debemos usar la macro ~$?~
+
+    #+BEGIN_SRC makefile
+      # - La macro $^ obtendrá todas las dependencias
+      # - Se intentará compilar un archivo todos los .c y .h
+      main.o: main.c players.h players.c
+        gcc $^ -c $@
+        @echo "Se compilaron los archivos" $^
+
+      # el codigo de abajo no cuenta para el ejemplo
+      init:
+        touch main.o main.c players.c players.h
+
+      .PHONY: clean
+      clean:
+        -rm *.{c,h}
+    #+END_SRC
+*** Macro @(F) y @(D) - Obtener directorio y archivo de un target
+**** Ejemplo
+     #+BEGIN_SRC makefile
+       ho/player/player.o: player/items.c player/account.c
+         @echo "Carpeta:" $(@D)
+         @echo "Archivo:" $(@F)
+
+       # el codigo de abajo no cuenta para el ejemplo
+       .PHONY: init
+       init: crearDirectorios crearArchivos
+         @echo "Terminamos de ejecutar las dependencias :)"
+
+       crearArchivos:
+         touch player/items.c player/account.c
+       crearDirectorios:
+         mkdir player
+
+       .PHONY: clean
+       clean:
+         -rm player/*.{c,o}
+     #+END_SRC
+** Macros con comodines
 ** Macros de expansión única y expansión recursiva
 *** Conceptos
    - Las *macros* NO se *expanden* (sustituyen por su valor) durante la asignación
@@ -375,5 +520,10 @@
      gcc -c monsters.c
  #+END_SRC
 * Referencias
-  1. http://profesores.elo.utfsm.cl/~agv/elo320/makefile/makefile.html
-  2. https://www.zator.com/Cpp/E1_4_0a.htm
+  1. https://www.gnu.org/software/make/manual/make.html
+  2. http://profesores.elo.utfsm.cl/~agv/elo320/makefile/makefile.html
+  3. https://www.zator.com/Cpp/E1_4_0a.htm
+  4. https://makefiletutorial.com/
+* Otras Referencias
+  1. https://www.islabit.com/94440/comando-ar-de-linux-usalo-para-crear-bibliotecas-estaticas.html
+  2. https://www.thegeekstuff.com/2012/10/gcc-compiler-options/
