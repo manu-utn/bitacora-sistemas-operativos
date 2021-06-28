@@ -1,11 +1,730 @@
-#+TITLE: Clase 07 - Memoria Real/Fisica
-* Tipos de Direcciones
+#+TITLE: Clase 07 - Memoria Principal
+#+STARTUP: inlineimages
+* Conceptos
+** Que contiene
+  En la *memoria principal* (física) encontramos
+  - Las *instrucciones* que se ejecutan
+  - los *datos* sobre los que se operan
+** Espacios 
+   Se divide en dos espacios
+   1. El *kernel space* (reservada para el SO)
+   2. El *User space* (reservada para los procesos de usuario)
+* Velocidad
+** Conceptos
+   A nivel velocidad, los registros son lo más rapido, y el disco el más lento
+   
+   DISCO -> RAM -> CACHE -> REGISTROS
+** Disco
+   - Es lento (por ser mecánico)
+** Registros (CPU)
+   - Es más rápido
+** Memoria (RAM)
+   - Es más rápido
+** Cache
+   - Para información reducida
+   - Para agilizar los accesos
+* Requerimientos
+** Realocacion
+   - Decidir si queda en un _lugar fijo en memoria_ o no
+   - Elegir _en que momento realocar_
+** Protección
+   - Es el *SO* es quien proteje las secciones de memoria de los *procesos*
+   - Un *proceso* NO puede acceder a un *espacio de memoria de direcciones* de otro sin permiso
+** Compartir memoria
+** Organización Lógica
+   -_Como acceden_ los procesos a memoria
+** Organización Física
+   - _Como se almacena_ la memoria
+* Reasignación de direcciones
+** Conceptos
+   1. Programa -> Compilador
+      - En el código fuente
+      - Las direcciones de memoria que elegimos son *simbólicas* (no son reales)
+   2. Compilador -> Loader
+      - Al momento de compilar se empiezan a definir las zonas de memoria
+      - se definen las *direcciones relativas* (reubicables)
+      - se pueden reubicar las direcciones
+      - <<DUDA 1>>:se pueden definir las *direcciones absolutas* (PERO NO ES BUENO, porque...)
+   3. Loader -> Memoria Principal
+      - se definen las *direcciones absolutas* (fisicas, direcciones que la memoria entiende)
+
+   *Observación:*
+   Las direcciones absolutas de memoria se deben definir recien _en el momento de ejecución_
+   porque...
+** Tiempos
+   La _reasignación de instrucciones y datos_ se puede realizar en 3 momentos:
+   1. Tiempo de compilación
+   2. Tiemmpo de carga
+   3. Tiempo de ejecución
+
+   *Nota:* en esos momentos se pueden definir las direcciones
+** Diagrama
+  #+BEGIN_SRC plantuml :exports results :file img/reasignacion-direcciones.png
+    @startuml
+    [programa] -> (compilador) : direcciones\n simbolicas
+    (compilador) -> (loader) : direcciones\n reubicables
+    (loader) -> [Memoria Principal] : direcciones\n absolutas
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/reasignacion-direcciones.png]]
+* Traduccion de direcciones
+** Conceptos
+   |-----------------------+---------------------------------------|
+   | Momento               | Comparación Dirección Lógica y Fisica |
+   |-----------------------+---------------------------------------|
+   | Tiempo de compilación | Dirección Lógica == Dirección Física  |
+   |                       |                                       |
+   | Tiempo de carga       | Dirección Lógica == Dirección Física  |
+   |                       |                                       |
+   | Tiempo de ejecución   | Dirección Lógica != Dirección Física  |
+   |-----------------------+---------------------------------------|
+** Direcciones Lógicas (DL)
+   - Cuando definimos las direcciones en tiempo de *compilación* ó *carga*
+** Direcciones Física (DF)
+   - Son las dirección válidas, que entiende la RAM
+   - Se deben definir en *tiempo de ejecución*
+  
+   *Observación:*
+   Es más eficiente si las definimos en tiempo de compilación/carga porque
+   es más directo, no necesitaria una traducción pero... HABRIA PROBLEMAS..
+** Unidad de Manejo de Memoria (MMU)
+   - Se encarga de la _traducción de direcciones_
+   - Cuando la *CPU* le pase las direcciones a la *memoria principal*
+   - Es el nexo entre la CPU y la Memoria Principal
+** Componentes Involucrados
+   + CPU
+   + MMU (Unidad de Manejo de Memoria)
+   + Memoria Principal
+** Diagrama
+  #+BEGIN_SRC plantuml :exports results :file img/traduccion-direcciones.png
+    @startuml
+    (CPU) -> (MMU) : Direcciones\n Logicas (DL)
+
+    (MMU) -> [Memoria Principal] : Direcciones\n Fisicas (DF)
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/traduccion-direcciones.png]]
+* Particiones Fijas/Dinámicas - Asignación Contigua
+** Conceptos
+  - Se particiona la *memoria principal* en *particiones contiguas*
+  - De cada partición necesitamos guardar en el *PCB* y en los *registros* (del CPU) lo siguiente
+    - La *base* 
+    - El *limite*
+
+  *Observación:*
+  - En el PCB siempre deberiamos guardar esa información en el caso de *swapping*
+    (cuando se pasa información del proceso de memoria a disco)
+  - Se pasan a los registros del CPU para trabajar más rápido, porque es el que se
+    comunica con la RAM (a través del MMU)
+ 
+  #+BEGIN_QUOTE
+  Cuando un proceso pide acceder a una dirección de memoria, el CPU se comunica con la RAM 
+  a través del MMU (el que traduce las direcciones, para que lo entienda la RAM)
+
+  1. Validamos si DL < Limite
+  Primero chequeamos si la dirección lógica de memoria que pide el proceso es válida,
+  evaluamos si la dirección es menor a la *longitud* de la partición (eso indica el tamaño).
+
+  2. DF = Base + DL (nos desplazamos como si le sumaramos un *offset*)
+  Luego, si la *dirección lógica* es válida, entonces si, calculamos la *dirección fisica*
+  sumando a la *dirección lógica* la *base* de la partición
+
+  La posición de la dirección lógica dentro de la partición es cero, 
+  pero.. la posición REAL es la dirección física, base+DL
+  #+END_QUOTE
+** Base
+   - es la direccion fisica (real) en la memoria principal
+   - representa el principio de la partición
+   - de donde nos desplazamos (con el limite)
+** Limite/Longitud
+   - para chequear si una dirección es válida (la que asignamos a un proceso)
+   - es el tamaño/longitud de esa partición
+   - nos desplaza
+** Tabla comparativa
+   |-----------------------+-------------------------|
+   | Tipo de asignacion    | Tipo de Fragmentación   |
+   |-----------------------+-------------------------|
+   | De tamaño variable => | *FRAGMENTACION EXTERNA* |
+   |                       |                         |
+   | De tamaño fijo =>     | *FRAGMENTACION INTERNA* |
+   |-----------------------+-------------------------|
+** Particiones Fijas (PF)
+*** Conceptos
+    - Se definen N _particiones de un tamaño fijo_ (no puede haber mas de N procesos en simultaneo)
+    - Esas N particiones fijas indican cuantos procesos pueden haber en memoria
+      (que es el *nivel de multiprogramación* cant. de procesos en memoria ejecutando concurrentemente)
+    - NO se necesita conocer la *base*, sólo con saber el número de partición es suficiente
+      (por ser todas las particiones de tamaño fijo)
+*** Desventajas
+    - Limitamos la cantidad y tamaño de los procesos
+    - Aparece el problema de la *fragmentación interna* (espacios libres, que no se usan)
+    - Los procesos NO pueden ser más grandes que las particiones fijas
+*** Fragmentación Interna
+    - Es lo que sobra a una partición de memoria
+      (Ej. si una partición es de 100, tiene un proceso que ocupa 80,
+      esos 20 que sobran es la fragmentación interna)
+** Particiones Dinámicas (PD)
+*** Ventajas
+    - El tamaño de las particiones se ajusta al tamaño del proceso (se define en el *momento de carga*)
+    - NO limita la cant. de procesos en memoria (que si sucede en las particiones fijas)
+    - NO hay *fragmentación interna*
+*** Desventajas
+    - Aparece el problema de la *fragmentación externa*
+    - Es más complejo de manejar 
+
+    #+BEGIN_QUOTE
+    Es más complejo de administar porque a medida que finalizan lo procesos
+    quedan esas particiones contiguas como huecos entre las particiones donde si hay
+    los procesos en ejecución
+    #+END_QUOTE
+*** Fragmentación Externa
+    - Cuando NO hay suficiente *memoria contigua* (sucede cuando se finalizan procesos)
+    - Es externa, porque no es dentro de cada partición
+    - Quedan particiones libres, son huecos entre particiones que tienen procesos en ejecución
+      (impiden ingresen nuevos procesos, porque no podemos dividirlo al proceso en distintas zonas
+       debe estar en una zona CONTIGUA)
+*** Compactación
+**** Ventajas
+    - Soluciona el problema de la *fragmentación externa* (huecos entre particiones con procesos activos)
+    - *Consolida* particiones (de procesos en ejecución) separadas por huecos (particiones libres, procesos que finalizaron) en una partición
+    - Cuando realizar? Cuando aparezca el problema de la *fragmentación externa*
+
+    *Observación:*
+    Consolidar se refiere a unir, a que dos o más particiones se junten en una.
+**** Desventajas
+    - Es una solución costosa, porque debe mover los procesos en memoria
+    - Si el tamaño de los procesos crecen, se debe volver a reasignar la dirección 
+      (porque delante tiene otra partición, y para crecer debería pisar esa otra...)
+
+    #+BEGIN_QUOTE
+     Al agrupar las particiones para que otro proceso pueda acceder a memoria, y estas ser contiguas
+     cuando los procesos tendrán el problema de que NO podrán crecer en la partición de memoria asignada
+     porque seguida a esa partición hay otra con otro proceso..
+
+     Por tanto se debe volver a reasignar una dirección a ese proceso
+    #+END_QUOTE
+*** Estrategias de asignación
+**** Conceptos
+     Existen 3 estrategias para saber en _que partición asignar_
+     1. Primer ajuste
+     2. Siguiente ajuste
+     3. Mejor ajuste
+**** Primer ajuste
+     - Elije la primer partición que encuentre
+     - Es el más rapido
+**** Siguiente ajuste
+     Elije el siguiente a la ultima asignación
+     (suponiendo que guardamos la ultima referencia en un puntero, 
+     porque... los punteros apuntan a direcciones en memoria)
+**** Mejor ajuste
+     - Tiene mayor *overhead*
+     - Tiene que buscar la partición mas chica, que se ajuste al tamaño del proceso
+**** Peor ajuste
+     - Se elije la particion más grande que encuentre (quedando espacio libre)
+     - Puede llegar a reducir la cant. de *compactaciones*
+     - Puede generar *fragmentación externa* cuando finalice el proceso que contiene,
+       quedando huecos(particiones libres) entre particiones que tienen procesos en ejecución.
+       Que luego se podrá asignar a otro proceso, reduciendo la cant. de *compactaciones*
+* Paginación (Simple)
+** Conceptos
+   - Se dividen a los *procesos* en *páginas*
+   - Se dividen a la *memoria principal* en *marcos* (ó frames)
+   - Las páginas y marcos son de *tamaño fijo*
+** Ventajas
+   + Soluciona el problema de *fragmentación externa*
+     - impedia cargar nuevos procesos, porque quedaban huecos entre las particiones
+        (donde la única solución era la *compresión*)
+     - no se podia cargar nuevos procesos porque las particiones debian ser contiguas
+       y no se podia repartir el proceso entre las particiones libres
+** Desventajas
+   - Puede tener una minima *fragmentación interna* (por usar tamaños fijos)
+     (aunque sólo en la última página)
+** Pagina
+   - Son las que se cargan en memoria (en marcos de memoria)
+   - El SO divide a los procesos en páginas, que luego se cargan en memoria
+** Marco
+   - Representa el tamaño de página (se ve distribuido en distintas zonas de la memoria principal)
+   - Almacenan páginas de un proceso particular
+** Tabla de paginas (TP)
+*** Conceptos
+    - Se tiene una *tabla de paginas* por cada proceso, y puede no utilizar todas
+    - Donde se almacenan las páginas
+    - Es una estructura en RAM
+    - Para acceder a una dirección de memoria, se debe recurrir a esta tabla
+*** Almacenamiento
+    Se guardaria una referencia/puntero de la página de un proceso a la *tabla de páginas*
+    - En el *PCB* del proceso
+    - En los *Registros* (del CPU) en el _momento de ejecución_ (para el momento de traducción)
+  
+    *Observación:*
+    Como el tamaño de la información es grande, no alcanzaria poder guardarlo en el PCB o en los Registros (del CPU)
+    por eso solo se guardan en ellas un puntero/referencia de la página del proceso a la tabla de páginas
+*** Estructura
+    - Cada *proceso* tiene una *tabla de páginas* (que indica en que marco se encuentra c/página)
+    - Cada *página* tiene un *bit de validéz* (indica si está en el espacio de direcciones del proceso)
+    - Valores del *bit de validez*
+      - Si es 1, es porque pertenece al espacio de direcciones del proceso
+      - Si es 0, y se intenta acceder a esa página dará ERROR, porque no pertenece a ese proceso
+*** Bitmap
+    - Para administar los *marcos* libres
+    - Como todos los *marcos* van a tener el mismo tamaño, no necesitamos saber el tamaño
+      con saber sólo el número de marco es suficiente (similar a las particiones fijas)
+
+    #+name: bitmap-marcos-libres
+    |---+---+---+---+---+---+---|
+    | 1 | 1 | 1 | 0 | 1 | 0 | 1 |
+    |---+---+---+---+---+---+---|
+*** Ejemplo
+    Suponiendo que tenemos un proceso (A), en su tabla de páginas se guardan 3 referencias/punteros
+    a los marcos de las páginas de ese proceso.
+    - La página 0 del proceso A, apunta al marco 5 de la ram
+    - La página 1 del proceso A, guarda la referencia al marco 6
+    - La página 2 del proceso A, tiene un putnero al marco 2
+
+    Las páginas 0,1,2 de ese proceso en su tabla de paginas, tiene el bit de validez en 1
+    eso indica que están en el espacio de direcciones de ese proceso (A)
+
+   #+name: tabla-de-paginas-de-un-proceso
+   |----------+-------+----------------|
+   | Num Pag. | MARCO | bit de validéz |
+   |----------+-------+----------------|
+   |        0 | 5     |              1 |
+   |        1 | 6     |              1 |
+   |        2 | 2     |              1 |
+   |        3 | -     |              0 |
+   |        4 | -     |              0 |
+   |        5 | -     |              0 |
+   |----------+-------+----------------|
+
+   #+name: memoria-principal
+   |-----------+-----|
+   | Nro Marco |     |
+   |-----------+-----|
+   |         0 |     |
+   |         1 |     |
+   |         2 | PA2 |
+   |         3 |     |
+   |         4 |     |
+   |         5 | PA0 |
+   |         6 | PA1 |
+   |         7 |     |
+   |         8 |     |
+   |         9 |     |
+   |-----------+-----|
+** [TODO] Puntero (PTBR)
+   - El ~PTBR~ contiene el puntero de la *tabla de paginas* del proceso en ejecución
+   - Su valor se debe guardar en los *cambios de contexto*
+   - El valor se va a cambiar cada vez que cambiemos de procesos (switch process)
+** TLB (Memoria Caché de HW)
+*** Conceptos
+    - Es el *Translation look-aside buffer*
+    - Es como una *caché* para la *tabla de páginas*
+    - Se guardan los valores cada vez que se accede a la (TP, Tabla de Páginas)
+    - Primero se tiende a acceder primero a esta *caché*, caso contrario va a la *tabla de páginas*
+    - Es una memoria asociativa de alta velocidad a nivel de hardware (actúa de *caché*)
+    - Guardan _entradas de tablas de páginas_
+    - Agilizan el acceso, aumenta la velocidad de acceso
+ 
+    TP: Tabla de paginas
+
+    #+BEGIN_QUOTE
+    1 acceso a una dirección fisica, implica 2 accesos a memoria
+
+    En cada entrada de pagina puede guardar tambien el identificador del proceso
+    (para proteger otros procesos, y evitar vaciar la cache en cada switch process)
+    #+END_QUOTE
+*** TLB Miss
+    Si accedi a la TLB, NO encontré el valor, y luego fui a la TP
+    (por tanto accedi 2 veces)
+*** TLB Hit
+    Si accedí a la TLB y encontré el valor
+** Protección y compartir memoria entre procesos
+*** Protección
+    - Se pueden agregar bits en la (TP) para agregar permisos sobre las páginas
+*** Memoria compartida
+    - Los procesos pueden compartir memoria, apuntando a los mismos *marcos*
+      en la (TP, Tabla de páginas)
+** Paginación Jerárquica
+*** Conceptos
+   - Para paginar la *tabla de paginas*
+   - Para tener distintos niveles de tabla de páginas
+     (guardar referencias en una TP a otras TP, y estas a otras..)
+   - Soluciona el problema de tener *tablas de páginas* MUY GRANDES
+   - Divide el problema de TP grandes en varias TP más chicas
+    (si no, se tendria el mismo problema que con las estructuras contiguas en memoria..)
+*** [TODO] Tabla de Páginas Jerárquica
+    Con las sig. tres referencias se define la *dirección fisica* a parti de una *tabla de paginas jerarquica*
+    - Pag. TP Global: Es un puntero/referencia a la *tabla de páginas global* (la que guarda referencias a otras TP)
+    - Direccion lógica
+      - Offset TP: Es un puntero a una *tabla de paǵinas*
+      - Offset: Es un puntero a un marco de página
+
+   #+name: tabla-de-pagina-jeraquica-de-2-niveles
+   |----------------+-----------+---------|
+   | Pag. TP Global | Offset TP | Offset  |
+   |----------------+-----------+---------|
+   | 10 bits        | 10 bits   | 12 bits |
+   |----------------+-----------+---------|
+*** Ejemplo 1- Con hexadecimal
+    Si tenemos la siguiente dirección fisica en hexadecimal del proceso A:
+    ~PA AA BB 1234h~
+
+    Podemos separarla en
+    - offset: 1234
+    - Numero de pagina: AA BB
+    - Numero de página global: AA
+    - Numero de página de 2do nivel: BB
+
+    1. Intentamos acceder al ~TLB~ con AABB (nos va a tirar que no está, por ser primer acceso)
+       TLB -> AABB -> no!
+    2. Entonces accede al número de página global del proceso A, obtiene el marco
+       TPG PA -> AA -> Marco=30 
+    3. Ahora con ese marco y el numero de pagina de 2do nivel, accede al marco de esa 2da TB
+        MARCO 30 => BB => MARCO 100 <--- este es el marco IMPORTANTE..!!!
+    4. Define la Dirección Fisica, hacemos la traducción
+       DF -> MARCO | OFFSET
+    5. Podemos guardar en el TLB el *marco* de ese *numero de página* para acceder más rapido
+       TLB -> AA BBh = 100
+
+    Ahora.. si queremos acceder nuevamente pero desplazarnos, reutilizamos lo que teniamos en el TLB
+    para un acceso más rapido
+
+    6. PA AA BB 0222h    <--- el numero de pagina es: AA BB
+    TLB-> AA BB -> 100   <--- ya reconoce que el *marco* de ese *numero de página* tiene 100 de dirección
+    DF -> MARCO | OFFSET <--- volvemos a definir la dirección fisica
+
+    *Conclusión:*
+    - Sin el TLB, tuvimos 3 accesos a RAM (1 TPG + 1 TP 2do nivel + 1 Marco 100)
+    - Con el TLB (con ~hit~), tuvimos 1 acceso a RAM (Marco 100)+ 1 acceso a la *caché*
+** Tabla de Paginas Invertida
+*** Conceptos
+    - Está indexeado por el *número de marco* (_busca secuencialmente_ por el marco como indice)
+    - Consiste en tener una única tabla de paginas (en vez de una por c/proceso)
+    - Hay tantas *entradas* como *marcos* tenga la memoria (???)
+
+    #+BEGIN_COMMENT
+    <<DUDA>>: Por que NO se puede compartir memoria entre procesos?
+
+    *Respuesta:*
+    Porque en esta tabla, se entra por el número de *marco*,
+    y esta dice el número de página de que proceso está en ese *marco*
+    #+END_COMMENT
+
+    #+BEGIN_QUOTE
+    En las TP normales el input (entrada) es el numero de página, 
+    y el ouput el número de marco.
+
+    EN las tablas de paginas invertida, es al revés..
+    el input es el numero de marco, y el output el número de página
+    #+END_QUOTE
+*** Ventajas
+    - Ocupa menos espacio que las *paginas de tablas* normales
+*** Desventajas
+    - NO soporta el *compartir memoria* entre procesos 
+*** Tabla de hash
+    - Mejora el tiempo de acceso 
+    - Para optimizar la *tabla de paginas invertida* (mejora el tiempo de acceso, si no esa tabla seria INEFICIENTE)
+    - Utilizan *funciones de hash* (que reciben de entrada la pag. del proceso)
+    - Las *funciones de hash* evitan las *busquedas secuenciales* (que hacen lenta la busqueda)
+** Ejemplo 1 - Calcular DF con decimales
+*** 1. Datos
+    Si nos dan el tamaño de la página, la dirección lógica (DL)
+    debo saber cual es la *página* para luego obtener el *marco*
+
+    #+name: tabla-paginas-proceso-A
+    |----------+-------+-------------|
+    | Nro Pag. | Marco | bit_validez |
+    |----------+-------+-------------|
+    |        0 |     5 |           1 |
+    |        1 |     6 |           1 |
+    |        2 |     2 |           1 |
+    |        4 |     - |           0 |
+    |        5 |     - |           0 |
+    |----------+-------+-------------|
+
+    Datos:
+    - tamaño de pagina = 1KiB (1024)
+    - DL = 2045 (decimal) 
+*** 2. Calculamos numero de pagina
+    Para saber el *número de página*, dividimos la dirección_logica por el tamanio_de_pagina
+    es decir numero_pagina = direccion_logica / tamanio_pagina
+
+    ~numero_pagina = 2045/1024~ => numero_pagina = 1, offset (desplazamiento) = 1021 bytes
+*** 3. Accedemos a la tabla de paginas
+    Para acceder a esa dirección lógica, debemos ir a la *tabla de páginas*
+    vamos a la ~pagina_numero=1~, esta guarda una referencia ~marco=6~ y verificamos
+    que se cumpla ~bit_validez=1~
+*** 4. Calculamos la dirección fisica (DF)
+    Para saber la *dirección física* (la que entiende la RAM y se encuentra ahí fisicamente)
+    multiplicamos el numero_marco por el tamanio_marco, y le sumamos el ~offset~.
+    (/Multiplicamos el número de marco por su tamaño, porque todos los marcos tienen mismo tamaño/
+    /y le sumamos el offset, porque es el desplazamiento, el que tanto se desplaza/)
+
+    Entonces...
+   ~direccion_fisica = numero_marco * tamanio_marco + offset~
+   => direccion_fisica = 6 * 1024 + 1021 
+   => direccion_fisica = 7165
+
+   *Observación:*
+   El tamaño de página es igual al tamaño de marco, entonces ~tamanio_pagina = tamanio_marco~
+
+** [TODO] Ejemplo 2 - Calcular DF con binarios
+*** 1. Datos
+    - Tamanio de la pagina: 1KiB
+    - DL = 2045 (decimal) => DL =1111111101 (en binario con bits)
+
+    #+BEGIN_QUOTE
+    Para direccionar 1 byte dentro de una página de 1KiB, necesitamos ~10 bits~ 
+    porque 2^10=1024 y 1Kib=1024 bytes. Esos 10 bits, serán los *bits de menor peso*,
+    y el numero de página los *bits de mayor peso*
+    #+END_QUOTE
+
+    #+name: tabla-de-paginas-proceso-A
+    |------------+-------+----------------|
+    | num pagina | marco | bit de validez |
+    |------------+-------+----------------|
+    |          0 | 5     |              1 |
+    |          1 | 6     |              1 |
+    |          2 | 2     |              1 |
+    |          3 | -     |              0 |
+    |          4 | -     |              0 |
+    |          5 | -     |              0 |
+    |------------+-------+----------------|
+*** 2. Calculamos el numero de pagina
+    Igual que en ejemplo (1) hacemos
+    ~numero_pagina = 2045/1024~ => numero_pagina = 1, offset (desplazamiento) = 1021 bytes
+
+    si pasamos el ~offset~ a binario, nos queda..
+    ~offset = 1111111101~ (en binario)
+
+*** 3. Calculamos la dirección logica (DL)
+    Sólo necesitamos
+    1. numero de pagina
+    2. offset dentro de página
+
+    #+name: direccion-logica
+    |---------------+------------------|
+    | numero_pagina | offset (10 bits) |
+    |---------------+------------------|
+    |             1 |       1111111101 |
+    |---------------+------------------|
+*** 4. Calculamos la dirección física (DF)
+    Pasamos el número de marco que daba ~6~ a binario..
+    ~numero_marco = 110~ (en binario)
+
+    Sólo necesitamos
+    1. numero de marco
+    2. offset dentro de página
+
+    #+name: direccion-fisica
+    |--------------+------------------|
+    | numero_marco | offset (10 bits) |
+    |--------------+------------------|
+    |          110 |       1111111101 |
+    |--------------+------------------|
+* Calcular Numero de Pagina y Direccion Fisica
+
+  |-------------------------+------------------------------------------------------------|
+  | Numero de página        | ~numero_pagina = direccion_logica / tamanio_pagina~        |
+  |                         |                                                            |
+  | Offset (Desplazamiento) | ~offset = direccion_logica % tamanio_pagina~               |
+  |                         |                                                            |
+  | Tamaño de marco         | ~tamanio_pagina = tamanio_marco~                           |
+  |                         |                                                            |
+  | Dirección Fisica        | ~direccion_fisica = numero_marco * tamanio_marco + offset~ |
+  | (en decimal)            |                                                            |
+  |                         |                                                            |
+  | Dirección Fisica        | ~direccion_fisica = numero_marco I offset~                 |
+  | (en binario)            |                                                            |
+  |                         |                                                            |
+  | Dirección logica        | ~direccion_logica = numero_pagina I offset~                |
+  | (en binario)            |                                                            |
+  |-------------------------+------------------------------------------------------------|
+
+  *Observación:*
+  - el resto de la división es el ~offset~, osea el desplazamiento
+  - el resto aparte de la divisón, también resulta de calcular el módulo con el operador % 
+* Segmentación (Simple)
+** Conceptos
+   - Los *segmentos* son de *tamaño variable*
+   - Similar a *partición dinámica*
+** Semántica
+   A diferencia de las *particiones* los *segmentos* toman un significado,
+    1. Segmento de Código (CS)
+    2. Segmento de Datos (DS)
+    3. Segmento de Pila (SS)
+** Permisos
+   Al tener una semántica asociada, se les puede agregar *permisos* (R,W,X)
+   - (R)ead
+   - (W)rite
+   - E(x)ecute
+** Desventajas
+   - Aparece la *fragmentación externa*
+     - es mínima comparado con las *particiones dinámicas*
+     - se debe recurrir a la *compactación* (desplazar los segmentos en memoria)
+** Ventajas
+   - NO hay *fragmentación interna*
 ** Dirección Lógica
-   + Es la que utiliza los procesos
-** Dirección Relativa
-** Dirección Absoluta ó Fisica
-   + Es la que utiliza en SO
-* Bibliotecas Compartidas
-  + 
-* Enlace Estático
-  + 
+   Se forma con ~numero_segmento + offset~
+** Almacenamiento
+   Los *segmentos* se guardan de forma *contigua* en la *memoria principal*
+* Segmentación Paginada
+** Conceptos
+   Agarra las ventajas de *paginación* y de *segmentación*
+** Reutiliza de paginación
+  - La *memoria principal* sigue dividida en *marcos*
+  - Podemos tener *tablas de páginas* para los *segmentos*
+** Reutiliza de segmentación
+   - Las particiones tienen una semántica, y se les _puede agregar permisos_ (R,W,X)
+   - NO tiene *fragmentación interna* y tiene *fragmentación externa* pero minima (en la última página de cada segmento)
+   - Los *segmentos* tendá un conjunto de páginas
+** Segmentation Fault
+   Cuando intentamos acceder a un número de segmento que NO está en la *tabla de segmentos*
+   (tiene el bit_de_validacion=0)
+* Tabla Comparativa
+ |--------------+---------------------------------------+-------------------------------+-------------------------|
+ | tecnica      | descripción                           | ventajas                      | desventajas             |
+ |--------------+---------------------------------------+-------------------------------+-------------------------|
+ | Particiones  | La memoria se divide                  | - Poco ~overhead~             | - Limita la cant. de    |
+ | Fijas        | en particiones de                     | - Fácil de implementar        | de procesos             |
+ |              | igual tamaño                          |                               | - Fragmentacion Interna |
+ |--------------+---------------------------------------+-------------------------------+-------------------------|
+ | Particiones  | Las particiones se ajustan            | Se usa la memoria de          | - Fragmentación externa |
+ | Dinámicas    | al tamaño de los procesos             | manera eficiente              | - Compactación          |
+ |--------------+---------------------------------------+-------------------------------+-------------------------|
+ | Paginación   | La memoria se divide en marcos        | - NO hay frag. externa        | - Fragmentacion interna |
+ |              | de igual tamaño                       | - Las pág. no son ~contiguas~ | (en la última pagina)   |
+ |              | Los procesos se dividen en páginas    |                               | - Muchas estructuras    |
+ |              | de igual tamaño                       |                               |                         |
+ |              | El tamaño de los marcos y las páginas |                               |                         |
+ |              | es el mismo                           |                               |                         |
+ |--------------+---------------------------------------+-------------------------------+-------------------------|
+ | Segmentación | Los procesos se dividen en segmentos  | - NO hay frag. interna        | - Fragmentacion externa |
+ |              | de diferentes tamaños                 |                               | (aunque es minima)      |
+ |--------------+---------------------------------------+-------------------------------+-------------------------|
+* Buddy System
+** Conceptos
+   Es una estrategia que junta las estrategias de *asignación contigua* y minimiza sus desventajas
+   - Particiones Fijas (limitaba el tamaño, y cant. de procesos)
+   - Particiones Dinámicas (huecos entre particiones, compactación)
+** Búsqueda y división - Definir tamaño partición
+   Define el tamaño de la *partición* a asignar *dinámicamente*
+   1. _Busca el bloque de potencia de 2 más chico_, que cumpla con lo pedido (se denominan *buddies*)
+   2. Si NO existe el bloque => _divide en dos al bloque más cercano_ a ese tamaño
+   3. Repite la búsqueda (y vuelve al ciclo)
+** Buddy
+    - Representa cada bloque que resulta de dividir en dos a otro más grande durante la búsqueda
+    - Dos bloques A y B son *buddies* si solo si
+      1. Tienen igual tamaño
+      2. Son contiguos (uno al lado del otro)
+      3. ~dirA = dirB XOR tamA && dirB = dirA XOR tamB~ (operador XOR)
+** Operador XOR
+*** Conceptos
+    - Cuando ambos son diferentes dará 1 (ej. 1 y 0, 0 y 1)
+    - Cuando ambos son iguales dará 0 (Ej. 0 y 0, 1 y 1)
+
+    |---+---+-------+-----+----|
+    | A | B | ~XOR~ | AND | OR |
+    |---+---+-------+-----+----|
+    | 0 | 0 |     0 |   0 |  0 |
+    | 0 | 1 |     1 |   0 |  1 |
+    | 1 | 0 |     1 |   0 |  1 |
+    | 1 | 1 |     0 |   1 |  1 |
+    |---+---+-------+-----+----|
+*** Aplicado en Buddy System
+    Si tenemos dos bloques A, B que son buddy (contiguos, y son resultado de dividir en dos uno más grande)
+    - Operamos la direccion_bloque_A XOR tamanio_bloque_b
+    - El _resultado es el comienzo de direccion de memoria_ de su *buddy* (bloque contiguo, de igual tamaño)
+
+    Supongamos que partimos de dos bloques de 16k (con dirección de 0 a 8, y el otro de 16 a 28)
+    1. Dividimos en primer bloque de 16k en dos de 8k (primero y segundo bloque)
+    2. Didivimos el segundo bloque en dos de 8k, y el segundo en otros dos de 4k (cuarto y quinto bloque, son buddies)
+
+    |----+----+----+----+----|
+    |  0 |  8 | 16 | 24 | 28 |
+    |----+----+----+----+----|
+    | 8k | 8k | 8k | 4k | 4k |
+    |----+----+----+----+----|
+
+    *Caso A:*
+    1. Se libera la segunda partición (tamaño=8K, dir_inicial=8)
+    2. Hacemos ~8 XOR 8~ (direccion inicial del segundo bloque ~XOR~ el tamaño de su buddy)
+       nos queda ~8 XOR 8 = 1000 XOR 1000 = 0000 => 8 XOR 8 = 0~ 
+       siendo ese resultado 0 la dirección del buddy (la partición 1)
+
+    *Caso B:*
+    1. Se libera la quinta partición (tamaño=4, dir_inicial=24)
+    2. Hacemos ~24 XOR 4 = 1100 XOR 100 = 11100 = 28 => 24 XOR 4 = 28~
+       siendo el resultado ~28~ el comienzo de la dirección del buddy de la quinta partición
+** Liberación de Bloques
+   Es el paso inverso al de busqueda y divisón, del definir el tamaño de la partición
+   + Se debe validar que si su *buddy* está libre
+     - Si está libre    => se *consolidan* (los dos en un solo bloque)
+     - Si NO está libre => sólo se libera ese bloque
+   + El *buddy* de un bloque
+     - es el otro bloque que se formó como resultado de dividir un bloque más grande en dos
+     - es el bloque contiguo de igual tamaño
+
+   *Observación:*
+   - *Consolidar* se refiere a _unir dos bloques en uno_
+** Estructura - Datos
+   En la estructura del bloque se guardan los datos, y un header
+   1) datos
+   2) header
+      - el tamaño del bloque (sólo se guarda la potencia 2^n)
+      - si el buddy esta libre
+
+  #+BEGIN_QUOTE
+  Al momento de *liberar un bloque* chequea el header, y verifica si su buddy está libre
+
+  si su *buddy* está libre => consolida los dos bloques (los junta en uno solo)
+  #+END_QUOTE
+
+  *Observación:*
+  - Con el Header podemos determinar si su buddy está libre, y de tamaño del bloque
+
+  #+name: bloque
+  |----------------+-------|
+  | HEADER         | DATOS |
+  |----------------+-------|
+  | LIBRE I TAMAÑO |       |
+  |----------------+-------|
+** Implementación
+*** Arbol Binario
+    - porque cada particion inicial se divide en dos
+*** Listas enlazadas
+    Los bloques se referencian entre ellos
+*** Bitmap de bloques
+    - para cada nivel
+    - uno por cada tamaño de partición posible
+
+    Ej. particiones de 512
+    |---+---+---+---|
+    | 1 | 1 | 0 | 1 |
+    |---+---+---+---|
+
+    Ej. particiones de 128
+    |---+---+---+---+---+---+---+---|
+    | 1 | 1 | 0 | 1 | 1 | 0 | 0 | 1 |
+    |---+---+---+---+---+---+---+---|
+
+    Ej. particiones de 64
+    |---+---+---+---+---+---+---+---+---+---+---+---+---+---|
+    | 1 | 1 | 0 | 1 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 1 | 1 |
+    |---+---+---+---+---+---+---+---+---+---+---+---+---+---|
+** Ventajas
+   - Mayor velocidad para la búsqeda de bloques libres
+   - Facilidad para busqueda del bloques libres (por el operador ~XOR~)
+   - Mayor velocidad de *consolidación* (juntar dos bloques en uno solo)
+   - Menor fragmentación interna/externa
+   - Menos frecuente la *compactación*
+** Desventajas
+   + Hereda los problemas de las particiones fijas/dinámicas (en menor medida)
+     - Fragmentacion Interna
+     - Fragmentación Externa
+   + Requiere *compactación* (aunque en menor medida) por tanto genera ~overhead~
+

@@ -1,0 +1,500 @@
+#+TITLE: Clase 08 - Memoria Virtual
+#+STARTUP: inlineimages
+
+Te quedaste en clase 9 - algoritmos y casos especiales - 35:42
+con el *clock modificado*
+
+* Problema
+  El *proceso* tiene que estar TODO => "implica" limitar el tamaño max. del proceso
+  cagado en RAM paa poder ejecutar
+* Primeras Soluciones
+  Cargar la lógica principal *overlay driver* mas importante a RAM (a nivel de programación)
+     (/Ej.  /)
+
+  - *Overlay:* es.. (???)
+  - *Overlay driver:* eran partes del programa.. (???)
+
+  Eran soluciones a nivel de RAM, no a nivel de Sistema Operativo
+* Solucion Valida
+  - Tener *direcciones lógicas* más grandes que la RAM
+    (/le mentimos a los procesos que le asignaremos tanto espacio/)
+  - Cargamos partes en *RAM* y partes *Swap* (en disco)
+  - Un *proceso* puede divirse en *partes*, que pueden no ser *contiguas* en *(MP)*
+    (pueden estar en la *memoria virtual*)
+** Ventajas
+   - Más procesos en memoria => "implica" aumentar el *grado de multiprogramación*
+   - Mayor tamaño para los procesos => la *MP* ya no limita
+* Memoria Virtual
+** Conceptos
+  + La Memoria Virtual se forma con (~RAM + SWAP = Memoria Virtual~)
+    1. Memoria Principal (RAM) <--- Paginas de los procesos
+    2. Disco SWAP (Almacenamiento Secundario)
+  + Los procesos que están en ejecución
+    - En la *memoria virtual* aparece su *número de Marco*
+    - En la *memoria principal* aparece su *número de Página*
+
+  *Observaciones:*
+  - Las *instrucciones* deben estar en RAM para estar en ejecución
+  - El disco (SWAP) tiene mayor capacidad que la RAM
+** Diagrama
+  #+BEGIN_SRC plantuml :file img/mem-virtual-1.png
+    @startuml
+    note as A
+    | 0| Pag1 ProcesoA |
+    | 1| Pag1 ProcesoA |
+    | 2| Pag1 ProcesoA |
+    | 3| Libre |
+    end note
+
+    note as B
+    Disco SWAP
+    (Almacenamiento sec.)
+    end note
+
+    note as C
+    Memoria Virtual
+    |0 | NO en AM|
+    |1 | Frame 0|
+    |2 | NO en AM|
+    |3 | NFrame 3|
+    |4 | NO en AM |
+    end note
+
+    A -r-> B
+    B -r-> C
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/mem-virtual-1.png]]
+
+** Paginación bajo demanda
+*** Conceptos
+    - Las *páginas* se cargan a medida que se necesita en *Memoria Física* (RAM)
+    - EL tiempo de carga de los procesos es menor
+
+    *Observación:*
+    Si el valor del marco no aparece, es porque no se cargó a *MF* aún
+   
+    #+name: procesos-en-memoria-fisica 
+    |----------+-------+---+---|
+    | Num Pag. | Frame | P | M |
+    |----------+-------+---+---|
+    |        0 |     - | 0 | 0 |
+    |        1 |     2 | 0 | 0 |
+    |        2 |     7 | 1 | 1 |
+    |        3 |     2 | 1 | 0 |
+    |----------+-------+---+---|
+
+    *Referencias de la tabla:*
+    - P: Bit de presencia
+    - M: Bit de Modificado
+    - Frame: Numero de marco
+*** Bit de presencial (P)
+    indica si están o no en *RAM*
+    - En 0: NO está en MP (quizás estaba) 
+    - En 1: SI está en MP
+
+    *Obsevación:*
+    - Si P=0 => la *MMU* lanzará una interrupción por *fallo de página* (PF), que atenderá el SO
+    - La *MMU* es la *Unidad de Manejo de Memoria*
+      1. Es el nexo entre la CPU y la MP
+      2. Es quien traduce las direcciones para que la MP las entienda (DL a DF)
+*** Bit modificado (M)
+    Indica si una *página* la última vez que se trajo fue modificada o no
+       - En 0: 
+       - En 1: Indica que fue modificada
+*** Swapping
+    - Concepto de mover *paginas* entre *SWAP* (disco) y *RAM* (MP)
+    - Evita tener que mover un proceso entero a RAM
+** Atención Page Fault (PF)
+*** Conceptos
+    1. Comprobar si la *dirección* de un proceso es valida ó no
+       (Se cumple si está dentro del *espacio de direcciones* de ese proceso)
+    2. Si la referencia NO es válida entonces
+       - Se finaliza el proceso
+       - ó Se envía un mensaje de error (y sigue con la sig. referencia a memoria)
+    3. Si la referencia es válida, entonces
+       1. Se lanza una operación de lectura para leer la página (<<DUDA>> supongo que Int. de I/O???)
+          - Se carga la página en el *marco* elegido
+          - Si no hubiese ningún marco libre, se desalojará alguno
+       2. Cuando termina la *interrupción de IO* (lectura en disco)
+          - se modifica en la *tabla de páginas* el *bit de presencia* en 1
+            (indicando que la pagina se encuentra en memoria)
+       3. Se reinicia la *instrucción* que dió origen a la *interrupción de IO*
+*** Diagrama Basico
+    #+BEGIN_SRC plantuml :exports results :file img/page-fault-1.png
+      @startuml
+      (*) --> "Comprobar dirección"
+
+      if "si es valida" then
+              --> "Interrupción I/O"
+              if "hay marco disponible" then
+                      --> "Cargar página en el marco"
+                      --> "Modificar Bit de presencia = 1"
+                      --> "Reiniciar instrucción"
+              else
+                      --> "Desalojar un marco"
+              endif
+      else
+              --> "Finaliza proceso ó Rechaza"
+      endif
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/page-fault-1.png]]
+*** Proceso
+    1. La *CPU* ejecuta una *instrucción* (referencia a una página)
+    2. Se busca en la *TLB* (memoría caché de HW)
+       - TLB HIT: Define *DF* (con el *marco*)
+       - TLB MISS: Busca en *TP*
+         1. Si P=1 (está en *MP*) => Agrega la entrada en *TLB* -> Define *DF*
+         2. Si P=0 (NO está en *MP*) => Interrupción *PF* -> *SO* atiende Int.
+            1. Si está fuera del espacio de direcciones -> Fin de proceso ó Devolver error
+            2. Si está dentro del espacio de direcciones -> Busca un *marco* libre
+               1. Si hay marco libre => Int. I/O (de lectura, quien la lanza el SO???) -> Int. FIN I/O (DMA)
+                  1. Se marca el *marco* como ocupado como???, y P=1
+                  2. Se agrega al *TLB*
+               2. Si NO hay marco libre => Se elije *marco* victima (Algoritmo + Politicas para reemplazar página)
+                  1. Si M = 0 => Se cambia P=0 (pagina ausente), se marca el *marco* como libre (en el header)
+                  2. Si M = 1 => Int. I/P (de escritura)
+               3. Int. FIN de I/O
+
+
+    *Observación:*
+   - El proceso se desbloquea cuando se agregó la entrada al *TLB*
+
+   *Referencias:*
+   - MMU:
+   - DF: Dirección Física
+   - TP: Tabla de Página
+   - PF: Page Fault
+   - P: Bit de Presencia (Si P=0 => la página está ausente, Si P=1 => está en MP)
+   - TLB: Memoria Caché de HW para la tabla de paginas
+   - DMA: Otro Procesador que no es la CPU que ejecuta tareas secundarias ... (???)
+   - CPU: Unidad Central de Procesamiento (Procesador)
+   - MP: Memoria Principal (RAM)
+** Asignación/Sustitución de Frames (marcos)
+*** Politicas de Asignación
+**** Fija
+     - Un *proceso* tiene asignado un número fijo de *frames* (marcos)
+**** Dinámica
+     Un *proceso* tiene asignado un número variable de *frames* (marcos)
+*** Políticas de Sustitución
+**** Local
+     Se elije de los marcos asignados a ese proceso (scope local)
+**** Global
+     Se elije de los marcos de cualquier proceso (scope global)
+*** Combinación de Politicas (Asignación+Sustitución)
+**** Asignacioń Fija y Sustitución Local
+     Si un proceso (A) tiene asignado N *marcos* deberá elegir entre esos N marcos
+     cual sustituir
+**** Asignación Dinamica y Sustitución Local
+     Elije y sustituye de los *marcos* que tenga asignados en el momento
+**** Asignación Dinámica y Sustitución Global
+     - Si no tiene suficientes, elije y sustituye del *marco* de otro proceso
+     - Le agrega marcos a un proceso (A), y le saca marcos a otro proceso (B)
+**** Asignación Fija y Sustitución Global
+     - NO SE PUEDE DAR
+     <<DUDA>>: POR QUE??
+
+** Thrashing (Sobrepaginación)
+*** Conceptos
+    - Si un proceso necesita ~N~ paginas durante ~X~ tiempo =>
+      - Necesita que estén en memoria durante ese ~X~ tiempo
+        <<DUDA>>: En MP? o sólo en memoria? osea.. puede estar en Memoria virtual?
+    - Si un proceso tiene menos *frames* de los que necesita para ejecutar =>
+      - Realizará muchos *PFs* y no hará nada util (siempre le faltará un marco)
+*** Soluciones
+    - Para el problema 2: Reducir el *grado de multiprogramación*
+*** Problema 1 y Problema 2
+    #+BEGIN_QUOTE
+    Del ejemplo del problema (1):
+
+    Una asignación fija (de poco tamaño) con sustitución local
+    puede afectar sólo a ese proceso.
+    Puede "quizás" no afectar al resto de los procesos, 
+    si lo hace, a lo mucho retrasa el trabajo del resto de los procesos
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    Del ejemplo del problema (2):
+
+    Una *asignación dinámica* con *sustitución global* puede afectar
+    a muchos procesos, NO solo a uno.
+    Puede tener mayor impacto...
+    #+END_QUOTE
+*** Problema 1 - Aplicado con Asignación Fija y Sustitución Local 
+    #+BEGIN_QUOTE
+    Una asignación fija (de poco tamaño) con sustitución local
+    puede afectar sólo a ese proceso.
+    Puede "quizás" no afectar al resto de los procesos, 
+    si lo hace, a lo mucho retrasa el trabajo del resto de los procesos
+    #+END_QUOTE
+
+    Si tiene pocos *marcos* el algoritmo de sustitución se ejecutará a cada rato,
+    reemplazando el marco que necesita el proceso y perdiendo otro que también necesitaba,
+    haciendo que el proceso NUNCA se ejecute.
+
+    Si un proceso (A) tiene dos marcos asignados y trata de ejecutar dos instrucciones
+    |-------------+-----------|
+    | Instrucción | Proceso A |
+    |-------------+-----------|
+    | Operacion_1 | Pagina_20 |
+    | Operacion_2 | Pagina_25 |
+    |-------------+-----------|
+    
+    #+BEGIN_QUOTE
+    Si tiene menos *frames* (marcos) realizará muchos *PFs* (page faults)
+    ejecutará su algoritmo de sustitución de marcos..
+
+    reemplazando un *marco* (A) existente por otro (B) que necesita,
+    pedirá el (A) que habia reemplazado y lo reemplazará por el (B) que ya tenia,
+    y repetirá el ciclo de sustitución..
+
+    Faltandole siempre un marco para terminar, y nunca terminaría, por tanto tampoco se ejecutaria
+    #+END_QUOTE
+*** Problema 2 - Aplicado con Asignación Dinámica y Sustitución Global
+    #+BEGIN_QUOTE
+    Una *asignación dinámica* con *sustitución global* puede afectar
+    a muchos procesos, NO solo a uno.
+    Puede tener mayor impacto...
+    #+END_QUOTE
+    
+    - Cuantos más procesos en RAM (grado de multiprogramación) => más cant. de *PFs*
+      (y.. mas procesos robarán marcos de otros, y esos de otros, y asi..)
+    - Mayor cant. de *PFs* => "implica"
+      - Decae el uso del CPU (porque ya no hay procesos en *running*)
+      - El SO aumenta el grado de multiprogramación por no haber procesos en ejecución (a través del *PLP*, si lo tuviese)
+    - Mayor cant. de *PFs* => "implica"
+      1. Los procesos comienzan a robar *marcos* de otros
+      2. Los procesos necesitan más *marcos* y roban a otros (porque varios procesos se los quitan)
+      3. Aumenta la cant. de *procesos bloqueados* (porque no pueden terminar su ejecución)
+    - Aumenta actividad en el *MMU* (<<DUDA>>: porque se roban, y.. necesita definir otra DL?? tareas de paginación)
+
+    *Referencias:*
+    - PLP: Planificador de largo plazo
+    - PFs: Page fault
+    - MMU: Unidad de Manejo de Memoria
+*** [TODO] Conjunto de Trabajo
+**** Concepto
+     La suma de los tamaños de los trabajos de los procesos debe ser menor o igual 
+     a la cant. de marcos
+     <<DUDA>>: Localidad temporal es lo mismo que conjunto de trabajo entonces?
+
+     Cada cierto tiempo se vuelve a analizar esa sumatoria, y comparar con la cant. de marcos
+**** Localidad Temporal
+     - Es el conjunto de paginas que un proceso tiene por ~X~ tiempo (en memoria)
+     - Soluciona el problema de *Trashing* <=>
+       - Si el proceso tiene los *frames* necesarios para ajustar su *localidad*
+     - Si le das menos *frames* vuelve a pasar el *Trashing*
+     - Si le das más *frames* le estamos quitando los *frames* que puede necesitar otro proceso
+**** Ejemplo
+     Si tenemos como datos
+     1. Frames para procesos: 8
+     2. Tamaño ventana de trabajo: 5 últimas referencias
+
+     #+name: proceso-1
+     |---+---+---+---+----+---+---+---+---+---+---+---+---+---+---+----+---|
+     | 3 | 4 | 4 | 3 |  4 | 4 | 3 | 3 | 4 | 1 | 4 | 3 | 5 | 3 | 6 |  4 | 6 |
+     |---+---+---+---+----+---+---+---+---+---+---+---+---+---+---+----+---|
+     |   |   |   |   | t1 |   |   |   |   |   |   |   |   |   |   | t2 |   |
+     
+     #+name: proceso-2
+     |---+---+---+---+----+---+---+---+---+---+---+---+---+---+----+---|
+     | 1 | 1 | 1 | 1 |  3 | 2 | 3 | 3 | 1 | 6 | 6 | 5 | 3 | 7 |  4 | 6 |
+     |---+---+---+---+----+---+---+---+---+---+---+---+---+---+----+---|
+     |   |   |   |   | t1 |   |   |   |   |   |   |   |   |   | t2 |   |
+
+     #+name: proceso-3
+     |---+---+---+---+---+----+---+---+---+---+---+---+---+---+---+----+---|
+     | 8 | 4 | 7 | 7 | 8 |  4 | 3 | 3 | 4 | 8 | 4 | 3 | 8 | 3 | 8 |  4 | 6 |
+     |---+---+---+---+---+----+---+---+---+---+---+---+---+---+---+----+---|
+     |   |   |   |   |   | t1 |   |   |   |   |   |   |   |   |   | t2 |   |
+
+     *Situación (A):*
+     Del instante ~t1~ tenemos:
+     - CT(P1) = 3,4 => Tamaño_CT = 2
+     - CT(P2) = 1,3 => Tamaño_CT = 2
+     - CT(P3) = 8,4,7 => Tamaño_CT = 3
+     
+     Si sumamos el conjunto de trabajos de los procesos P1,P2,P3
+     Sumatoria_CT(P1,P2,P3) = 2+2+3 = 7
+     y.. 7 < 8 (es menor a la cant. de marcos para procesos)
+     entonces OK..! Se cumple 
+
+     *Situación (B):*
+     Del instante ~t2~ tenemos:
+     - CT(P1) = 6,3,5,4 => Tamaño_CT = 4
+     - CT(P2) = 7,3,5,6 => Tamaño_CT = 4
+     - CT(P3) = 8,3,4 => Tamaño_CT = 3
+
+     SI hacemos la sumatoria, nos da 11 > 8 (es mayor a la cant. de marcos que teniamos asignados)
+* Algoritmos de Sustitución de Páginas
+** Operación de carga/descarga de paginas
+   Por cada *PF* lo que ocurre es
+   1. Una operación de carga de página: _se lee la página faltante_, y se carga en *MP*
+   2. Una operación de descarga: _se escribe el valor del frame_ que es victima en *SWAP* (disco)
+
+   La segunda podría no ocurrir...
+** Análisis y Comparación en los Algoritmos
+   En cada algoritmo
+    - Se analizará una *secuencia de referencias*
+    - Se comparará la canti. de *PFs* que genera cada *referencia*
+      <<DUDA>>: Las referencias son los marcos que apuntan a las páginas?
+    - Lo más importante de la secuencia serán los *número de página*
+      <<DUDA>>: Porque?
+** Anomalia de Belady
+   mayor cant. de *frames* => "implica" mayor cant. de *PFs*
+   (ocurre en algunos algoritmos ante determinadas secuencias de *referencias*)
+
+   #+BEGIN_QUOTE
+   Por lo general a mayor cant. de *frames* a una secuencia, 
+   se tiende a generar igual o menor cant. de *PFs*
+   pero puede en ciertos casos darse la *anomalia de belady*
+   #+END_QUOTE
+** Tips Resolución de Ejercicios
+   1. Un conjunto de páginas que necesita cada proceso
+   2. Cuando no hay páginas cargadas, se cargarán en el primer *frame* libre
+   3. Cuando haya una *página* que NO esté cargada en un *frame* (osea, NO está en MP)
+      1. Habrá un *Page Fault* (PF)
+      2. Habrá un acceso a SWAP (disco) para escribir/cargarlo en MP (en un frame) <-- operación de escritura
+   4. En las primeras *referencias* no habrá sustitución, habrá *PF* (porque no está la página) y se cargará
+   5. Se realiza una operación de escritura en SWAP (disco)
+      1. Cada vez que se carga una página en un *frame*
+      2. Cada vez que haya un *Page Fault* (PF)
+   6. Cuando se carga una página en *modo de escritura* (M=1 ???) y se quiere sobreescribir por otra (requiere 2 accesos a disco)
+      <<DUDA>>: Cada vez que se carga en modo escritura, es modificado=1 ?
+      1. Se debe escribir en la página que estaba en modo escritura en *SWAP* (disco)
+      2. Luego escribir la nueva página nueva en el *frame* (en la *MP*)
+      <<DUDA>>: Mas en detalle como sería esto (??)
+* Tipos de Algoritmos de Sustitución de Páginas
+** [TODO] Algoritmo FIFO
+   - Se reemplazan las *páginas* en los *frame* en..
+** Algoritmo OPTIMO
+*** Conceptos
+    - Se reemplazará (en los *frames* de MP) a la página que *referenciamos* (usaremos) mas lejos en el futuro
+      (osea que luego no se referencia, ó que está como último, respecto de la posición actual en la secuencia)
+    - Intenta minimizar la cantidad de *Page Fault* (PF)
+    - Intenta hacer como el algoritmo *SJF* de planificación, pero NO se puede estimar...
+
+      #+BEGIN_QUOTE
+      Si tenemos la siguiente secuencia de páginas: 7,2,3,(4),5,2,1,4,1
+      Si en esa secuencia estamos parados en el 4, elegirá al 1 (porque es el más lejano al 4)
+
+      Si tenemos esta otra secuencia de páginas: 7,(2),3,4,5,1
+      Si en esa secuencia estamos parados en el 2, elegirá al 1 (porque es el más lejano al 2)
+      #+END_QUOTE
+*** Ejemplo
+    Si tenemos la siguiente secuencia de páginas
+
+    |------------------------+----+----+---+----+------+---+---+---+----|
+    | Secuencia de Páginas   |  2 | 3' | 2 |  1 | ~5'~ | 2 | 3 | 4 | 2' |
+    |------------------------+----+----+---+----+------+---+---+---+----|
+    | 1º Frame (marco en MP) |  2 |  2 | 2 |  2 | 2    |   |   |   |    |
+    | 2º Frame (marco en MP) |    |  3 | 3 |  3 | 3    |   |   |   |    |
+    | 3º Frame (marco en MP) |    |    |   |  1 | ~5~  |   |   |   |    |
+    |------------------------+----+----+---+----+------+---+---+---+----|
+    | PFs                    | PF | PF | - | PF | PF   |   |   |   |    |
+    |------------------------+----+----+---+----+------+---+---+---+----|
+    | Acceso a SWAP (disco)  |  1 |  1 | 0 |  1 | 1    |   |   |   |    |
+    |------------------------+----+----+---+----+------+---+---+---+----|
+
+    Podemos ver que en la posición 5 de la secuencia, cuando evaluamos la página ~5~ que está en modo de escritura
+    al decidir que *página* reemplazar (entre la 2,3,1) se elije la ~1~ (que estaba en el *3º Frame*)
+    Porque la ~1~ no está cerca de la posición actual, respecto a las próximas páginas que le siguen 2,3,4,2,..
+    (si estuviera al final, también se elegiría al ~1~, porque estaría lejos.. y si estuviera luego del ~4~ también, porque aún sería
+    la página las lejana respecto de la ~5~)
+** Algoritmo Least Recent use (LRU)
+*** Conceptos
+    - La página que usé hace más tiempo (si la usé hace mucho tiempo, en el futuro seguramente tampoco la use tanto)
+    - Elige a la página menos recientemente utilizada (hace mas tiempo que no se referencia)
+    - Utiliza el pasado reciente como una aprox. del futuro
+*** Implementación
+**** Con Pila
+     - Una pila de los números de paginas
+     - Con cada referencia se coloca la pag. superior (asi actúa una pila, se apila/encimando, y arriba va el más reciente)
+     - Se elige la pagina de la parte inferior (porque sería el que se usó antes)
+**** [TODO] Con un puntero contador
+     - Se elige el que tiene menor valor (por
+     - Crear un puntero al menor
+     <<DUDA>>: Pero el menor no sería el más reciente?
+*** Ejemplo
+    #+name: algoritmo-lru
+    |------------------------+----+----+----+----+------+---+----+---+---|
+    | Secuencia de Páginas   |  2 | 3' |  2 |  1 | ~5'~ | 2 | 4' | 5 | 3 |
+    |------------------------+----+----+----+----+------+---+----+---+---|
+    | 1º Frame (marco en MP) |  2 | 2  |  2 |  2 |    2 |   |    |   |   |
+    | 2º Frame (marco en MP) |    | 3' | 3' | 3' | ~5'~ |   |    |   |   |
+    | 3º Frame (marco en MP) |    |    |    |  1 |    1 |   |    |   |   |
+    |------------------------+----+----+----+----+------+---+----+---+---|
+    | PFs                    | PF | PF |  - | PF |   PF |   |    |   |   |
+    |------------------------+----+----+----+----+------+---+----+---+---|
+    | Acceso a SWAP (disco)  |  1 | 1  |  0 |  1 |    1 |   |    |   |   |
+    |------------------------+----+----+----+----+------+---+----+---+---|
+
+    *Situación A:* En ~5'~  hay 2 accesos a disco porque
+    1. por *leer de swap* por el *Page Fault* (PF)
+       (/La pagina ~5'~ la tengo que leer de *SWAP* (disco) para pasarla al *frame* de *MP* (RAM)/)
+    2. y *escribir en swap*
+       (/porque la la pag. ~3'~ que estoy reemplazando estaba modificada (m=1), y antes de reeemplazar/
+        /se debe escribir en SWAP para no perder esos cambios/)
+** Algoritmo Clock
+*** Conceptos
+    - Basado en FIFO, se aproxima al *LRU*
+    - Se aplica el algoritmo cuando se debe reemplazar, hasta tanto se aplica FIFO (al principio, cuando hay frames libes)
+    - Tiene menos ~overhead~ que el LRU
+    - Si PF = 0 => no elige a nadie, y avanza al sig. numero de pagina de la secuencia
+*** Puntero
+    Tiene un *puntero* que indica cual es la siguiente *pagina* víctima a ser sustituída
+    (<<DUDA>>: la cola es circular??? Osea que vuelve al primer frame?)
+*** Bit de uso
+    - Trata de aproximar el algoritmo
+    - Las páginas que usé de nuevo se le da una 2da opotunidad :)
+    - Si ~U=1~ => Cambia U=0  y avanza el puntero al sig. frame
+      (si el la pagina del sig. frame tiene U=1, lo pasa a 0 y avanza el puntero al sig frame, y asi..)
+    - Si ~U=0~ => Sustituye esa pagina y avanza el puntero al sig. frame
+*** Ejemplo
+    #+name: algoritmo-clock
+    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+    | Secuencia de Páginas   | 2     | 3'    | 2     | 1     | 5'     | 2     | 4' | 5 | 3 |
+    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+    | Bits                   | P U   | P U   | P U   | P U   | P U    | P U   |    |   |   |
+    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+    | 1º Frame (marco en MP) | ~2^¹~ | ~2^¹~ | ~2^¹~ | ~2^⁰~ | 5'^¹   | 5'^¹  |    |   |   |
+    | 2º Frame (marco en MP) |       | 3'^¹  | 3'^¹  | 3'^⁰  | ~3'^¹~ | 2^¹   |    |   |   |
+    | 3º Frame (marco en MP) |       |       |       | 1^⁰   | 1^⁰    | ~1^⁰~ |    |   |   |
+    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+    | PFs                    | PF    | PF    | -     | PF    | PF     | PF    |    |   |   |
+    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+    | Acceso a SWAP (disco)  | 1     | 1     | 0     | 1     | 1      | 2     |    |   |   |
+    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+
+    *Caso (A): Cuando el puntero avanza, cuando se cambia el bit de uso y cuando se ejecuta el algoritmo*
+    En la secuencia vemos que en la página número ~1~ 
+    1. Al ingresar el número de página en el 3º Frame, ya puede iniciar el algoritmo
+    2. El puntero estaba en el 1º frame que contiene al ~2~ y este tiene bit_uso=1, 
+       lo modifica a cero y avanza el puntero al 2º frame
+    3. El puntero está en el 2º frame que contiene a ~3'~ este tiene ~bit_uso=1~
+       lo cambia a cero y avanza el puntero al 3º frame
+    4. El puntero está en el 3º frame que contiene a ~1~ este también tiene ~bit_uso=1~
+       lo modifica a cero y vuelve a apuntar al 1º frame que contiene al ~2~
+    5. El puntero está en el 1º frame que contiene a la pag. ~2~
+       pero.. como su ~bit_uso=0~ aplicará la sustitución de página por ~5~
+       y cambia el ~bit_uso=1~ y avanza el puntero al 2º frame
+
+    *Caso (B): Dos accesos a SWAP (disco)*
+    EN la secuencia notamos que en la página número ~2~ que está seguido del ~5~
+    hay dos accesos a disco (swap) porque
+    1. El frame que se sustituye es el 2º y tiene a la página ~3~ que estaba modificada
+       osea tenia bit_modificado=1, por tanto se debe guardar el valor de esa página ~3~
+       en SWAP para no perder los datos(primer acceso a disco). Y luego escribir en SWAP
+       por el propio PF (xq no estaba en el espacio de direcciones del proceso) la página ~2~ 
+       en el mismo 2º frame (2do acceso a disco)
+
+    *Referencias:*
+    - En la 2da fila Bits, P:pagina, U: Bit de uso
+    - Las páginas que estén marcadas así ~numero~ indica como va avanza el *puntero* entre los *frames*
+    - Las potencias en ^¹ se refieren a bit_de_uso=1
+    - Las potencias en ^⁰ se refieren a bit_de_uso=0
