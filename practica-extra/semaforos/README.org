@@ -21,11 +21,11 @@
                  );
 
     // - decrementar en una unidad el semáforo
-    // - bloquear el acceso al recurso compartido con otro hilo
+    // - si (sem == 0) => se bloquea el acceso al recurso compartido con otro hilo
     int sem_wait(sem_t *sem);
 
     // - incrementar en una unidad el semáforo
-    // - desbloquear el acceso el recurso compartido
+    // - si (sem > 0 ) => se desbloquea el acceso el recurso compartido
     int sem_post(sem_t *sem);
   #+END_SRC
 * Compilar
