@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
   int i;
 
   // definimos como condición un número de hilos,
-  // actúa como un "semaforo contador" (?)
+  // actúa como un "semaforo contador"
   pthread_barrier_init(&barrier, NULL, 3);
 
   for(i =0; i < THREADS_MAX; i++){

@@ -1,90 +1,82 @@
-#include <pthread.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
 
-// -------------------------------------------------------------------------------
-//
-pthread_mutex_t mutex_nota;
-pthread_cond_t cond_nota;
+void* rutina(void*);
+void thr_join();
+void thr_exit();
 
-int nota = 0;
+int DONE = 0;
 
-void *corregirParcial(void *arg);
-void *molestarAlProfesor(void *arg);
+// -> inicializamos ambos de forma estática
+// -> se realiza en tiempo de compilación
+pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t COND = PTHREAD_COND_INITIALIZER;
 
+// ------------------------------------------------------------
 
-// -------------------------------------------------------------------------------
-// > MAIN
-int main(int agc, char* argv[]){
-  // declaramos un vector de hasta hilos
-  pthread_t th[5];
+int main(int argc, char* argv[]){
+  pthread_t th;
+  printf("Hilo (main): Hola!\n");
 
-  // inicializamos el mutex
-  pthread_mutex_init(&mutex_nota, NULL);
-  // inicializamos la condición
-  pthread_cond_init(&cond_nota, NULL);
+  // -> 1er parámetro: dirección de memoria en donde se guardará el hilo creado
+  // -> 3er parámetro: al hilo le asociamos como rutina la función "rutina"
+  // -> 4to parámetro: le mandamos NULL como parámetro a "rutina", es decir nada
+  pthread_create(&th, NULL, &rutina, NULL);
 
-  if(pthread_create(&th[0], NULL, &corregirParcial, NULL) != 0){
-    perror("Error al crear el hilo 1..!");
-  }
-
-  for(int i=1; i < 5; i++){
-    if(pthread_create(&th[i], NULL, &molestarAlProfesor, NULL) != 0){
-      perror("Error al crear el hilo 2..!");
-    }
-  }
-
-  for(int i=0; i < 2; i++){
-    if(pthread_join(th[i], NULL) != 0){
-      perror("Error al esperar los hilos ?");
-    }
-  }
-
-  // no es tan.. importante porque funciona sin esto, pero bueno (?)
-  pthread_mutex_destroy(&mutex_nota);
-  pthread_cond_destroy(&cond_nota);
+  // -> emulamos lo que haría pthread_join(th, NULL)
+  thr_join();
 
   return 0;
 }
 
+// ------------------------------------------------------------
 
-// -------------------------------------------------------------------------------
-//
-void *corregirParcial(void *arg){
-  for(int i=0; i < 5; i++){
-    pthread_mutex_lock(&mutex_nota);
-    nota += 2;
-    printf("Profesor: Corrigiendo parcial.. (nota=%d)\n", nota);
-    pthread_mutex_unlock(&mutex_nota);
+// -> Bloqueamos el mutex cuando invocamos a pthread_cond_wait() y pthread_cond_signal()
+// -> porque ambas se deben ejecutar de forma atómica, para evitar condiciones de carrera
 
-    // despierta sólo a un hilo que esperaba esta condición
-    // pthread_cond_signal(&cond_nota);
+void thr_join(){
+  pthread_mutex_lock(&MUTEX);
+  // -> loop infinito que se ejecuta mientras no se cumpla la condición de corte
+  // -> si se cumple la condición de corte, el hilo ya no necesita esperar
+  //
+  // -> si usamos IF(condition)    => no se garantiza que sea tan certero el chequeo de la condición
+  // -> si usamos WHILE(condition) => garantizamos que la condición true, porque se vuelve a iterar y chequear
+  while(DONE == 0){
+    printf("Esperando que finalize el hilo..\n");
 
-    // despierta a todos los hilos que esperan esta condición
-    pthread_cond_broadcast(&cond_nota);
-
-    sleep(1);
+    // -> hace que el hilo se quede esperando/durmiendo mientras tanto
+    // -> si otra función no le manda un signal/1 asociado con esta condición, el hilo se queda durmiendo/esperando
+    pthread_cond_wait(&COND, &MUTEX);
   }
 
-  pthread_exit(NULL);
+  pthread_mutex_unlock(&MUTEX);
 }
 
-void *molestarAlProfesor(void *arg){
-  pthread_mutex_lock(&mutex_nota);
+void thr_exit(){
+  // 1. bloqueamos el recurso compartido con el mutex, evitamos una "race condition"
+  pthread_mutex_lock(&MUTEX);
+    // 2. usamos el recurso compartido, está protegido
+    DONE = 1;
+    // 3. avisamos que se terminó de ejecutar la tarea/rutina asociada al hilo
+    // -> si no hacemos signal() => el hilo se quedará esperando/durmiendo
+    // -> es necesario indicar la condición al signal/1, porque wait/2 la tiene asociada
+    pthread_cond_signal(&COND);
+    // 4. desbloqueamos el recurso compartido
+  pthread_mutex_unlock(&MUTEX);
+}
 
-  // el hilo se queda bloqueado hasta que se cumpla la condición
-  while(nota < 2){
-    printf("Alumno: molesta al profesor por tener baja nota :F\n");
-    // mientras se cumpla la condición (nota < 2)
-    // el cond_wait hará que se duerma el 'hilo' que tiene asociada esta a rutina 'molestarAlProfesor'
-    pthread_cond_wait(&cond_nota, &mutex_nota);
-  }
+void* rutina(void* args){
+  // ponemos un delay previo a ejecutar las instrucciones de abajo
+  sleep(3);
 
-  nota -= 1;
-  printf("Profesor: corrigiendo parcial muy enojado >:[ (nota=%d, hilo_id=%d)\n", nota, pthread_self());
-  pthread_mutex_unlock(&mutex_nota);
+  // pasado los 3 segundos, se ejecutan las siguientes sentencias
+  printf("Hilo: Hola..!\n");
 
-  pthread_exit(NULL);
+  // --> emulamos lo que haría pthread_exit(NULL)
+  thr_exit();
+
+  // retornamos NULL, porque es un puntero a una función a void
+  return NULL;
 }
