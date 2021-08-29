@@ -24,7 +24,7 @@
 ** Ventajas
 ** Desventajas
    - El *paso de mensajes* lo hace más lento
-* Arquitectura por Capas
+* Arquitectura Multicapa
 ** Desventajas
   - funciona en *modo kernel* (si hay errores, es algo grave)
 ** Ventajas

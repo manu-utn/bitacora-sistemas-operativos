@@ -1,4 +1,4 @@
-#+TITLE: Clase 03 - Planificación
+#+TITLE: Clase 03 - Planificación de Procesos/Hilos
 
 1º PARCIAL 05/06 (Junio)
 
@@ -117,20 +117,26 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    
    también programas que sincronizan archivos en la nube (dropbox)
    #+END_EXAMPLE
+* Planificador - Objetivos
+  - Asigna procesos para ser ejecutado en la CPU (administrado por dif. colas READY-BLOCKED)
+  - Decide cual es el próximo proceso que se debe ejecutar
+  - Decide donde ubicar el *PCB del proceso* en ejecución
+  - Cada planificador prioriza las siguientes *métricas* de manera diferente
+    - Tiempo de respuesta
+    - Eficiencia de CPU
+    - Throughput (nivel de procesamiento)
 * Tipos de Planificadores
    En el Diagrama de 7 estados
 ** Conceptos
-   - Decide cual es el próximo proceso que se debe ejecutar
-   - Decide donde ubicar el *PCB del proceso* en ejecución
-   - Cada planificador prioriza las siguientes *métricas* de manera diferente
-     - Tiempo de respuesta
-     - Eficiencia de CPU
-     - Throughput (nivel de procesamiento)
 ** Grado de multiprogramación
    - Max. cant. de procesos en ejecución, osea que usen CPU
      (de *forma recurrente*)
-** (PLP) Planificador de Largo Plazo
-   Es el diagrama de 2 estados, que contiene
+** [DOING] (PLP) Planificador de Largo Plazo
+   - Controla el *grado de multiprogramación* del sistema
+   - Decide que *job* será aceptado y convertido en *proceso*
+     - idle (?)
+     - cpu bound / io bound (?)
+   - Es el diagrama de 2 estados, que contiene
      + Estado Nuevo (new)
      + Estado Finalizado (exit)
 
@@ -151,15 +157,16 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     *Observación:*
     - Estos procesos pueden pasar a los estados del de [[Planificador de Corto Plazo][Corto Plazo]]
       (ready/running/blocked)
-** (PCP) Planificador de Corto Plazo
+** [DOING] (PCP) Planificador de Corto Plazo
 *** Conceptos
+    + Monitorea...
     + Se ejecuta muy frecuentemente, todo el tiempo se ejecuta
     + Es invocado cuando
-      - ocurre un evento que libera el CPU
-      - debe seleccionar un proceso más prioritario
-*** Clasificación
-    + Con desalojo
-    + Sin desalojo
+      - ocurre un evento que *libera el CPU*
+      - debe seleccionar un *proceso más prioritario*
+*** Clasificación (Con/Sin Desalojo)
+    + Con desalojo: apropiativo
+    + Sin desalojo: no apropiativo, cooperativos
 *** Eventos de replanificación
     + Interrupciones I/O
     + LLamadas al sistema
@@ -176,7 +183,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
       - Puede ser una ~syscall~
       - Puede ser una *interrupción*
     + Proceso nuevo (Syscall: New -> Ready)
-    + Interrupción por timer-clock (a nivel de hardware)
+    + Interrupción por timer-clock (por ~quantum~ a nivel de hardware)
 *** Estados
     Es el diagrama de 3 estados, pero los más importantes son
     + Estado Listo (ready)
@@ -195,16 +202,20 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     - le puse el comando =sleep()=
     - usar semaforos
 *** Porque planificamos (Criterios)
+    #+BEGIN_COMMENT
+    Throughput (sistema)
+    #+END_COMMENT
+
 **** Prestaciones (cuantitavo/medibles)
 ***** orientados al usuario/proceso
       + tiempo de ejecución (ó turnaround time)
         - es el proceso desde que inicié un proceso hasta que finalizó
       + tiempo de respuesta
-        - cuanto tiempo tarda el sistema en responder ante una operación
-          del usuario 
+        - cuanto tiempo tarda el sistema en responder ante una operación del usuario
       + tiempo de espera
         - es la suma de todos los tiempos en los que el proceso estuvo
           en la cola de listo (el proceso espera que el SO lo elija)
+        - tiempo que se le niega en usar la CPU
 ***** orientados al sistema
       Pueden afectar a todos los procesos
       + tasa de procesamiento (rendimiento/throughput)
@@ -247,7 +258,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    *Observaciones:*
    - Cuando un proceso está en E/S queda en *estado bloqueado*
      porque está esperando que ese dispositivo finalize
-** (FCFS/FIFO) First Come First Served
+** [DOING] (FCFS/FIFO) First Come First Served
 *** Ventajas
     - facil de implementar
     - tiene poco *overhead*
@@ -258,6 +269,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     - El throughput es el nivel de procesamiento, cuantos procesos se ejecutaron 
       en una unidad de tiempo
 *** Conceptos
+    - es *sin desalojo*
     - la elección del próximo proceso es el tiempo de llegada
     - la prioridad es śegun el que más lleva tiempo
       está esperando en la *cola de listos*
@@ -269,6 +281,8 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
       - por una *llamada al sistema* (ó syscall)
         (Ej. exit, sleep, etc..)
       - ó porque termina su tiempo de ejecución
+*** [DOING] Momentos de Replanificación
+    
 *** Ejemplo
     Un ejemplo hipotécico de 3 procesos que compiten por usar el CPU
     habiendo un único procesador
@@ -732,7 +746,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     - por la fórmula
     - ó porque el algoritmo decide que cuando el proceso termine todo
       su *quantum* entonces *aumente su prioridad*
-** Categorías de Algoritmos
+** Categorías de Algoritmos (Con/Sin desalojo)
 *** Sin desalojo (sin explusión ó Nonpreemptive)
     - significa sin desalojo del procesador
     - el sistema operativo no puede hacer para que ese proceso deje de usar
@@ -753,8 +767,6 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
     - Los algoritmos que entran en esta categoría son
       1) RR 
-         
-
 * [DOING] Tips Algoritmos
 ** (RR) Round Robin
    Se desalojan los procesos por *quantum*
@@ -784,7 +796,6 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
      2. Interrupción de IO
 ** Planificadores
    - son parte del SO
-   - 
 * [DOING] COnceptos importantes
 ** que es el tiempo de espera
    es el tiempo que un proceso está en la cola de espera

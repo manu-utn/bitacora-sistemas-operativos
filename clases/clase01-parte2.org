@@ -1,31 +1,29 @@
-#+TITLE: Introducción al Sistemas operativos
-
+#+TITLE: Introducción al Sistema Operativo
 * temas al aire
 los distintos SO tienen en común
 que tienen funcionalidades que están en el kernel
 * [TODO] Evolución de los Sistemas Operativos
 ** Monoprogramados
-   los programas dejaban de funcionar
-   porque el procesador se quedaba esperando
+*** Conceptos
+    los programas dejaban de funcionar porque el procesador se quedaba esperando
 *** Procesamiento en serie
     - Se podia ejecutar solo un programa a la vez
-    - Eran las personas quienes que tenian que ejecutar
-      esos otros programas
+    - Eran las personas quienes que tenian que ejecutar esos otros programas
 *** Sistemas en lotes sencillos
     ???
 ** Multiprogramados
 *** Sistemas en lotes multiprogramados
     - Se automatizó el procesamiento en serie (???)
-    - se podian ejecutar varios programas
-      de manera *concurrente*
+    - se podian ejecutar varios programas de manera *concurrente*
 *** Sistemas de tiempo compartido
     - Es el utilizado actualmente
-    - son sistemas de multiusuario donde varios 
-      usuarios conectados en 
+    - son sistemas de multiusuario donde varios usuarios conectados en 
 * Funciones
-** Administrar la ejecución de programas
-** Interfaz para usuario y programadores
-   - Puede ser a traves de una consola, ó de una interfaz
+** [TODO] Administrar la ejecución de programas
+   - relacionado con hilos
+** Interfaz para usuario y dispositivos
+   - Ser interfáz de usuario (/a través de una consola de comandos, ó de una interfaz gráfica/)
+   - Ser interfaz con los dispositivos
 ** Administración de los recursos de HW y SW
    - Cuando hacemos un programa (Ej. una calculadora), es este
      quien le solicita al *SO* que muestre por pantalla los resultados
@@ -33,7 +31,7 @@ que tienen funcionalidades que están en el kernel
      recursos de hardware*, evitandole al programador lidiar con problemas
      de hardware
 ** Comunicación entre programas
-   - a traves del *sistema operativo* para evitar que otros
+   - a través del *sistema operativo* para evitar que otros
      programas accedan a posiciones de memoria de otro
      para agregar/sacar información
     
@@ -46,8 +44,10 @@ que tienen funcionalidades que están en el kernel
 ** Asignación de recursos
    El mismo SO es quien se encarga de asignarse los recursos
 ** Administrar los archivos
-* Capas de una computadora
-** Tipos de usuarios
+** Administrar la memoria
+** Administrar los dispositivos de IO
+* Capas del Sistema Operativo
+** Aplicaciones de usuario
    |---------------------------------+-------------------|
    | Tipo de usuario                 | Que necesita usar |
    |                                 |                   |
@@ -57,25 +57,31 @@ que tienen funcionalidades que están en el kernel
    | Programadores                   | Utilidades        |
    |                                 | Sistema Operativo |
    |---------------------------------+-------------------|
-   | Diseñador del Sistema Operativo | Hadware           |
+   | Diseñador del Sistema Operativo | Hardware          |
    |---------------------------------+-------------------|
-** Aplicaciones
+
    - Los *usuarios finales* solo quieren usar las aplicaciones
-** Utilidades
+** Aplicaciones Utilitarias
   - Son lo que los *programadores* que necesitan para poder programar
     (Ej. compilador, consola, interfaz grafica)
   - Para usarlos necesitamos conocer el *sistema operativo*
     (Ej. mac, linux, windows,.. cada uno su mundo)
-** Sistema operativo (kernel)
+** Bibliotecas del Sistema
+** System Calls
+   - Para tener un control instrucciones
+   - Para manejar recursos (/la manera correcta/)
+** Kernel (Sistema operativo)
    - Para diseñar un SO necesitamos conocer el hardware
 ** Hardware
 * (Syscall) Llamadas al sistema
+** Conceptos
    #+BEGIN_EXAMPLE
    Las llamadas al sistema son a nivel sistema operativo, 
    porque el printf() en Linux llama a write (llamada al sistema en linux)
    quiźas en Windows la llamada al sistema tiene otro nombre en vez de write
    #+END_EXAMPLE
 
+  - Son la _manera correcta de solicitar los recursos_
   - permite al programador utilizar recursos
   - suelen ser utilizadas a traves de una API por medio de wrappers
     - permiten portabilidad
@@ -83,6 +89,16 @@ que tienen funcionalidades que están en el kernel
       SO deberia hacer lo mismo, aunque por dentro cada SO haga 
       otra cosa, PERO siempre que usemos funciones estandar)
   - son a nivel *sistema operativo*  (no es lo mismo en Linux, Windows, ...)
+** Salto de Modo
+   La syscall hace el cambio de modo a nivel de implementación se usa
+   + interrupciones
+     1. dejar info que es una syscall
+     2. lanzar la interupción
+   + fast syscalls
+     1. dejar info que es una syscall
+     2. logica de la syscall -> ejecuta directo la syscall
+
+   Manejo de interrupciones -> RAM -> Ejecuta Syscall
 ** Portabilidad de un programa
    La portabilidad de un programa consiste en poder pasar un 
    programa de un sistema operativo a otra, y que siga funcionando.
@@ -93,10 +109,9 @@ que tienen funcionalidades que están en el kernel
    por eso un programa compilado para Linux puede no funcionar en Windows,
    y viceversa.
 ** Wrappers
-     - significa envoltorio
-     - es una función que llama a otra función (que es una llamada 
-       al sistema)
-     - son funciones que incluyen una llamada al sistema
+     - significa envoltorio, y encapsula la complejidad de una llamada a una ~syscall~
+     - es una función que llama a otra función (que es una llamada al sistema)
+     - son funciones que incluyen una *llamada al sistema*
 
    #+NAME: funcion-printf
    #+BEGIN_EXAMPLE
@@ -131,13 +146,20 @@ que tienen funcionalidades que están en el kernel
    |     1 | Modo Usuario      |
    |-------+-------------------|
 
+  + también llamados "anillos de protección"
+    1. anillo - aplicaciones
+    2. anillo - device drivers
+    3. anillo - kernel
+  + Es el ~PSW~ el que tenía el bit de *modo de ejecución*
+  + Suelen ser 4 anillos de protección, pero sólo usamos 2 (kernel/usuario)
+  + Garantiza la protección
   + según el modo podemos ejecutar o no ciertas *instrucciones* (privilegiadas y no privilegiadas)
   + el SO es el primero en bootear,
-     - quien cambia a modo usuario todos los programas, 
-     - es el unico que puede cambiar a [[Modo kernel]] y ejecutar [[instrucciones privilegiadas]]
+    - quien cambia a modo usuario todos los programas, 
+    - es el unico que puede cambiar a [[Modo kernel]] y ejecutar [[instrucciones privilegiadas]]
 ** Modo kernel
-   - se pueden ejecutar las *instrucciones privilegiadas*
-   - solo el SO puede ejecutar en este modo, 
+  - se pueden ejecutar las *instrucciones privilegiadas*
+  - solo el SO puede ejecutar en este modo, 
      para poder acceder al hardware
 ** Modo usuario
    - se pueden ejecutar las *instrucciones NO privilegiadas*   

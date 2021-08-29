@@ -36,7 +36,6 @@
       quede en *estado Listo* o que cambie de estado *Ejecutando a Listo*.
  
     <<DUDA 1>>: Ejemplo de Ejecutando a Listo?
-
 ** El Response Time es un criterio de planificación
    a. Ninguna de las anteriores.
    b. Orientado al sistema.
@@ -47,7 +46,6 @@
    c. Orientado al usuario. 
 *** Observaciones
     Es el tiempo que el usuario espera desde que realiza una operación hasta recibe alguna respuesta del sistema.
-
 
 ** Al utilizar el algoritmo Round Robin, el quantum
    a. Ninguna de las anteriores. 

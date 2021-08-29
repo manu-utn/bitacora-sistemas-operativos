@@ -36,17 +36,178 @@
      (un programa son instrucciones compiladas a codigo máquina)
    - Un proceso NO puede acceder a la memoria de otro proceso
      (Ej. un programa que quiera acceder a nuestro homebanking)
+   - Es un programa en ejecución
+   - Es la *minima unidad de planificación*
 ** Espacio de direccionamiento de memoria
    - Contiene las instrucciones, variables, estructuas de datos, ..
    - Lo que compilamos y queremos que se ejecute
+** [#A] Cambio de Contexto - Cambio de Proceso - Cambio de Modo
+*** Escenarios Comunes
+    El recíproco de los dos ejemplos NO siempre se cumple
+
+    |------------------+-----------------------------------------------|
+    | 1 Process Switch | 2 context switch                              |
+    |                  | (se guarda el _contexto de un proceso_        |
+    |                  | y se guarda el de otro)                       |
+    |                  |                                               |
+    |                  | Ej. de un _proceso usuario_ al _planificador_ |
+    |                  | y del _planificador_ al _proceso elegido_     |
+    |------------------+-----------------------------------------------|
+    | 1 Mode Switch    | 1 Context Switch                              |
+    |                  | (paso de ejecutar un _proceso usuario_        |
+    |                  | a ejecutar el _sistema operativo_ ó viceversa |
+    |                  |                                               |
+    |                  | Ej.                                           |
+    |------------------+-----------------------------------------------|
+*** Recíproco de los Escenarios comunes
+    NO siempre se cumple el recíproco de los escenarios anteriores, es decir
+    + Que hayan dos _cambios de contexto_ NO implica que siempre haya un _cambio de proceso_
+    + Que haya un _cambio de contexto_ NO implica que siempre haya dos _cambios de modo_
+    
+    |------------------+------------------------------------------------------------------|
+    | 2 Context Switch | 1 Process Switch (sin cambiar de proceso)                        |
+    |                  | - se puede elegir al mismo proceso                               |
+    |                  | - ejecutar una ~syscall~                                         |
+    |                  | - atender una ~interrupción~                                     |
+    |                  |                                                                  |
+    |                  | Ej.                                                              |
+    |------------------+------------------------------------------------------------------|
+    | 1 Context Switch | 1 Mode switch (sin cambiar de modo)                              |
+    |                  | (puede ocurrir una ~interrupción~ cuando ya estoy atendiendo una |
+    |                  | osea si tenemos ~interrrupciones anidadas~)                      |
+    |                  |                                                                  |
+    |                  | Ej. Estar en _modo kernel_ y atender una ~interrupción~          |
+    |                  | y luego sin haber cambiado de modo, atender otra ~interrupción~  |
+    |                  | en este caso hubo un _cambio de contexto_                        |
+    |------------------+------------------------------------------------------------------|
+*** Cambio de Contexto
+**** Conceptos
+     + Cuando se cambia el proceso que está en la *CPU* se debe guardar el *Contexto de ejecución*
+        para luego reanudarlo en el lugar interrumpido
+     + En el tiempo que sucede el *SO* no hace nada útil (para el usuario) se considera *overhead*
+        y se debe minimizar
+     + Produce *Overhead*
+     + Se guarda el contenido de los registros del CPU en el *Stack* del Sistema Operativo, y luego 
+       al PCB de proceso (cuando vuelva al proceso)
+
+     #+BEGIN_QUOTE
+     En el stack del SO se guardan las cosas de forma temporal, a nivel de HW
+     se guarda info cada vez que ocurre un cambio de contexto (Ctx)
+     #+END_QUOTE
+
+     #+BEGIN_QUOTE
+     Que hayan dos *cambios de contexto* no implica que se haya un *cambio de proceso*
+    
+     Si un proceso A invoca un ~wrapper~ para una ~sycall~, habrá un *cambio de contexto*
+     de *modo usuario* a *modo kernel*, y *modo kernel* a *modo usuario*,
+     y sigue siendo el mismo proceso A
+
+     También pueden haber varios *cambios de contexto* sin que haya un *cambio de modo*
+     #+END_QUOTE
+**** Objetivos
+     + Ejecutar otro proceso
+     + Atender una [[interrupción]] (ejecutará el [[interrupt handler]]) <<MEJORAR 1>>
+     + Ejecutar una [[syscall]]
+**** Ejemplo
+     Cuando queremos ejecutar dos procesos (A) y (B)
+     1. el *sistema operativo* guarda el contexto de ejecución del proceso (A) para luego retomarlo
+     2. el *sistema operativo* carga el contexto de ejecución del proceso (B) hasta que termine 
+        y se guarde en el contexto de ejecución
+     3. se vuelve a cargar el contexto de ejecución del proceso (A)
+    
+     se repite (1)(2)(3) con cada proceso
+     se intercambia el contexto de ejecución
+     y se guarda dentro de un espacio propio de proceso (en el *PCB*)
+**** Observaciones 
+      + Es el *Sistema Operativo* quien carga/guarda los datos de los contextos
+         de la memoria a los registros del procesador y viceversa
+      + Es el *registro SP* quien guarda la dirección de memoria de la 
+        última instrucción ejecutada
+**** Diagrama Proceso
+     |------------------|
+     |     PROCESO      |
+     |------------------|
+     |      Codigo      |
+     |      Datos       |
+     |       Pila       |
+     |       Heap       |
+     | ~(PCB) CONTEXTO~ |
+     |------------------|
+**** Diagrama Procesador
+    |-----------------|
+    |   Procesador    |
+    |-----------------|
+    | Program Counter |
+    |       PSW       |
+    |       AX        |
+    |       SP        |
+    |       ...       |
+    |-----------------|
+*** [TODO] Cambio de un proceso
+    1:00:00 Video
+**** [TODO] Pasos
+**** Sobrecarga (Overhead)
+     - Cuando el *sistema operativo* interviene, provoca *overhead*
+     - Mientras menos intervenga el *sistema operativo* mejor
+     - El sistema operativo es un proceso pero NO proceso de usuario
+       (tiene un conjunto de procesos, pero no son de usuario)
+**** Cambio de modo
+**** Overhead
+**** Interrupciones
+*** Cambio de modo de Ejecución
+    Sólo el *Sistema Operativo* es el que puede realizar el Cambio de [[file:clase01-parte2.org::*Modo de ejecución][Modo de ejecución]] 
+    de Modo kernel a Modo usuario, ó viceversa
+** Atributos
+*** Identificador
+    - PID: Process Identifier (numero que lo identifica univocamente)
+    - PPID: Parent Process Identifier (el proceso padre)
+    - UID: User Identifier (el usuario que lo ejecuta) 
+*** Información de gestión de memoria
+    Cada proceso tiene propia estructura (codigo/datos/stack/heap)
+*** Información de Planificación
+    - Cuando tenemos muchos procesos para ejecutar
+    - Existe un algoritmo para saber que proceso ejecutar
+*** Información de E/S
+    - Dispositivos asociados a ese proceso
+    - El usuario/programador no los necesita conocer, pero si el sistema operativo
+*** Información contable
+    - Información sobre los recursos que utilizó el proceso
+
+    #+BEGIN_EXAMPLE
+    Es util para sistemas en la nube, con esa información
+    determinan cuanto te cobraran  :(
+    #+END_EXAMPLE
+** (PCB) Bloque de Control de proceso
+   + Hay uno por cada proceso en el sistema
+   + Se encuentra SIEMPRE cargado en la *RAM*
+   + Contiene TODA la infomación relacionada con el proceso, para administrarlo
+     * atributos (identificador, info de gestion de memoria, ...)
+     * contexto de ejecución 
+     * la dirección de las estructuras (codigo,datos,stack,heap)
+
+   #+NAME: pcb
+   |------------------------------------|
+   |         Estado del proceso         |
+   |------------------------------------|
+   |          Program Counter           |
+   |------------------------------------|
+   |           Registros CPU            |
+   |------------------------------------|
+   | Información de Planficación de CPU |
+   |------------------------------------|
+   |  Información de manejo de memoria  |
+   |------------------------------------|
+   |    Información de Estado de E/S    |
+   |------------------------------------|
+   |        Información Contable        |
+   |        (para estadísticas)         |
+   |------------------------------------|
 ** Estructuras Principales
-   E  as .structuras están guardadas en el *espacio de direccionamiento
-   de    ...a*
-*** Codi o  ...
-    - Es el Esp...o asignado para *almacenar la secuencia de instrucciones
+   E  as .structuras están guardadas en el *espacio de direccionamiento de    a*
+*** Codigo...
+    - Es el Espacio asignado para *almacenar la secuencia de instrucciones
       del programa*
-    - Es solo de lectura y ejecución
-      (NO es de escritura)
+    - Es solo de lectura y ejecución (NO es de escritura)
 *** Datos
     - Espacio asignado para las *variables globales*
 *** Stack
@@ -58,6 +219,8 @@
     #+BEGIN_EXAMPLE
     Las variables locales que estan dentro de una función dejan de existir
     cuando esta termina su ejecución.    
+
+    Es el stack del proceso, no del SO
     #+END_EXAMPLE
 
     #+BEGIN_SRC c
@@ -140,176 +303,20 @@
          return 0;
        }
      #+END_SRC
-
-** [#A] Cambio de Contexto - Cambio de Proceso - Cambio de Modo
-*** Escenarios Comunes
-    El recíproco de los dos ejemplos NO siempre se cumple
-
-    |------------------+-----------------------------------------------|
-    | 1 Process Switch | 2 context switch                              |
-    |                  | (se guarda el _contexto de un proceso_        |
-    |                  | y se guada el de otro)                        |
-    |                  |                                               |
-    |                  | Ej. de un _proceso usuario_ al _planificador_ |
-    |                  | y del _planificador_ al _proceso elegido_     |
-    |------------------+-----------------------------------------------|
-    | 1 Mode Switch    | 1 Context Switch                              |
-    |                  | (paso de ejecutar un _proceso usuario_        |
-    |                  | a ejecutar el _sistema operativo_ ó viceversa |
-    |                  |                                               |
-    |                  | Ej.                                           |
-    |------------------+-----------------------------------------------|
-*** Recíproco de los Escenarios comunes
-    NO siempre se cumple el recíproco de los escenarios anteriores, es decir
-    + Que hayan dos _cambios de contexto_ NO implica que siempre haya un _cambio de proceso_
-    + Que haya un _cambio de contexto_ NO implica que siempre haya dos _cambios de modo_
-    
-    |------------------+------------------------------------------------------------------|
-    | 2 Context Switch | 1 Process Switch (sin cambiar de proceso)                        |
-    |                  | - se puede elegir al mismo proceso                               |
-    |                  | - ejecutar una ~syscall~                                         |
-    |                  | - atender una ~interrupción~                                     |
-    |                  |                                                                  |
-    |                  | Ej.                                                              |
-    |------------------+------------------------------------------------------------------|
-    | 1 Context Switch | 1 Mode switch (sin cambiar de modo)                              |
-    |                  | (puede ocurrir una ~interrupción~ cuando ya estoy atendiendo una |
-    |                  | osea si tenemos ~interrrupciones anidadas~)                      |
-    |                  |                                                                  |
-    |                  | Ej. Estar en _modo kernel_ y atender una ~interrupción~          |
-    |                  | y luego sin haber cambiado de modo, atender otra ~interrupción~  |
-    |                  | en este caso hubo un _cambio de contexto_                        |
-    |------------------+------------------------------------------------------------------|
-*** Cambio de Contexto
-**** Conceptos
-     + Cuando se cambia el proceso que está en la *CPU* se debe guardar el *Contexto de ejecución*
-        para luego reanudarlo en el lugar interrumpido
-     + En el tiempo que sucede el *SO* no hace nada útil (para el usuario) se considera *overhead*
-        y se debe minimizar
-
-     #+BEGIN_QUOTE
-     Que hayan dos *cambios de contexto* no implica que se haya un *cambio de proceso*
-    
-     Si un proceso A invoca un ~wrapper~ para una ~sycall~, habrá un *cambio de contexto*
-     de *modo usuario* a *modo kernel*, y *modo kernel* a *modo usuario*,
-     y sigue siendo el mismo proceso A
-
-     También pueden haber varios *cambios de contexto* sin que haya un *cambio de modo*
-     #+END_QUOTE
-**** Objetivos
-     + Ejecutar otro proceso
-     + Atender una [[interrupción]] (ejecutará el [[interrupt handler]]) <<MEJORAR 1>>
-     + Ejecutar una [[syscall]]
-**** Ejemplo
-     Cuando queremos ejecutar dos procesos (A) y (B)
-     1. el *sistema operativo* guarda el contexto de ejecución del proceso (A) para luego retomarlo
-     2. el *sistema operativo* carga el contexto de ejecución del proceso (B) hasta que termine 
-        y se guarde en el contexto de ejecución
-     3. se vuelve a cargar el contexto de ejecución del proceso (A)
-    
-     se repite (1)(2)(3) con cada proceso
-     se intercambia el contexto de ejecución
-     y se guarda dentro de un espacio propio de proceso (en el *PCB*)
-**** Observaciones 
-      + Es el *Sistema Operativo* quien carga/guarda los datos de los contextos
-         de la memoria a los registros del procesador y viceversa
-      + Es el *registro SP* quien guarda la dirección de memoria de la 
-        última instrucción ejecutada
-**** Diagrama Proceso
-     |------------------|
-     |     PROCESO      |
-     |       <c>        |
-     |------------------|
-     |      Codigo      |
-     |      Datos       |
-     |       Pila       |
-     |       Heap       |
-     | ~(PCB) CONTEXTO~ |
-     |------------------|
-**** Diagrama Procesador
-    |-----------------|
-    |   Procesador    |
-    |       <c>       |
-    |-----------------|
-    | Program Counter |
-    |       PSW       |
-    |       AX        |
-    |       SP        |
-    |       ...       |
-    |-----------------|
-*** [TODO] Cambio de un proceso
-    1:00:00 Video
-**** [TODO] Pasos
-**** Sobrecarga (Overhead)
-     - Cuando el *sistema operativo* interviene, provoca *overhead*
-     - Mientras menos intervenga el *sistema operativo* mejor
-     - El sistema operativo es un proceso pero NO proceso de usuario
-       (tiene un conjunto de procesos, pero no son de usuario)
-**** Cambio de modo
-**** Overhead
-**** Interrupciones
-*** Cambio de modo de Ejecución
-    Sólo el *Sistema Operativo* es el que puede realizar el Cambio de [[file:clase01-parte2.org::*Modo de ejecución][Modo de ejecución]] 
-    de Modo kernel a Modo usuario, ó viceversa
-** Atributos
-*** Identificador
-    - PID: Process Identifier (numero que lo identifica univocamente)
-    - PPID: Parent Process Identifier (el proceso padre)
-    - UID: User Identifier (el usuario que lo ejecuta) 
-*** Información de gestión de memoria
-    Cada proceso tiene propia estructura (codigo/datos/stack/heap)
-*** Información de Planificación
-    - Cuando tenemos muchos procesos para ejecutar
-    - Existe un algoritmo para saber que proceso ejecutar
-*** Información de E/S
-    - Dispositivos asociados a ese proceso
-    - El usuario/programador no los necesita conocer, pero si el sistema operativo
-*** Información contable
-    - Información sobre los recursos que utilizó el proceso
-
-    #+BEGIN_EXAMPLE
-    Es util para sistemas en la nube, con esa información
-    determinan cuanto te cobraran  :(
-    #+END_EXAMPLE
-** (PCB) Bloque de Control de proceso
-   + Hay uno por cada proceso en el sistema
-   + Se encuentra SIEMPRE cargado en la *RAM*
-   + Contiene TODA la infomación relacionada con el proceso
-     * atributos (identificador, info de gestion de memoria, ...)
-     * contexto de ejecución 
-     * la dirección de las estructuras (codigo,datos,stack,heap)
-
-   |                <c>                 |
-   |------------------------------------|
-   |         Estado del proceso         |
-   |------------------------------------|
-   |          Program Counter           |
-   |------------------------------------|
-   |           Registros CPU            |
-   |------------------------------------|
-   | Información de Planficación de CPU |
-   |------------------------------------|
-   |  Información de manejo de memoria  |
-   |------------------------------------|
-   |    Información de Estado de E/S    |
-   |------------------------------------|
-   |        Información Contable        |
-   |        (para estadísticas)         |
-   |------------------------------------|
 ** Imagen del proceso
-   La imagen del proceso se representa con                      
+   - La imagen del proceso se representa con                      
 
-   |--------|
-   | CODIGO |
-   |--------|
-   | DATOS  |
-   |--------|
-   | HEAP   |
-   |--------|
-   | PILA   |
-   |--------|
-   | PCB    |
-   |--------|
+   |------------|
+   | CODIGO     |
+   |------------|
+   | DATOS      |
+   |------------|
+   | HEAP       |
+   |------------|
+   | STACK/PILA |
+   |------------|
+   | PCB        |
+   |------------|
 
    *Observación:*
    - El {CODIGO,DATOS,HEAP,PILA} se asigna a la memoria de cada *proceso*
@@ -455,8 +462,16 @@
      [[file:img/diagrama-tres-estados.png]]
 
 *** Diagrama de 5 estados
-    <<DUDA 1>>: EN finalización entonces se elimina de la imagen del proceso, solo
-    la estructura (?)
+    #+BEGIN_COMMENT
+    <<DUDA 1>>: EN finalización entonces se elimina de la imagen del proceso, solo la estructura (?)
+
+    Rta: SI, pero no toda la estructura, se guarda una parte, el PCB
+
+    Duda 2:
+    Cuando un proceso está en "estado nuevo" ó "estado finalizado", el PCB de proceso estará en memoria (del SO)
+    aunque el proceso en si aún no estaría del todo cargado en RAM
+    #+END_COMMENT
+    
 
     |---------------+-------------------------------------------------------------------------|
     | *ESTADO*      | *DESCRIPCION*                                                           |
@@ -531,7 +546,7 @@
     - Aparece el concepto de *Depuración* (debugging)
 *** Diagrama de 7 estados
     - Aparece el concepto de *intercambio* (swapping)
-    - Con la aparición de la *memoria virtual* ya no se utiliza porque
+    - Los procesos (la imagen) se pasan a disco para que dejen de usar recursos mientras no están en ejecución
     - Aparecen dos estados nuevos
       1. Ready/Suspend
       2. Blocked/Suspend
@@ -562,7 +577,8 @@
      - Se realiza en procesos que NO estan siendo ejecutados
        (porque estan esperando en la cola de Ready ó bloqueados en la cola Blocked)
 **** Swap out
-     + Mover un *proceso* de *RAM* (memoria) a una *Partición Swap* (disco)
+     + Mover un *proceso* (la imagen) de *RAM* a una *Partición Swap* (disco)
+     + Pasar a *disco* la imagen de los procesos de *memoria*
 **** Swap In
      + Cargar un proceso a memoria
      + Mover un proceso de *Partición SWAP* (disco) a la *RAM* (memoria)
@@ -612,7 +628,12 @@
      a) seguir ejecutando
      b) no realizar operacion
      #+END_EXAMPLE
-** Creación de un proceso
+** [DOING] Creación de un proceso
+*** Conceptos
+    - A través de una ~syscall~ un proceso padre, puede crear a un proceso hijo
+    - NO comparten recursos, a menos.. que se use una *estrategia de comunicación* (y estos se llaman cooperativos)
+*** Objetivos
+    - Para ejecutar otra tarea, ó la misma tarea
 *** Pasos
     1. Asignación del (PID, Process Identifier)
     2. Reservar espacio para estructuras (Stack, Heap, Codigo, Datos)
@@ -690,16 +711,32 @@
             //Do parenty things
          }
        #+END_SRC
+** [DOING] Comunicación entre procesos
+*** Conceptos
+   - Deben utilizar una *tecnica de comunicación* (si la usan, se llaman cooperativos)
+
+  #+begin_comment
+  ipc? comunicación inter-proceso?
+
+  recordando gdd.. inter creo que es "entre", mientras que "intra" es "dentro de"
+  #+end_comment
+*** Paso de Mensajes
+    - Es más lento xq requiere *cambios de contextos* (syscalls)
+    - Util para manejar poca cant. de datos
+    - Produce ~overhead~ (porque interviene el SO)
+    - A través de *sockets*
+*** Memoria Compartida
+    - Se realiza al principio
+    - Permite una comunicación más rápida
+    - NO requiere intervención del SO (se evita el ~overhead~)
 ** Terminación de un proceso
 *** Conceptos
     - Los recursos asignados a ese proceso son liberados (por el SO)
-    - Le envia al proceso-padre informacion de salida, el resultado
-      del estado mediante ~wait~
+    - Le envia al proceso-padre informacion de salida, el resultado del estado mediante ~wait~
 *** Motivos
     + Terminación normal
       (Ese proceso hizo una invocación a una *syscall* ~exit~ para finalizarse)
-    + Terminado por otro proceso
-      (Ej. proceso padre con ~abort~)
+    + Terminado por otro proceso (Ej. proceso padre con ~abort~)
     + Terminado por falla/error
 
     + Porque ya no es necesario

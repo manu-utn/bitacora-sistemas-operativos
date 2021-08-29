@@ -1,0 +1,57 @@
+EL de natasha
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+    - Se atienden las interrupciones sólo cuando finaliza la interrupción en curso
+    - NO se atienden en cuanto ocurren, para no perder la info (contexto,..)
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+    Ante una interrupción se debe guardar el
+    1. IP/PC program counter,
+    2. EL PSW, que tiene el modo de ejecución (kernel/usuario)
+*** Respuesta incorrecta
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+    depende en que modo se ejecute la *instrucción CLI*
+    1. lo pone en modo 0, si es 
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+    Las interrupciones síncronas sólo son
+    1. Dirección de memoria no permitida
+*** Respuesta incorrecta
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+    los *wrappers de syscall* sólo llaman a syscall
+*** Respuesta incorrecta
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+    Microkernel 
+*** Justificación a las respuestas incorrectas
+    
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta
+* Pregunta 1
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+*** Respuesta correcta

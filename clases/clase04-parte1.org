@@ -31,6 +31,16 @@
    1. se hace una syscall
    2. luego se atiende una interrupción
 * Hilos
+** Conceptos
+   - Es la *unidad básica de utilización de la CPU*
+   - Tiene un espacio de pila, y registros
+   - Es administrado por un *TCB* (se encuentra en el *PCB* del proceso asociado)
+   - tienen su propio *Stack* (guarda las variables locales, llamadas a funciones, y parámetros de las funciones)
+   - NO necesitan un *mecanismo de comunicación* (por estar compartiendo recursos)
+   - Comparten con otros hilos
+     1. código
+     2. los datos
+     3. los recursos
 ** Imagen de un proceso
 *** Conceptos
     |--------|
@@ -88,7 +98,7 @@
     porque por cada proceso se debe guardar los datos en los PCB
 *** Comunicación más rápida
     La comunicación entre hilos, es _más rápida que entre procesos_
-    porque el *sistema operativo* no tiene que intervenir
+    porque el *sistema operativo* no tiene que intervenir (se evita el overhead)
 *** Concurrentes
     si se ejecutan de forma *concurrente*
     es que se van ir alternando el uso del CPU,
@@ -99,7 +109,7 @@
      + Heap
      + Datos
      + Codigo
-*** Multiprocesamiento
+*** Multiprocesamiento/Paralelismo
     + Es cuando se tienen muchos procesadores, teniendo un hilo
        o más en cada procesador
     + NO siempre permite *multiprocesamiento*
@@ -151,16 +161,20 @@
     quedando todos los hilos del proceso también bloqueados
     #+END_EXAMPLE
 *** Recursos sin liberar
-    Cuando un proceso muere
-     + todos sus hilos también (El sistema operativo los toma)
-     + NO se liberan automaticamente los recursos
-       (es responsabilidad del programador, el SO no se entera cuales usamos)
+    - cuando un hilo muere, no se liberan los recursos automaticamente
+      (/Ej. si un hilo reserva memoria, no se libera la memoria y muere,
+       se produce *memory leak* xq se pierde la referencia/)
+    - Cuando un proceso muere
+      + todos sus hilos también (El sistema operativo los toma)
+      + NO se liberan automaticamente los recursos
+        (es responsabilidad del programador, el SO no se entera cuales usamos)
 ** Clasificación de Hilos
 *** Hilos de Usuario (ULT)
 **** Conceptos
-     NO los ve el *Sistema operativo*, se manejan mediante una *biblioteca de usuarios*
-     * desarrollada por usuarios
-     * se ejecuta en [[Modo Usuario]]
+     - Cuando se crean es a nivel de usuario (modo usuario)
+     - NO los ve el *Sistema operativo*, se manejan mediante una *biblioteca de usuarios*
+       * desarrollada por usuarios
+       * se ejecuta en [[Modo Usuario]]
 **** Ventajas
     + portabilidad
       * utilizar en cualquier sistema operativo
@@ -173,9 +187,14 @@
      - NO permite *multiprocesamiento* si hubiese multiples CPU's (porque trabajan de forma concurrente, no?)
 *** Hilos de Kernel (KLT)
 **** Conceptos
-    + El *sistema operativo* los conoce, por tanto _los puede Planificar_
-    + para el usuario es más fácil, porque se evita
-      tener q buscar una biblioteca sin que falle
+    + Para crear un *KLT* se pasa de *modo usuario* a *modo kernel*
+    + El *sistema operativo* los conoce, por tanto _los puede Planificar_ (gestionar)
+    + para el usuario es más fácil, porque se evita tener q buscar una biblioteca sin que falle
+    + Se guarda una referencia del *TLB* en el *PCB* del proceso (/no es el caso de los ULT, porque no los gestiona el SO/)
+
+    #+BEGIN_COMMENT
+     no ejecutan código del SO
+    #+END_COMMENT
 **** Escenarios
 ***** Escenario 1 - Planificador con Quantum
       Si el planificador establece un *quantum* de 4 (q=4)
