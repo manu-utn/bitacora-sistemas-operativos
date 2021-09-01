@@ -10,7 +10,6 @@ que tienen funcionalidades que están en el kernel
     - Se podia ejecutar solo un programa a la vez
     - Eran las personas quienes que tenian que ejecutar esos otros programas
 *** Sistemas en lotes sencillos
-    ???
 ** Multiprogramados
 *** Sistemas en lotes multiprogramados
     - Se automatizó el procesamiento en serie (???)
@@ -18,9 +17,10 @@ que tienen funcionalidades que están en el kernel
 *** Sistemas de tiempo compartido
     - Es el utilizado actualmente
     - son sistemas de multiusuario donde varios usuarios conectados en 
-* Funciones
-** [TODO] Administrar la ejecución de programas
-   - relacionado con hilos
+* [DONE] Funciones
+  CLOSED: [2021-08-30 lun 15:18]
+** Administrar la ejecución de programas
+   Se basa en el tema de *planificación de procesos/hilos*
 ** Interfaz para usuario y dispositivos
    - Ser interfáz de usuario (/a través de una consola de comandos, ó de una interfaz gráfica/)
    - Ser interfaz con los dispositivos
@@ -44,9 +44,14 @@ que tienen funcionalidades que están en el kernel
 ** Asignación de recursos
    El mismo SO es quien se encarga de asignarse los recursos
 ** Administrar los archivos
+   - Entra el concepto de *filesystem*
 ** Administrar la memoria
+   - Porque _todo lo que se ejecuta está en memoria_
+   - A posterior se trata la _memoria física/virtual_
+   - Es necesario porque la _memoria es limitada_ (/existen técnicas para administrarla/)
 ** Administrar los dispositivos de IO
-* Capas del Sistema Operativo
+* [DONE] Capas del Sistema Operativo
+  CLOSED: [2021-08-30 lun 15:25]
 ** Aplicaciones de usuario
    |---------------------------------+-------------------|
    | Tipo de usuario                 | Que necesita usar |
@@ -69,11 +74,16 @@ que tienen funcionalidades que están en el kernel
 ** Bibliotecas del Sistema
 ** System Calls
    - Para tener un control instrucciones
-   - Para manejar recursos (/la manera correcta/)
+   - Para manejar los pedidos de recursos de los procesos (/la manera correcta/)
+   - Las provee el SO y usa al kernel como puente/nexo con el HW
 ** Kernel (Sistema operativo)
+   - El SO concentra/encapsula la lógica en el su núcleo/Kernel, para proteger el HW
+   - Es el _núcleo del SO_, es la base del SO
+   - Es la que queremos proteger
    - Para diseñar un SO necesitamos conocer el hardware
 ** Hardware
-* (Syscall) Llamadas al sistema
+* [DONE] (Syscall) Llamadas al sistema
+  CLOSED: [2021-08-30 lun 16:03]
 ** Conceptos
    #+BEGIN_EXAMPLE
    Las llamadas al sistema son a nivel sistema operativo, 
@@ -81,7 +91,8 @@ que tienen funcionalidades que están en el kernel
    quiźas en Windows la llamada al sistema tiene otro nombre en vez de write
    #+END_EXAMPLE
 
-  - Son la _manera correcta de solicitar los recursos_
+  - Son la _manera correcta de solicitar los recursos_ (/Ej. pedir memoria/)
+  - son más complejas de usar, los *wrappers* facilitan su uso
   - permite al programador utilizar recursos
   - suelen ser utilizadas a traves de una API por medio de wrappers
     - permiten portabilidad
@@ -90,11 +101,11 @@ que tienen funcionalidades que están en el kernel
       otra cosa, PERO siempre que usemos funciones estandar)
   - son a nivel *sistema operativo*  (no es lo mismo en Linux, Windows, ...)
 ** Salto de Modo
-   La syscall hace el cambio de modo a nivel de implementación se usa
-   + interrupciones
+   La syscall hace el *cambio de modo* y a nivel de implementación se usa
+   + *Interrupciones*
      1. dejar info que es una syscall
-     2. lanzar la interupción
-   + fast syscalls
+     2. lanzar la interrupción
+   + *fast Syscalls*
      1. dejar info que es una syscall
      2. logica de la syscall -> ejecuta directo la syscall
 
@@ -108,35 +119,38 @@ que tienen funcionalidades que están en el kernel
    Las llamadas en cada sistema operativo son diferentes
    por eso un programa compilado para Linux puede no funcionar en Windows,
    y viceversa.
-** Wrappers
-     - significa envoltorio, y encapsula la complejidad de una llamada a una ~syscall~
-     - es una función que llama a otra función (que es una llamada al sistema)
-     - son funciones que incluyen una *llamada al sistema*
+* [DONE] Wrappers
+  CLOSED: [2021-08-30 lun 16:04]
+    - significa envoltorio
+    - *Encapsula la complejidad* de una llamada a una ~syscall~ (/para hacer un pedido al SO/)
+    - es una función que llama a otra función (que es una llamada al sistema)
+    - son funciones que incluyen una *llamada al sistema*
 
-   #+NAME: funcion-printf
-   #+BEGIN_EXAMPLE
-   la función printf(..) de C
+  #+NAME: funcion-printf
+  #+BEGIN_EXAMPLE
+  la función printf(..) de C
 
-   llama a otra función (que es una llamada al sistema, nombrada write)
-   paa poder imprimir en pantalla
+  llama a otra función (que es una llamada al sistema, nombrada write)
+  paa poder imprimir en pantalla
 
-   al incluir una llamada al sistema, se lo considera un wrapper
+  al incluir una llamada al sistema, se lo considera un wrapper
   
-   nos evita tener que pasarle al write el código del dispositivo 
-   de la pantalla y la cantidad de caracteres a imprimir.
-   Sólo le pasamos los caracteres y listo, él se encarga
-   de imprimir en pantalla.
-   #+END_EXAMPLE
+  nos evita tener que pasarle al write el código del dispositivo 
+  de la pantalla y la cantidad de caracteres a imprimir.
+  Sólo le pasamos los caracteres y listo, él se encarga
+  de imprimir en pantalla.
+  #+END_EXAMPLE
    
-   #+NAME: syscall-write
-   #+BEGIN_EXAMPLE
-   wite es una funcion del sistema
-   que se puede utilizar para imprimir en cualquier dispositivo
-   (Ej. suponiendo que sabemos el codigo del dispositivo de la pantalla) 
+  #+NAME: syscall-write
+  #+BEGIN_EXAMPLE
+  wite es una funcion del sistema
+  que se puede utilizar para imprimir en cualquier dispositivo
+  (Ej. suponiendo que sabemos el codigo del dispositivo de la pantalla) 
 
-   write NO es una instruccion privilegiada
-   #+END_EXAMPLE
-* Modo de ejecución
+  write NO es una instruccion privilegiada
+  #+END_EXAMPLE
+* [DONE] Modo de ejecución
+  CLOSED: [2021-08-30 lun 15:55]
 ** Conceptos
    |-------+-------------------|
    | Nivel | Modo de Ejecución |
@@ -147,9 +161,9 @@ que tienen funcionalidades que están en el kernel
    |-------+-------------------|
 
   + también llamados "anillos de protección"
-    1. anillo - aplicaciones
+    1. anillo - aplicaciones/usuario (/está más limitado/)
     2. anillo - device drivers
-    3. anillo - kernel
+    3. anillo - kernel (/es el modo mas restrictivo/)
   + Es el ~PSW~ el que tenía el bit de *modo de ejecución*
   + Suelen ser 4 anillos de protección, pero sólo usamos 2 (kernel/usuario)
   + Garantiza la protección
@@ -157,10 +171,12 @@ que tienen funcionalidades que están en el kernel
   + el SO es el primero en bootear,
     - quien cambia a modo usuario todos los programas, 
     - es el unico que puede cambiar a [[Modo kernel]] y ejecutar [[instrucciones privilegiadas]]
+  + La CPU no sabe quien está ejecutando, sólo conoce el *modo de ejecución*
+    1. Si está en modo usuario => no va a dejar ejecutar instrucciones privilegadias
+    2. Si está en modo kernel => le permite ejecutar instrucciones privilegiadas
 ** Modo kernel
   - se pueden ejecutar las *instrucciones privilegiadas*
-  - solo el SO puede ejecutar en este modo, 
-     para poder acceder al hardware
+  - solo el SO puede ejecutar en este modo, para poder acceder al hardware
 ** Modo usuario
    - se pueden ejecutar las *instrucciones NO privilegiadas*   
    - cuando ejecutamos una aplicación está en este modo
@@ -168,19 +184,33 @@ que tienen funcionalidades que están en el kernel
 ** Cambio de modo
 *** Modo usuario a Modo Kernel
     Puede suceder por
-    + Una [[Interrupción]]
-    + Una [[Syscall]]
+    + Por atender una [[Interrupción]]
+    + Por invocar una [[Syscall]] (/Ej. si un proceso pide memoria/)
 *** Modo Kernel a Modo Usuario
     A través de 
-    + Una [[instrucción privilegiada]]
-    + Restaurando el contexto
-** conceptos que utiliza
-*** syscall
-    - son llamadas al sistema
-*** interrupción
+    + Una [[instrucción privilegiada]] (otra que no sea privilegiada no podría, por estar en modo kernel)
+    + Por *Restaurar el contexto* (/porque al cambiar los registros del CPU, además del PC también se pisa el PSW para cambiar el modo/)
+
+    #+BEGIN_QUOTE
+    Puede darse por *restaurar el contexto* porque cuando atendemos una *interrupción*
+    se guarda el *CTX* (/los registros del CPU, tanto el PC, como el PSWD/)
+
+    Al guardar también el *PSWD* se estaría pisando el *modo de ejecución* (/para pasar de modo kernel a modo usuario/)
+
+    Dos casos en los que NO habría un *cambio de modo* sería
+    1. Si ya se estaba atendiendo una *interrupción* => ya estaba en *modo kernel*
+    2. Si ya se estaba ejecutando una *syscall* => ya estaba en *modo kernel*
+    #+END_QUOTE
+** [TODO] Otros conceptos que utiliza
+*** Syscall
+    - son llamadas al sistema (/la manera correcta de manejar los recursos pedidos por los procesos/)
+*** [TODO] Interrupciones
     - la notificacion de un evento (ej. de una E/S)
-    - el procesador se entera de esto y un modulo del SO
-      se encarga de manejar esto
+    - el procesador se entera de esto y un modulo del SO se encarga de manejar esto
+
+    #+BEGIN_COMMENT
+    El CPU se entera, y el módulo que lo maneja es el *interrupt handler* ?
+    #+END_COMMENT
 ** Ejemplos
 *** Ejemplo 1 - Cambios de modo
     Ejemplo
