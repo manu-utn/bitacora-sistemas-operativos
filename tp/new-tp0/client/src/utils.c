@@ -16,22 +16,48 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 	return magic;
 }
 
+/*
+ *
+ * addrinfo:
+ * 1. Devuelve un puntero a una lista linkeada que pueden ser una o más
+ * estructuras del tipo addrinfo
+ * 2. Si tuvo éxito retorna 0 (osea cero)
+ * 3. Es importante luego usar freeaddrinfo(res) (donde el parámetro res
+ * representa la estructura de dirección)
+ *
+ * Nota (1): Hints
+ * 1. apunta a una estructura "addrinfo" con información que usaremos
+ * 2. contiene la familia de protocolos y el protocolo a utilizar
+
+ * Paso (2): Socket/3
+ * Creamos el socket (que es un archivo conocido como File descriptor)
+ *
+ * ai_family: define la familia de protocolos
+ * ai_socktype: define el tipo de socket
+ * ai_protocol: define el protocolo de la familia a utilizar
+ *
+ * Paso (3) Connect/2
+ * Establecemos la conxión con el socket
+
+ * ai_addr: es donde se almacena la dirección
+ * ai_addrlen: define el tamaño de la dirección
+ */
 int crear_conexion(char *ip, char* puerto)
 {
-	struct addrinfo hints;
-	struct addrinfo *server_info;
+  struct addrinfo hints; // <-- (1)
+  struct addrinfo *server_info;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC; // permite obviar entre IPV4 y IPV6
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE; // nos asigna el IP del localhost actual
 
-	getaddrinfo(ip, puerto, &hints, &server_info);
+  getaddrinfo(ip, puerto, &hints, &server_info);
 
-	// Ahora vamos a crear el socket.
+  // --> (2)
   int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
-	// Ahora que tenemos el socket, vamos a conectarlo
+  // --> (3)
   connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
 
 	freeaddrinfo(server_info);

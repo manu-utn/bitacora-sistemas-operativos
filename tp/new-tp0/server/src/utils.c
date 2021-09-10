@@ -1,5 +1,31 @@
 #include "../include/utils.h"
 
+/*
+ * Paso (1): socket/3
+ * Tenemos la explicación del lado del cliente
+ *
+ * Paso (2): Bind/3
+ * 1. Para reservar un puerto a un socket
+ * 2. Sólo tiene sentido si usaremos listen() osea si estamos escuchando como
+ * servidor (el kernel se quedará esperando algún socket descriptor de un
+ * proceso)
+ *
+ * sockfd: Es el socket file descriptor devuelto por socket()
+ *
+ * my_addr: es un *ptr contiene informacion de la dirección, dirección IP, puerto, ..
+ *
+ * addrlen: es el tamaño en bytes de esa dirección
+
+ * Paso (3): Listen/2
+ * 1. Se requiere previamente asociar un número de puerto a la dirección IP (con la
+ * syscall bind() para asociarlo)
+ * 2. Las conexiones entrantes (clientes) las acepta el servidor con la syscall accept()
+ * si dicho servidor lo permite
+ *
+ * - sockfd: es el file descriptor de la syscall socket()
+ *
+ * - backlog: es el número de conexiones pendienes, el limite de conexiones entrantes a encolar
+ */
 int iniciar_servidor(void)
 {
 	int socket_servidor;
@@ -14,13 +40,13 @@ int iniciar_servidor(void)
     getaddrinfo(IP, PUERTO, &hints, &servinfo);
 
     // Creamos el socket de escucha del servidor
-    socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+    socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol); // --> (1)
 
     // Asociamos el socket a un puerto
-    bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
+    bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen); // --> (2)
 
     // Escuchamos las conexiones entrantes
-    listen(socket_servidor, SOMAXCONN);
+    listen(socket_servidor, SOMAXCONN); // --> (3)
 
     freeaddrinfo(servinfo);
 
@@ -35,7 +61,7 @@ int esperar_cliente(int socket_servidor)
   socklen_t tam_direccion = sizeof(struct sockaddr);
 
 	// Aceptamos un nuevo cliente
-	int socket_cliente = accept(socket_servidor, &dir_cliente, &tam_direccion);
+	int socket_cliente = accept(socket_servidor, &dir_cliente, &tam_direccion); // --> (1)
 
 	log_info(logger, "Se conecto un cliente!");
 

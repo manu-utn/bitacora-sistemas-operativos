@@ -21,5 +21,4 @@ void leer_consola(t_log*);
 void paquete(int);
 void terminar_programa(int, t_log*, t_config*);
 
-//void configurar_conexion(char*, char*, int);
 #endif /* CLIENT_H_ */
