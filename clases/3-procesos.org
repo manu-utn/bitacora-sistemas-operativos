@@ -194,7 +194,6 @@
      * prioridad, estado, valor de retorno, ..
 
      #+BEGIN_COMMENT
-     <<DUDA>>:
      El (CTX) Contexto de ejecución estaría conteniendo todo lo que tiene el PCB, no?
      #+END_COMMENT
 
@@ -482,7 +481,7 @@
 **** Swap In
      + Cargar un proceso (la imagen) a memoria
      + Mover un proceso de *Partición SWAP* (disco) a la *RAM* (memoria)
-*** E/S Bloqueante y NO Bloqueante
+*** [WAITING] E/S Bloqueante y NO Bloqueante
 **** Conceptos
      - Es el programador quien decide si una función será *bloqueante* ó *NO bloqueante*
 **** E/S Bloqueante
@@ -643,9 +642,13 @@
     - NO requiere intervención del SO (se evita el ~overhead~)
     
     #+BEGIN_COMMENT
-    Sólo puede ocurrir si los procesos, están en la misma página (?) página de memoria?
+    Sólo puede ocurrir si los procesos, están en la misma página, habla sobre el tema que
+    se da después sólo de memoria?
+    *Respuesta:*
 
-    La memoria compartida se define al principio mediante una ~syscall~ ?
+
+    La memoria compartida para la comunicación se definía al principio mediante una ~syscall~ ?
+    *Respuesta:* SI
     #+END_COMMENT
 
     *Observación:*
@@ -765,7 +768,7 @@
     #+END_QUOTE
 *** Objetivos
     + Ejecutar otro proceso
-    + Atender una [[interrupción]] (ejecutará el [[interrupt handler]]) <<MEJORAR 1>>
+    + Atender una [[interrupción]] (ejecutará el [[interrupt handler]])
     + Ejecutar una [[syscall]]
 *** Ejemplo
     Cuando queremos ejecutar dos procesos (A) y (B)

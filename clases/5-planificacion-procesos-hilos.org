@@ -44,7 +44,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    también programas que sincronizan archivos en la nube (dropbox)
    #+END_EXAMPLE
 * [DONE] Planificador - Objetivos
-  CLOSED: [2021-08-31 mar 20:17]
+  CLOSED: [2021-09-10 vie 15:01]
   - Asigna procesos para ser ejecutado en la CPU (administrado por dif. colas READY-BLOCKED)
   - Decide cual es el próximo proceso que se debe ejecutar
   - Decide donde ubicar el *PCB del proceso* en ejecución
@@ -227,27 +227,27 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
      porque está esperando que ese dispositivo finalize
 ** [DONE] (FCFS/FIFO) First Come First Served
    CLOSED: [2021-08-31 mar 22:25]
-*** Ventajas
-    - Fácil de implementar
-    - Tiene poco *overhead*
-*** Desventajas
-    - NO optimiza metricas (throughput, tiempo de espera, tiempo de respuesta,...)
-
-    *Observación:*
-    - El throughput es el nivel de procesamiento, cuantos procesos se ejecutaron 
-      en una unidad de tiempo
 *** Conceptos
     - Es *sin desalojo*
     - La elección del próximo proceso es el tiempo de llegada
     - La prioridad es śegun el que más lleva tiempo
       está esperando en la *cola de listos*
     - El próximo proceso sera el que más tiempo se quedó esperando
-
-    *Observación:*
+*** [WAITING] Finalización de algún proceso
     Un proceso puede dejar de ejecutar cuando
     - ocurre una *interrupción*
     - por una *llamada al sistema* (~syscall~) (/Ej. exit, sleep, etc../)
     - ó porque termina su tiempo de ejecución
+*** Ventajas
+    - Fácil de implementar
+    - Tiene poco *overhead*
+*** Desventajas
+    - NO optimiza metricas (throughput, tiempo de espera, tiempo de respuesta,...)
+    - Los procesos podrían manipular la cpu
+
+    *Observación:*
+    - El throughput es el nivel de procesamiento, cuantos procesos se ejecutaron 
+      en una unidad de tiempo
 *** Momentos de Replanificación
     Si considera los eventos obligatorios finalización/bloqueado/cede cpu
     - Proceso finalizado
@@ -318,23 +318,31 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
    #+RESULTS:
    [[file:img/fcfs-1.png]]
-   
-** (SJF) sin desalojo ó (SPN) Short Job First
+** [WAITING] (SJF) sin desalojo ó (SPN) Short Job First
 *** Conceptos
     - Lo llamaremos *Primero con rafaga más corta*
-    - la prioridad es el que tenga rafaga de cpu mas corta
-    - el sistema operativo intervino cuando hubo
-      - una *llamada al sistema*
-      - ó una *interupción* (cambio de modo)
-*** Replanifica cuando
-    + Libera CPU
+    - El (SO) Sistema Operativo interviene ante
+      - Una ~syscall~ *llamada al sistema*
+      - Una *Interrupción* (/porque provoca un Cambio de modo/)
+
+    *Observación:*
+    NO se puede aplicar la tecnica de *Aging* (/envejecimiento/)
+
+    #+BEGIN_COMMENT
+    <<DUDA>>
+    Por que no se puede aplicar aging? porque los procesos man
+    #+END_COMMENT
+*** Prioridad
+    El que tenga *ráfaga de cpu más corta*
+*** Eventos de Replanificación
+    - Cuando se libera (CPU)
 *** Desventajas
     - Puede generar *Inanición* (ó Starvation, que un proceso nunca se ejecute)
-    - Que un proceso monopolice la CPU
+    - Que un proceso monopolice la (CPU)
 *** Ventajas
-    + Mejora el Throughput
-    + Mejora el T de espera promedio
-    + Mejora el T de respuesta
+    + Mejora el Throughput (/métrica de .../)
+    + Mejora (/reduce/) el *Tiempo de espera promedio*
+    + Mejora (/reduce/) el *Tiempo de respuesta*
 *** Ejemplo
    |----+----+-----+----+-----|
    |    | LL | CPU | ES | CPU |
@@ -383,39 +391,70 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
         
 
      El P1 a ejecucion, el P2 a bloqueado y el P3 a la cola de listos
-** (SJF) Con desalojo ó (SRT)
+** [DONE] (SJF) Con desalojo ó (SRT)
+   CLOSED: [2021-09-04 sáb 09:30]
 *** Prioridad
-    - El *Criterio de prioridad* es el siguiente que tenga 
-      menos rafagas de CPU
-    - Se elije al proceso siguiente *con la rafaga más corta*
+    - El *siguiente con menos rafagas de CPU* (/del estimado/)
+    - Se elije al proceso *siguiente con la ráfaga de CPU más corta* (/del estimado/)
 *** Conceptos
-    - por cada ejecución se le resta uno a las rafaga de CPU
-    - si tienen misma prioridad, se aplica FIFO
-      (el que ejecutaba, sigue ejecutandose)
-    - Cada vez que se agrega un proceso a la *cola de listos*
-      se debe evaluar si hay otro con mayor prioridad
-      (osea con menos ráfagas de cpu)
-*** Replanifica cuando
-    + Libera CPU (libera los recursos asignados de un proceso)
-    + Un nuevo proceso
-    + Un poceso se desbloquea
+    - Si el proceso/hilo ejecutó => se le resta una ráfaga de (CPU)
+    - Si dos procesos tienen misma prioridad => se desempata con ~FIFO~ (/el que ejecutaba, sigue ejecutandose/)
+    - Si se agrega un proceso a la *cola de listo* => se replanifica (/si hay otro con mayor prioridad, con menos ráfagas de CPU/)
+    - Si NO hay un proceso nuevo => se compara el estimado del proceso actual Vs el último más chico
+      
+    *Observación:*
+    NO se puede aplicar *aging*
+
+    #+BEGIN_COMMENT
+    <<DUDA>>
+    Por que NO se puede aplicar aging???
+    #+END_COMMENT
+
+    #+BEGIN_QUOTE
+    El cálculo del estimado se hace sobre todos los procesos sea un ~SJF con/sin desalojo~
+    #+END_QUOTE
+*** Eventos de Replanificación
+    + Se Libera CPU, por cada ráfaga (/libera los recursos asignados a un proceso/)
+    + Un nuevo proceso/hilo
+    + Un proceso se desbloquea
 *** Ventajas
     - Garantiza prioridades 
 *** Desventajas
     - Puede generar *Inanición* (ó Starvation, que un proceso nunca se ejecute)
     - Que un proceso monopolice la CPU
 *** Formula de estimación
-    Est(n+1)=alfa*TE + (1-alfa)*Est(n)	
-     
-    - Est(n):   Estimado de la Rafaga Anterior
-    - TE(n):    Lo que realmente ejecutó la rafaga anterior en la CPU
-    - Est(n+1): Estimado de la Rafaga Siguiente
+    ~Est(n+1)=alfa*TE + (1-alfa)*Est(n)~
 
-    alfa * rafaga_anterior + (1-alfa) * estimacion_anterior
+    |------------+-------------------------------------------------------|
+    | Expresión  | Descripción                                           |
+    |------------+-------------------------------------------------------|
+    | ~Est(n)~   | Estimado de la Ráfaga Anterior                        |
+    | ~TE(n)~    | Lo que realmente ejecutó la rafaga anterior en la CPU |
+    | ~Est(n+1)~ | Estimado de la Ráfaga Siguiente                       |
+    |------------+-------------------------------------------------------|
+    
+    #+BEGIN_QUOTE
+    El cálculo de la estimación se guarda siempre en el (PCB) para luego reutilizar.
+    
+    Una manera más descriptiva de c/expresión 
+    ~estimacion_rafaga_siguiente = alfa * rafaga_anterior + (1-alfa) * estimacion_rafaga_anterior~
+
+    - se suma el resultado de multiplicar *alfa* por a la ráfaga anterior, y por el estimado de la ráfaga anterior
+    - aunque el alfa de la estimación de la ráfaga anterior le resta a 1
+    #+END_QUOTE
+    
+    #+BEGIN_COMMENT
+    Los ~Est~ son la acumulación de TODAS las estimaciones de ráfagas
+
+    El resultado podría llegar a dar negativo, 
+    y eso quiere decir que nos pasamos en el estimado.
+    En la práctica se podría acotar el rango para que evitarlo.
+    #+END_COMMENT
 
     *Observación:*
     - Conviene un alfa mas chico para rafagas estables
     - Conviene un alfa mas grande para rafagas más cambiantes
+    - El alfa suele tener el valor ~0.5~
 *** Ejemplo
    |----+----+-----+----+-----|
    |    | LL | CPU | ES | CPU |
@@ -431,34 +470,34 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    + LL: Instante de llegada del proceso a la *cola de listos*
    + CPU: Rafagas de cpu
    + ES: Rafagas de E/S
-** (RR) Round Robin
+** [DONE] (RR) Round Robin
+   CLOSED: [2021-09-04 sáb 11:06]
 *** Conceptos
-   - Entra en la categoría de *con desalojo*
-   - *Quantum* es cuanto o rafaga de tiempo
-   - Cola de procesos listos es *FIFO*
-   - la rafaja es la misma para todos los procesos
-   - Es el sistema operativo configura el reloj
-   - Utiliza *interrupciones de clock* para *desalojar*
-     a los *procesos* del procesador cada X tiempo
-     (si el proceso tenia cosas por hacer 
+   - Es un algoritmo *Con desalojo*
+   - Cola de procesos listos es *FIFO* (/respeta el orden de llegada/)
+   - El Quantum es el mismo para todos los procesos
 
    #+BEGIN_QUOTE
-   si el *quantum* es muy chico ej. q=1
-   habrá un =overhead= osea el kernel va a intervenir a cada rato
-
-   si el *quantum* es muy grande ej. q=5
-   el RR actuará igual a un FIFO
-   #+END_QUOTE
-
-   #+BEGIN_EXAMPLE
-   En los algoritmos "sin desalojo" como el FIFO
+   En los algoritmos "sin desalojo" como el *FIFO*
    
-   aquellos procesos que tengan "rafagas muy largas"
-   van a usar mucho tiempo el CPU (se lo apropian)
+   Si los procesos tienen "rafagas largas" => monopolizan la CPU (/se lo apropian/)
+   
+   Si los procesos tienen "rafagas cortas" => permiten que otros procesos pueda usar el (CPU)
+   #+END_QUOTE
+*** Eventos de replanificación
+   - Se libera (CPU) <- un proceso finalizó
+   - Por Fin de Quantum (interrupción de clock/reloj, se desaloja procesos del (CPU) cada X tiempo/)
+*** Quantum
+   - Es un tiempo X fijado por la CPU a nivel de hardware
+   - En (RR) el Quantum es el mismo para TODOS los procesos
+   - El fin de quantum produce una una *interrupción de clock/reloj*
+   - El (SO) Sistema operativo configura el reloj que está a nivel de (HW) Hardware
+   
+   #+BEGIN_QUOTE
+   si el *quantum* es muy chico (/ej. q=1/) => habrá un *overhead* (/el SO interveniene a cada rato/)
 
-   mientras que los que tengan "rafagas cortas"
-   permiten que otros procesos pueda usar el CPU
-   #+END_EXAMPLE
+   si el *quantum* es muy grande (/ej. q=5/) => el algoritmo *RR* actuará como *FIFO*
+   #+END_QUOTE
 *** Diagrama de Estados
     #+BEGIN_SRC plantuml :file img/round-robin.png
       @startuml
@@ -474,14 +513,11 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
     #+RESULTS:
     [[file:img/round-robin.png]]
-*** Replanifica cuando
-    + Libera CPU
-    + FIN de Quantum (interrupción por timer, a nivel hardware)
 *** Ventajas
-    + respeta el orden de llegada (FIFO/FCFS)
-    + Permite que todos ejecuten *concurrentemente* 
+    + Respeta el orden de llegada (FIFO/FCFS)
+    + Permite que todos ejecuten *concurrentemente* (/apenas termina uno, ya empieza otro/)
 *** Desventajas
-    + Puede generar MUCHO *overhead* osea *process switch*
+    + Si el quantum es muy chico => genera *overhead* por los múltiples *switch process*
 *** Ejemplo
     COn quantum = 3
 
@@ -494,28 +530,32 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    |----+----+-----+----+-----|
    | P3 |  2 |   3 |  2 |   3 |
    |----+----+-----+----+-----|
-** (VRR) Virtual Round Robin
+** [DONE] (VRR) Virtual Round Robin
+   CLOSED: [2021-09-04 sáb 11:06]
 *** Conceptos
-   *IMPORTANTE:*
-   En la cola Auxiliar-Listos, van a ir todos los que les faltó terminar su *quantum*
-   (tanto los CPU-Bound como I/O-Bound)
+   - Es un algoritmo con *desalojo* pero sólo por *quantum*
+   - Se agrega una cola de READY auxiliar de mayor prioridad
+     - Para los procesos que NO terminaron TODO su Quantum
+     - Se la llama de *quantum variable* porque es el quantum que les falta, para terminar su quantum fijo
+   - Tiene *dos colas de procesos READY* para ejecutar
+     1. Una cola de READY por fin Quantum
+     2. Una cola de READY auxiliar de MAYOR PRIORIDAD (/procesos bloqueados que NO terminaron su quantum/)
 
-   - Con *desalojo*
-   - COn *quantum* de tiempo
-   - Con interupción de reloj
-   - dos colas de procesos listos para ejecutar
-     (por tanto tiene una *cola auxiliar*)
-   - mejora el rendimiento para pocesos I/O-BOUND ante los CPU-Bound
-     (las E/S son mucho mas lentas)
-   - cuando se termina todo su *quantum* irá a la cola de *listos*
-   - los procesos de menor prioridad (los que están en la Cola de Auxiliar-Listos)
-     se ejecutan luego de que se ejecuten TODOS los de mayor prioridad
+   *Observaciones:*
+   - La cola de READY por fin de quantum, es la común de (RR) con un quantum fijo
+   - La cola de READY auxiliar, también se llama de *quantum variable*
+   
+   #+BEGIN_QUOTE
+   1. Si ~q~ es el quantum y ~s~ tiempo en cpu (/lo que ejecutó/)
+   2. Entonces ~q* = q-s~ (/lo que le queda por consumir del Q fijo/)
+   3. Donde ~q*~ se conoce por *quantum variable*
+   
+   - Si el proceso termina todo su *quantum*  => irá a la cola de READY
+   - Si el proceso NO terminó todo su quantum porque fue bloqueado => irá a la cola Auxiliar de READY
 
-   #+BEGIN_EXAMPLE
-   q: quantum
-   s: tiempo en cpu
-   q* = q-s
-   #+END_EXAMPLE
+   Tanto los procesos *CPU-Bound* como *IO-Bound* irán a la cola Auxiliar de READY
+   si no terminaron todo su *quantum*
+   #+END_QUOTE
 
    #+BEGIN_EXAMPLE
    Problema del Round Robin con los procesos
@@ -524,14 +564,19 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    habrá un *overhead* donde los procesos se van intercalando 
    en el uso del CPU, y los I/O no llegan a realizar su I/O
    #+END_EXAMPLE
+*** Eventos de replanificación
+    Los mismos eventos de replanificación que (RR)
+   - Se libera (CPU) <- un proceso finalizó
+   - Por Fin de Quantum (interrupción de clock/reloj, se desaloja procesos del (CPU) cada X tiempo/)
+*** Ventajas
+   - Mejora el rendimiento para procesos *IO-Bound* ante los *CPU-Bound* (/las E/S son mucho más lentas/)
+*** [WAITING] Desventajas
 *** Diferencias con el (RR) Round Robin
-    - En el *RR* la rafaga se mantiene
-    - Resuelve el poblema de *RR* que perjudicaba a los procesos I/O-bound
-    - Aparece una *Cola Auxiliar de Listos*
-      donde los *procesos bloqueados* tienen *mayor prioridad*
+    - En el *RR* la ráfaga se mantiene
+    - Resuelve el poblema del *RR* que perjudicaba a los procesos *IO-Bound*
+    - Aparece una *Cola Auxiliar de Listos* donde los *procesos bloqueados* tienen *mayor prioridad*
       (tanto los I/O-Bound como los CPU-Bound)
-    - En el (RR) los procesos que tenian menor prioridad 
-      no podian competir con los otros de mayor prioridad
+    - En el (RR) los procesos que tenian menor prioridad no podian competir con los otros de mayor prioridad
       y nunca se terminaban de ejecutar
 *** Diagrama de Estados
     #+BEGIN_SRC plantuml :file img/virtual-round-robin.png
@@ -553,45 +598,74 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     #+RESULTS:
     [[file:img/virtual-round-robin.png]]
 
-** (HRRN) Highest Ratio Response Next
+** [DONE] (HRRN) Highest Ratio Response Next
+   CLOSED: [2021-09-10 vie 17:10]
 *** Conceptos
-    - Es un algoritmo del tipo *Sin desalojo*
+    - Es un algoritmo *Sin desalojo*
     - Significa "Primero el de mayor tasa de respuesta"
-    - aging (envejecimiento)
-*** Criterio de Prioridad
-    + prioriza a los de menor rafaga
+    - Si se considera *Con desalojo* => el *Waiting time* cambiaría a c/rato generando *Overhead*
 
+    #+BEGIN_QUOTE
+    NO aplica FIFO, se desempata por el valor de la ráfaga
+    #+END_QUOTE
+*** Prioridad
     + (+) prioridad: a mayor es W => mayor RR => mayor sera el tiempo de espera
     + (-) prioridad: a menor es S => menor RR =>menor será la duración de ráfaga
-*** Replanifica cuando
-    + Libera CPU
-*** Ventajas
-    + Prioriza procesos IO-Bound
-       sin generar *starvation* (inanición)
-*** Desventajas
-    + Genera MUCHO *overhead*
-      * porque necesita hacer muchos cálculos
-      * intenta estimar la duración de la prox. ráfaga
-    + Requiere estimación
-*** Formula
-     RR = (W+S) / S  => RR = 1+W/S
-     
-     *Observación:*
-     NUNCA va a tener un valor menor a 1
-        
+      
+    #+BEGIN_QUOTE
+    1. Mayor tiempo de espera tiene un proceso => más se prioriza
+    2. Menor ráfaga de CPU (service time) tenga un proceso => mayor prioridad también
 
-    |--------------------+-----------------------------------|
-    | W (wait time)      | tiempo esperando en Ready         |
-    |--------------------+-----------------------------------|
-    | S (service time)   | - duración de prox. rafaga de cpu |
-    |--------------------+-----------------------------------|
-    | RR (ratio response) | tasa de respuesta                 |
-    |--------------------+-----------------------------------|
-** Colas Multinivel
+    Menor ráfaga de CPU (ó service time) el resultado de la fórmula aumenta,
+    porque se divide en menos partes el (W) *waiting time*
+    #+END_QUOTE
+*** Eventos de Replanificación
+    + Cuando se Libera CPU
+*** Ventajas
+    - NO genera *starvation* (inanición), porque PRIORIZA los procesos *IO-Bound*
+    - Mayor tiempo tiempo de espera de un proceso => más prioriza al proceso
+*** Desventajas
+    + Genera MUCHO *overhead* (/por el cálculo del ratio, osea el estimar la próx. ráfaga/)
+    + Requiere estimación
+*** Fórmula
+     ~RR = (W+S) / S~  => ~RR = 1+W/S~
+     
+     *Observación:* El ratio NUNCA va a tener un valor menor a 1
+        
+    |---------------------+---------------------------------|
+    |                     | Descripción                     |
+    |---------------------+---------------------------------|
+    | W (waiting time)    | Tiempo esperando en Ready       |
+    |---------------------+---------------------------------|
+    | S (service time)    | Duración de prox. ráfaga de CPU |
+    |---------------------+---------------------------------|
+    | RR (ratio response) | Tasa de respuesta               |
+    |---------------------+---------------------------------|
+** [DONE] Por Prioridades
+   CLOSED: [2021-09-10 vie 16:28]
+*** Conceptos
+    - Puede ser Con/Sin desalojo
+    - puede generar starvation porque si hay procesos con más prioridad, esos nunca se ejecutan
+
+    #+BEGIN_QUOTE
+    La solución al *starvation* (inanición) es aplicar la técnica de Aging (envejecimiento)
+    aumentando la prioridad del proceso hasta que llega a su prioridad máxima (osea cero)
+    para ser elegido
+    #+END_QUOTE
+*** Prioridad
+    - El valor más bajo ~0~ es el de mayor prioridad
+*** (Con desalojo) Eventos de replanificación
+    - Se libera CPU
+*** (Sin desalojo) Eventos de replanificación
+    - Se libera CPU
+    - Desbloqueo
+    - Nuevo proceso
+** [DONE] Colas Multinivel
+   CLOSED: [2021-09-10 vie 18:23]
 *** Conceptos
     - Aparecen varias colas *Ready* con *distintas prioridades*
-    - se clasifican los procesos por tipos
-    - cada cola usa su propio algoritmo de planificación
+    - *Cada cola usa su propio algoritmo de planificación* con *distintas prioridades*
+    - Se clasifican los procesos por tipos
     - Los procesos se ejecutan por prioridad, quedando la *cola de listos*
       1) Cola Prioridad Máxima
       2) Cola Prioridad Media
@@ -602,7 +676,6 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 *** Ejemplo
     |-----------+------------------------------------------+-------------------|
     | Prioridad | Cola                                     | Posible Algoritmo |
-    |    <c>    |                                          |                   |
     |-----------+------------------------------------------+-------------------|
     |     1     | Cola Clase (1) para Procesos del Sistema | Round Robin       |
     |-----------+------------------------------------------+-------------------|
@@ -612,17 +685,31 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     |-----------+------------------------------------------+-------------------|
     |     4     | Cola Clase (4) -                         | FCFS/FIFO         |
     |-----------+------------------------------------------+-------------------|
-** Colas multinivel realimentado (ó Feedback)
+** [DONE] Colas multinivel realimentado (ó Feedback)
+   CLOSED: [2021-09-10 vie 18:24]
 *** Conceptos
-    - si hay *desalojo* por *interrupción de reloj* baja su prioridad
-    - cada cola usa su propio algoritmo de planificación
-    - el *sistema operativo* puede elegir sus propias reglas,
-      para hacer un algoritmo mas complejo
-      * definir la cantidad de colas
-      * el algorito que usará cada cola
-      * si habrá desalojo o no en las colas
-      * definir en que momento un algoritmo aumenta/baja la prioridad
-        (por tanto existe una técnica de *anging*)
+    - Si hay *desalojo* por *interrupción de reloj* (fin de quantum) => baja su prioridad
+    - Cada cola usa su propio algoritmo de planificación
+    - El (SO) *Sistema operativo* puede elegir sus propias reglas, para definir un algoritmo mas complejo
+
+    #+BEGIN_QUOTE
+    A diferencia de las *colas multinivel* común, en este los procesos se pueden mover
+    entre las distintas colas
+    
+    Si hay varias colas y los procesos se mueven entre las distintas colas => usa colas multinivel retroalimentado
+
+    Si hay varias colas y los procesos se quedan en la misma cola => usa sólo colas multinivel
+    #+END_QUOTE
+
+   *Observación:*
+   El (VRR) es como una cola multinivel retroalimentado por tener dos colas
+*** Como el SO puede definir el algoritmo
+    1. Definir el *número de colas*
+    2. Decidir que *algoritmo de planificación de cada cola*
+    3. El criterio para pasar de una cola a otra (/cambiar de prioridad/)
+    4. Si habrá desalojo ó no en las colas
+    5. El algoritmo entre colas
+    6. A que cola llegaran los procesos nuevos
 *** Ejemplo 1
       |-----------------------------------|
       | Cola Prioridad Máxima (quantum=2) |
@@ -707,8 +794,8 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
       EST(n+1): tiempo estimado para la proxima rafaga 
       alfa: constante entre 0 y 1
       #+END_EXAMPLE
-*** Anging (Envejecimiento)
-    Definir el método de *Anging* es cualquier método que se le ocurra
+*** Técnica de Aging (Envejecimiento)
+    Definir el método de *Aging* es cualquier método que se le ocurra
     al diseñador para hacer que un proceso que tenía *baja prioridad*
     después de un tiempo tenga *mayor prioridad*
 
@@ -743,8 +830,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
    + es el *timer* el que genera una *interrupcion de quantum*
      - es el SO el maneja esa *interrupcion*
      - el timer es a nivel hardware
-     - es seteado por el *planficador*
-     
+     - es seteado por el *planificador*     
      
    + Se vuelve a replanificar siempre en cuando
      * Cuando un proceso de *bloquea* osea una *interrupción de IO*
@@ -802,7 +888,6 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
    
    
-
 * Repaso zoom
   + en los GANTT no se grafican los *cambios de modo* 
     porque el SO ya comienza con ese cambio de modo, eso es a nivel hardware

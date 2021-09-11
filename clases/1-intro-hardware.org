@@ -223,10 +223,6 @@
      - Se generan interrupciones para analizar el código
      - para manejar el código (depurar)
 ** [TODO] Interrupciones - Procesamiento
-   #+BEGIN_COMMENT
-   Detallar un poco más, con el vide de la clase
-   #+END_COMMENT
-
 *** A nivel hardware
     1. El controlador de un dispositivo ó (HW)  genera una *Interrupción*
     2. el (CPU) completa la ejecución de la *instrucción*
@@ -259,8 +255,8 @@
     3. Se restaura el (CTX) Contexto de la *interrupción* anterior (1)
     4. Se restaura el (CTX) del Proceso
 *** Interrupciones secuenciales Vs anidadas
-    - Las anidadas se priorizan las interrupciones según cual sea dispositivo que la notifique
-    - Las secuenciales se espera que se terminen antes de atender otra
+    - Las anidadas se _priorizan las interrupciones_ según cual sea dispositivo que la notifique
+    - Las secuenciales _se espera que se terminen_ antes de atender otra
 ** [TODO] Interrupt Handler
 *** Conceptos
     - Es un *puntero* al *vector de interrupciones*

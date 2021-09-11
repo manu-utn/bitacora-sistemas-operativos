@@ -43,11 +43,13 @@
    El *TCB* es el *Thread Control Block* (Bloque de control del hilo)
 
    #+BEGIN_COMMENT
-   que sería un espacio de pila? del SO? o que tiene su Stack?
+   en la ppt mencionaba que los hilos tienen un espacio de pila, 
+   se refería al stack del so?
+
+    *Respuesta:* supongo q si
    #+END_COMMENT
 ** Monohilo
-** [DONE] Estructura de Hilos
-   CLOSED: [2021-08-31 mar 19:21]
+** [TODO] Estructura de Hilos
 *** Conceptos 
     Cada *hilo de ejecución* tiene 
     + su propio Stack, Heap, PCB
@@ -70,8 +72,7 @@
 
    cada columna es un hilo, y comparten *DATOS* (Variables globales)
    <<DUDA 1>> y comparten también codigo (?) 
-** [DONE] Ventajas de hilos
-   CLOSED: [2021-08-31 mar 19:21]
+** [TODO] Ventajas de hilos
 *** Menos Costoso
     Crear un hilo es _menos costoso que crear un proceso-hijo_ porque por cada proceso
     se debe guardar los datos en los PCB, y esto implíca más recursos.
@@ -122,8 +123,7 @@
     al homebanking, y facebook
     uno podria acceder a la información de otro
     #+END_EXAMPLE
-** [DONE] Desventajas
-   CLOSED: [2021-08-31 mar 19:21]
+** [TODO] Desventajas
 *** Falta de Seguridad
     NO hay seguridad entre hilos (/porque se comparten los recursos/)
 *** Un hilo afecta al resto
@@ -145,7 +145,7 @@
       + todos sus hilos también (El sistema operativo los toma)
       + NO se liberan automaticamente los recursos
         (es responsabilidad del programador, el SO no se entera cuales usamos)
-** Clasificación de Hilos
+** [TODO] Clasificación de Hilos
 *** [DONE] Hilos de Usuario (ULT - User Level Threads)
     CLOSED: [2021-08-31 mar 19:52]
 **** Conceptos
@@ -200,7 +200,7 @@
      en cambio si fuesen *hilos de usuario* 
      aparecería solo uno
      #+END_EXAMPLE
-** Hilos Combinados (KLT y ULT)
+** [TODO] Hilos Combinados (KLT y ULT)
 *** KLT con ULTs
     Si el _KLT tiene contiene ULTs_
     + Es el SO quien ejecutará la **Biblioteca de Usuario* que entiende que 
