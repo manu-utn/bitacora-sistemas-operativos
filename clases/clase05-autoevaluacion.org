@@ -1,3 +1,149 @@
+* Cuestionario Nuevo
+** Pregunta (1)
+   #+BEGIN_QUOTE
+   ¿Cuál es el planificador que es más importante que tenga menos overhead?
+
+   1. El encargado de admitir nuevos procesos al sistema
+   2. El encargado de hacer swapping
+   3. El encargado de poner procesos en ejecución
+   #+END_QUOTE
+*** Respuesta Correcta
+   3. El encargado de poner procesos en ejecución
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    El planificador de corto plazo, el encargado de seleccionar procesos para ejecutar,
+    es el que va a ejecutarse muy seguido por lo que es necesario que tome buenas decisiones
+    y que tenga el menor overhead posible.
+** Pregunta (2)
+   #+BEGIN_QUOTE
+   ¿Qué es el tiempo de espera?
+   
+   1. El tiempo en el que el proceso está en la cola de bloqueado
+   2. El tiempo en el que el proceso no está en ejecución
+   3. El tiempo en el que el proceso está en la cola de listos
+   4. El tiempo en el que el proceso está en suspendido
+   #+END_QUOTE
+*** Respuesta Correcta
+   3.El tiempo en el que el proceso está en la cola de listos
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    El el tiempo en el que le negamos CPU al proceso, podríamos haberlo elegido para ejecutar, pero el planificador seleccionó a otro.
+** Pregunta (3)
+   #+BEGIN_QUOTE
+   ¿Cuál/es de las siguientes afirmaciones son falsas sobre FIFO?
+   
+   1. Podría permitir que un proceso monopolice la CPU
+   2. Podría ser útil para correr procesos secuenciales
+   3. Minimiza los cambios de contexto
+   4. Todas
+   5. Ninguna
+   #+END_QUOTE
+*** Respuesta Correcta
+   5.Ninguna
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Al no tener desalojo, se espera a que el proceso voluntariamente libere la CPU,
+    esto potencialmente podría generar que un proceso nunca la libere.
+    En un contexto en el que se quiere correr un lote de procesos en forma batch
+    minimizando el overhead, es una buena opción.
+    Al ejecutar un proceso después del otro minimiza la replanificación y
+    por ende los cambios de contexto.
+** Pregunta (4)
+   #+BEGIN_QUOTE
+   Indique cuál de las siguientes afirmaciones son correctas sobre SJF
+   
+   1. Puede implementarse con o sin desalojo
+   2. Minimiza el tiempo de espera promedio
+   3. Para poder optimizarlo se puede utilizar la media exponencial
+   4. Prioriza a los procesos CPU Bound
+   5. Es un algoritmo con poco overhead
+   #+END_QUOTE
+*** Respuesta Correcta
+   1.Puede implementarse con o sin desalojo
+   2.Minimiza el tiempo de espera promedio
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    La media exponencial es necesaria para poder implementarlo ya que uno
+    no podría predecir las siguientes ráfagas, sólo puede estimarlas.
+    
+    Prioriza a los procesos IO Bound.
+    Tiene bastante overhead por el cálculo de la media exponencial, aún más si es con desalojo.
+** Pregunta (5)
+   #+BEGIN_QUOTE
+   V o F . HRRN podría implementarse con o sin desalojo según cómo se prefiera
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Como tiene en cuenta la variable "tiempo de espera", en caso de implementarlo
+    con desalojo habría que estar replanificando con cada instante que pasa,
+    generando demasiado overhead.
+** Pregunta (6)
+   #+BEGIN_QUOTE
+   V o F. En RR el SO lanza una interrupción para desalojar al proceso en ejecución
+   y selecciona al siguiente proceso en LISTO
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    No es el SO el que interrumpe la ejecución sino el timer (que es programado por el
+    planificador antes de poner a ejecutar el proceso de usuario) lanzando una interrupción
+    de fin de quantum. Luego el SO atiende dicha interrupción y el planificador
+    selecciona a otro proceso para ejecutar.
+** Pregunta (7)
+   #+BEGIN_QUOTE
+   V o F. Para un algoritmo de tipo "Feedback" no es suficiente saber que tiene dos
+   colas de planificación y que ambas utilizan RR para poder implementar el algoritmo.
+   #+END_QUOTE
+*** Respuesta Correcta
+    Verdadero
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Es necesario saber también:
+    - a qué cola ingresan los procesos nuevos?
+    - cuáles son las prioridades entre colas?
+    - hay desalojo entre ellas?
+    - cuál es el criterio para pasar de una cola de mayor prioridad?
+    - se puede pasar de una cola de menor prioridad a una de mayor?
+** Pregunta (8)
+   #+BEGIN_QUOTE
+   ¿Cuáles de los siguientes algoritmos podrían sufrir de inanición?
+   
+   1. FIFO
+   2. SJF
+   3. Por prioridades
+   4. RR
+   5. VRR
+   6. HRRN
+   7. Feedback
+   #+END_QUOTE
+*** Respuesta Correcta
+   2.SJF
+   3.Por prioridades
+   7.Feedback
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    1. FIFO: respeta el orden de llegada, por lo que atenderá a todos en dicho orden
+    2. RR: igual que FIFO, pero con límite de Q
+    3. VRR: podría generar la impresión de generar inanición por la cola prioritaria.
+       Sin embargo, lo que hay que recordar es que ese Q' tiende a 0, es decir,
+       cuando finalmente consuma todo el Q inicial vuelve a la cola menos prioritaria.
+    4. HRRN: fuera de que privilegia a los procesos de ráfagas cortas, al meter en la
+       ecuación el tiempo de espera hace que los procesos largos no sufran de inanición
+** Pregunta (9)
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+*** Respuesta Correcta
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (10)
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+*** Respuesta Correcta
+*** Justificación Respuestas Incorrectas
+*** Observaciones
 * Cuestionario (1)
 ** Pregunta 1
    En que momento se atienden las interrupciones?
