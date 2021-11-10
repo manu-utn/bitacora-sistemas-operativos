@@ -1,0 +1,182 @@
+* Pregunta (1)
+  #+BEGIN_QUOTE
+  ¿Cuál de los siguientes podrían ser síntomas de que está ocurriendo una condición de carrera?
+   
+  1. Los procesos están bloqueados y no pueden ejecutar
+  2. Los procesos siguen ejecutando pero no pueden finalizar
+  3. Los procesos pueden ejecutar pero tienen resultados erráticos (cambia según el orden de ejecución)
+  #+END_QUOTE
+** Respuesta Correcta
+  - (3) Los procesos pueden ejecutar pero tienen resultados erráticos (cambia según el orden de ejecución)
+** Justificación Respuestas Incorrectas
+** Observaciones
+   En una condición de carrera al estar accediendo en forma concurrente a un recurso compartido
+   no se puede asegurar el resultado final, va a variar según el orden de ejecución de los procesos.
+* Pregunta (2)
+  #+BEGIN_QUOTE
+  ¿Qué condiciones son necesarias para que se exista una condición de carrera?
+   
+  1. Dos o más procesos/hilos accediendo a un recurso común
+  2. Dos o más procesos/hilos accediendo a un recurso común ambos en modo escritura
+  3. Dos o más procesos/hilos accediendo a un recurso común ambos en modo lectura
+  4. Dos o más procesos/hilos accediendo a un recurso común, al menos alguno en modo escritura
+  5. Dos o más procesos/hilos accediendo a un recurso común en forma concurrente
+  #+END_QUOTE
+** Respuesta Correcta
+  - (1) Dos o más procesos/hilos accediendo a un recurso común
+  - (4) Dos o más procesos/hilos accediendo a un recurso común, al menos alguno en modo escritura
+  - (5) Dos o más procesos/hilos accediendo a un recurso común en forma concurrente
+** Justificación Respuestas Incorrectas
+   - (2) no es necesario que dos procesos/hilos estén en modo escritura, con que uno lo esté, ya puede ocurrir
+** Observaciones
+   Siguiendo las condiciones de bernstein:
+   - Tiene que existir un recurso en común
+   - Al menos una de las partes tiene que acceder en forma de escritura
+   - Esos accesos tienen que ser concurrentes para que generen el problema
+* Pregunta (3)
+  #+BEGIN_QUOTE
+  ¿Cuáles de las siguientes afirmaciones son correctas sobre la "Región crítica"?
+   
+  1. Dentro de la misma se suele aprovechar para acceder a varios recursos compartidos para ser más eficientes
+  2. Debe ser lo más chica posible
+  3. La misma debe estar rodeada por un protocolo de sección de entrada y de salida
+  4. Según cómo esté construída la sección de entrada podría dejar entrar a uno o más procesos a la región crítica
+  #+END_QUOTE
+** Respuesta Correcta
+  - (2) Debe ser lo más chica posible
+  - (3) La misma debe estar rodeada por un protocolo de sección de entrada y de salida
+** Justificación Respuestas Incorrectas
+  - (1) NO, la idea es que sea lo más chica posible la región crítica
+  - (4) No deberia de acceder más de un proceso a la SC, porque es requisito que se cumpla la *mutua exclusión*
+** Observaciones
+   La región crítica es la sección del código que accede a un recurso compartido que podría generar una condición de carrera.
+   Por lo mismo, debe ser accedida en forma atómica siguiendo un protocolo de entrada y salida que puede ser implementado
+   de distintas formas (semáforos, testandset, etc).
+   Como en el tiempo en que un proceso acceda a la RC el resto no podrá hacerlo, hay que dejar que la misma sea lo más chica posible.
+* [WAITING] Pregunta (4)
+  #+BEGIN_QUOTE
+  *¿Qué condiciones debería cumplir una buena solución a la condición de carrera?*
+   
+  1. Permitir que un proceso pueda ingresar a la RC eventualmente, que tarde más o menos pero que no genere starvation
+  2. Sin importar cuántas veces un proceso necesite ingresar a la RC pueda hacerlo sin problemas <--- *yo tenia otra definición (?)*
+  3. No debe condicionar el ingreso a la RC a otros procesos que no estén en la sección de entrada
+  4. Garantizar que sólo un proceso pueda ingresar a la vez a la RC
+  #+END_QUOTE
+
+  #+BEGIN_COMMENT
+  yo tenía otra definición de *velocidad relativa*
+  que no importaba el orden en que se ejecutaran los procesos
+  #+END_COMMENT
+** Respuesta Correcta
+   Todas, donde
+   - (1) esto garantiza la *espera limitada* (evitar starvation)
+   - (2) esto garantiza la *velocidad relativa*
+   - (3) esto garantiza el *progreso* (si la RC está disponible, que se pueda acceder)
+   - (4) esto garantiza la *mutua exclusión*
+** Justificación Respuestas Incorrectas
+** Observaciones
+   Corresponden (en orden) a las condiciones de:
+   - Espera limitada
+   - Velocidad de los procesos
+   - Progreso
+   - Mutua exclusión
+* Pregunta (5)
+  #+BEGIN_QUOTE
+  *¿Cuál/es de las siguientes son opciones para garantizar mutua exclusión?*
+   
+  1. Solución de Peterson
+  2. Semáforo mutex
+  3. TestAndSet
+  4. Monitores
+  5. Deshabilitar interrupciones
+  #+END_QUOTE
+** Respuesta Correcta
+   Todas, donde
+   - (1) la de peterson es a nivel de sw, integraba turno+interesado
+** Justificación Respuestas Incorrectas
+** Observaciones
+   Todas son opciones válidas para garantizar mutua exclusión y resolver el problema de la condición de carrera.
+* Pregunta (6)
+  #+BEGIN_QUOTE
+  V o F.
+  *Swap and exchange y deshabilitar interrupciones son opciones válidas para solucionar el
+  problema de la condición de carrera. Sin embargo, la 2da opción no siempre es recomendada.*
+  #+END_QUOTE
+** Respuesta Correcta
+   Verdadero
+** Justificación Respuestas Incorrectas
+** Observaciones
+   Deshabilitar interrupciones no podría ser aplicado en un entorno multiprocesador ya que sería
+   muy costoso por tener que deshabilitar las interrupciones en cada uno de los procesadores.
+* Pregunta (7)
+  #+BEGIN_QUOTE
+  ¿Cuáles de los siguientes valores de inicialización de semáforos son correctos?
+
+  - 1
+  - 10
+  - (-1) <- negativo
+  - 0
+  #+END_QUOTE
+** Respuesta Correcta
+   - 1 -> estamos hablando de un *semáforo mutex* o de un *semáforo binario* en el que está inicialmente habilitado
+   - 10 -> estamos hablando de un *semáforo contador* , hay 10 instancias disponibles del recurso
+   - 0 -> estamos hablando de un *semáforo binario* en el que espera que desde otro proceso de lo habilite con un signal
+** Justificación Respuestas Incorrectas
+   Nunca nunca nuca vamos a inicializar un semáforo en negativo
+** Observaciones
+* Pregunta (8)
+  #+BEGIN_QUOTE
+  V o F.
+  Las funciones de acceso al mutex pueden ser implementeadas con bloqueo y sin bloqueo (espera activa).
+  Sin embargo, con bloqueo es la forma recomendada para favorecer la performance.
+  #+END_QUOTE
+** Respuesta Correcta
+   Falso
+** Justificación Respuestas Incorrectas
+   Falta contexto, la respuesta en realidad sería "depende"...
+   - En un sistema con 1 procesador NO sería la mejor idea "sin bloqueo" (espera activa),
+     porque el único procesador que tenemos podría ser monopolizado por un proceso
+   - En un sistema con varios procesadores podría estar OK "con bloqueo" (sin espera activa)
+   - Si la *Región crítica* es chica, en un sistema con varios procesadores también podría estar OK "sin bloqueo" (con espera activa)
+** Observaciones
+   En los casos en que hay multiprocesamiento (más de una CPU) si las regiones críticas son chicas
+   el utilizar un mutex con espera activa va a ser más eficiente ya que va a evitar el overhead del bloqueo/cambios de contexto.
+    
+   El proceso que está en la espera activa, cuando otro proceso en otra CPU libere ese mutex,
+   va a poder ejecutar inmediatamente ingresando en la RC. Por otro lado, en la versión con bloqueo tiene
+   que esperar a que el planificador vuelva a elegirlo para ejecutar
+* [WAITING] Pregunta (9)
+  #+BEGIN_QUOTE
+  Si en un momento miramos el estado de los semáforos y vemos que uno tiene un valor -4. ¿Qué inferencias podríamos hacer?
+   
+  1. Los semáforos se están usando con una implementación con espera activa
+  2. Los semáforos se están usando con una implementación con bloqueo
+  3. Hay un error con ese semáforo
+  4. Hay 4 procesos en estado "en espera" en general en el sistema
+  5. Hay 4 procesos en estado bloqueados por ese semáforo
+  #+END_QUOTE
+** Respuesta Correcta
+  - (2) Los semáforos se están usando con una implementación con bloqueo
+  - (5) Hay 4 procesos en estado bloqueados por ese semáforo
+** Justificación Respuestas Incorrectas
+   - (1) NO, porque si fuese con *espera activa* => NO haría directo el ~sem--~ si no que valida que no sea negativo
+   - (4) NO, porque hay una cola de espera por cada recurso. Si hay 10 semaforos => habrá 10 colas de espera
+   - (4) Quizás, sería válido si dijese "al menos 4"
+** Observaciones
+   Los semáforos implementados con espera activa nunca toman valores negativos (son >= 0)
+   por lo que podemos asumir que se está utilizando una implementación con bloqueo
+   y que a su vez hay 4 procesos esperando por dicho semáforo.
+* Pregunta (10)
+  #+BEGIN_QUOTE
+  V o F.
+  Independientemente del algoritmo del planificador de corto plazo,
+  el problema de inversión de prioridades podría ocurrir siempre en un sistema que utilice mutex sobre sus recursos.
+  #+END_QUOTE
+** Respuesta Correcta
+   Falso
+** Justificación Respuestas Incorrectas
+** Observaciones
+   En el sistema debe haber además un algoritmo de planificación que maneja prioridades.
+   El problema se da justamente porque un proceso menos prioritario toma un recurso antes de que uno más prioritario pueda tomarlo.
+   Por ejemplo, si en un sistema se utiliza un algoritmo RR el problema se terminaría finalizando
+   ya que el proceso de baja prioridad podría continuar su ejecución y liberar el recurso

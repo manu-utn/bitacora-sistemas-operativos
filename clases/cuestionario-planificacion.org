@@ -1,14 +1,101 @@
-* Cuestionario Nuevo
+#+STARTUP: inlineimages
+* Cuestionario (1)
+** Pregunta (1)
+   #+BEGIN_QUOTE
+   V/F
+   ¿En caso de utilizar jacketing sería lo mismo utilizar ULTs/KLTs?
+   #+END_QUOTE
+*** Respuesta Correcta
+    F
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Ya que el SO sigue sin "ver" dichos ULTs no puede planificarlos (ej, asignarles un Q, o ejecutarlos en distintas CPUs)
+    Recordar que lo único que soluciona jacketing es que el KLT/Proceso asociado a los ULTs no se bloquee y la biblioteca pueda planificar otro ULT en caso de tener alguno LISTo.
+** Pregunta (2)
+   #+BEGIN_QUOTE
+   Indique cuáles de las siguientes afirmaciones son VERDADERAs sobre planificación con biblioteca de ULTs
+   
+   1. Si hay varios KLTs con ULTs todos los KLTs deben usar la misma biblioteca de ULTs
+   2. Si decidimos usar ULTs es igual de útil usar directo syscalls (ej write) que usar los wrappers de las sycalls provistas por la biblioteca
+   3. Cuando un ULT necesita realizar una IO se lo pide al SO con una syscall. En este caso, el SO puede diferenciar cuál ULT lo está pidiendo.
+   4. Todas son correctas
+   5. Ninguna es correcta
+   #+END_QUOTE
+*** Respuesta Correcta
+   - Ninguna es correcta
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Son todas falsas:
+    - Cada KLT puede usar una biblioteca distinta, y por ende tener distintos criterios de planificación
+    - Si llamamos directo a syscalls bloqueantes desde el código de nuestros ULTs no permitimos que la biblioteca replanifique cuando sea necesario para el algoritmo usado
+    - El SO no "ve" ni sabe de la existencia de los ULTs, cuando le llega el pedido de una sycall, sólamente sabe que vino de una entidad de planificación que conoce, como un KLT o un proceso
+** [#A] Pregunta (3)
+   #+BEGIN_QUOTE
+   Un proceso posee 3 KLTs y cada uno 3 ULTs asociados.
+   Si un ULT necesita hacer una syscall bloqueante (ej read) ...
+   ¿cuáles de las siguientes afirmaciones PODRÍAN ser ciertas?
+
+   1. Por default todo el KLT se bloquea
+   2. Por default todo el KLT y el proceso asociado se bloquean
+   3. Podría no bloquearse todo el KLT <- Ojo..!
+   4. Al finalizar la operación bloqueante y ser seleccionados por el planificador del SO vuelve a ejecutar el mismo ULT
+   5. Al finalizar la operación bloqueante y ser seleccionados por el planificador del SO ejecuta el ULT que seleccione la biblioteca de ULTs <- Ojo..!
+   #+END_QUOTE
+*** Respuesta Correcta
+    Todas
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    El SO por default "ve" que la syscall llega del KLT asociado, por lo que lo bloquea.
+    Por otro lado, en caso de utilizar jacketing, podría ejecutar otro ULT del mismo KLT sin bloquearse.
+    Luego de finalizar la operación bloqueante:
+    - Si se realizó la syscall directo -> va a continuar con el ULT que hizo la llamada
+    - Si se realizó la _syscall desde una función wrapper de la biblioteca_ -> la bilioteca podrá seleccionar al siguiente ULT a ejecutar
+      (que igualmente podría ser el que originó la llamada)
+    - _En caso de que justo el último KLT de un proceso se bloquee, quedaría todo el proceso en estado bloqueado_
+** [#A] Pregunta (4)
+   #+BEGIN_QUOTE
+   V o F.
+   En caso de elegir usar ULTs con jacketing vs KLTs, la única desventaja sería no poder aprovechar el multiprocesamiento.
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Otra desventaja es que en caso de tener un algoritmo con quantum, todos los ULTs deberán compartirlo vs en un esquema con KLTs cada uno recibiría 1 Q
+** [#A] Pregunta (5)
+   #+BEGIN_QUOTE
+   Considere el siguiente sistema en el que en un momento (está empezada la ejecución) tenemos el siguiente estado.
+   Sabiendo que el SO planifica con SJF, que el estimado anterior de KAA fue 3 y que los 3 ULTs ya estaban ready.
+   Responda cuáles de las siguientes afirmaciones son verdaderas. (aclaración alpha = 0,5)
+   Fórmula SJF: ~prox_est = raf_ant*alfa + (1-alfa)*ant_est~
+
+     1. El próximo estimado de KAA será 4
+     2. KAA nunca llega a bloquearse
+     3. KAA utiliza una biblioteca de ULTs con jacketing
+     4. La biblioteca de ULTs de KAA utiliza SJF
+   #+END_QUOTE
+
+   [[./img/gantt-naty1.png]]
+*** Respuesta Correcta
+    - El próximo estimado de KAA será 4
+    - KAA utiliza una biblioteca de ULTs con jacketing
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    - Como el estimado anterior fue de 3, y ejecutó 5 unidades hasta bloquearse (entre todos los ults) su próximo estimado es de (3+5)/2
+    - Hay un momento en el que todos los ULTs están bloqueados, por lo que el KLT se bloquea (la biblioteca no tiene nada más para ejecutar)
+    - La biblioteca de KAA usa jacketing ya que vemos que hay un ULT ejecutando mientras otro realiza una IO
+    - No podemos afirmar que la biblioteca de KAA utilice SJF ya que depende un poco de los estimados, bien podría ser FIFO
+* Cuestionario (2)
 ** Pregunta (1)
    #+BEGIN_QUOTE
    ¿Cuál es el planificador que es más importante que tenga menos overhead?
 
-   1. El encargado de admitir nuevos procesos al sistema
-   2. El encargado de hacer swapping
-   3. El encargado de poner procesos en ejecución
+   1. El encargado de admitir nuevos procesos al sistema (PLP)
+   2. El encargado de hacer swapping (PMP)
+   3. El encargado de poner procesos en ejecución (PCP)
    #+END_QUOTE
 *** Respuesta Correcta
-   3. El encargado de poner procesos en ejecución
+   - (3) El encargado de poner procesos en ejecución (PCP)
 *** Justificación Respuestas Incorrectas
 *** Observaciones
     El planificador de corto plazo, el encargado de seleccionar procesos para ejecutar,
@@ -24,10 +111,10 @@
    4. El tiempo en el que el proceso está en suspendido
    #+END_QUOTE
 *** Respuesta Correcta
-   3.El tiempo en el que el proceso está en la cola de listos
+   - (3) El tiempo en el que el proceso está en la cola de listos
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-    El el tiempo en el que le negamos CPU al proceso, podríamos haberlo elegido para ejecutar, pero el planificador seleccionó a otro.
+    El tiempo en el que le negamos CPU al proceso, podríamos haberlo elegido para ejecutar, pero el planificador seleccionó a otro.
 ** Pregunta (3)
    #+BEGIN_QUOTE
    ¿Cuál/es de las siguientes afirmaciones son falsas sobre FIFO?
@@ -39,16 +126,16 @@
    5. Ninguna
    #+END_QUOTE
 *** Respuesta Correcta
-   5.Ninguna
+   1. Ninguna
 *** Justificación Respuestas Incorrectas
 *** Observaciones
     Al no tener desalojo, se espera a que el proceso voluntariamente libere la CPU,
     esto potencialmente podría generar que un proceso nunca la libere.
     En un contexto en el que se quiere correr un lote de procesos en forma batch
     minimizando el overhead, es una buena opción.
-    Al ejecutar un proceso después del otro minimiza la replanificación y
-    por ende los cambios de contexto.
-** Pregunta (4)
+    
+    _Al ejecutar un proceso después del otro minimiza la replanificación y por ende los cambios de contexto._
+** [WAITING] [#A] Pregunta (4)
    #+BEGIN_QUOTE
    Indique cuál de las siguientes afirmaciones son correctas sobre SJF
    
@@ -59,15 +146,22 @@
    5. Es un algoritmo con poco overhead
    #+END_QUOTE
 *** Respuesta Correcta
-   1.Puede implementarse con o sin desalojo
-   2.Minimiza el tiempo de espera promedio
+   1. Puede implementarse con o sin desalojo
+   2. Minimiza el tiempo de espera promedio
 *** Justificación Respuestas Incorrectas
 *** Observaciones
     La media exponencial es necesaria para poder implementarlo ya que uno
     no podría predecir las siguientes ráfagas, sólo puede estimarlas.
     
-    Prioriza a los procesos IO Bound.
-    Tiene bastante overhead por el cálculo de la media exponencial, aún más si es con desalojo.
+    _Prioriza a los procesos IO Bound._
+    
+    #+BEGIN_COMMENT
+    puede ser que me haya equivocado con lo de io-bound? no es cpu-bound?
+    
+    el hrrn es el que prioriza io-bound, porque a mayor tiempo de espera => mas prioridad tiene
+    #+END_COMMENT
+    
+    _Tiene bastante overhead por el cálculo de la media exponencial, aún más si es con desalojo._
 ** Pregunta (5)
    #+BEGIN_QUOTE
    V o F . HRRN podría implementarse con o sin desalojo según cómo se prefiera
@@ -79,7 +173,7 @@
     Como tiene en cuenta la variable "tiempo de espera", en caso de implementarlo
     con desalojo habría que estar replanificando con cada instante que pasa,
     generando demasiado overhead.
-** Pregunta (6)
+** [#A] Pregunta (6)
    #+BEGIN_QUOTE
    V o F. En RR el SO lanza una interrupción para desalojar al proceso en ejecución
    y selecciona al siguiente proceso en LISTO
@@ -87,12 +181,13 @@
 *** Respuesta Correcta
     Falso
 *** Justificación Respuestas Incorrectas
+    EL SO no lanza, sino que atiende la interrupción de clock
 *** Observaciones
     No es el SO el que interrumpe la ejecución sino el timer (que es programado por el
     planificador antes de poner a ejecutar el proceso de usuario) lanzando una interrupción
     de fin de quantum. Luego el SO atiende dicha interrupción y el planificador
     selecciona a otro proceso para ejecutar.
-** Pregunta (7)
+** [#B] Pregunta (7)
    #+BEGIN_QUOTE
    V o F. Para un algoritmo de tipo "Feedback" no es suficiente saber que tiene dos
    colas de planificación y que ambas utilizan RR para poder implementar el algoritmo.
@@ -107,11 +202,11 @@
     - hay desalojo entre ellas?
     - cuál es el criterio para pasar de una cola de mayor prioridad?
     - se puede pasar de una cola de menor prioridad a una de mayor?
-** Pregunta (8)
+** [#A] Pregunta (8)
    #+BEGIN_QUOTE
    ¿Cuáles de los siguientes algoritmos podrían sufrir de inanición?
    
-   1. FIFO
+   1. FIFO <- Ojo..!
    2. SJF
    3. Por prioridades
    4. RR
@@ -120,10 +215,11 @@
    7. Feedback
    #+END_QUOTE
 *** Respuesta Correcta
-   2.SJF
-   3.Por prioridades
-   7.Feedback
+   - (2) SJF
+   - (3) Por prioridades
+   - (7) Feedback (/porque depende de los algoritmos elegidos/)
 *** Justificación Respuestas Incorrectas
+    _Todos los de sin desalojo que priorizen, podria generar starvation_
 *** Observaciones
     1. FIFO: respeta el orden de llegada, por lo que atenderá a todos en dicho orden
     2. RR: igual que FIFO, pero con límite de Q
@@ -132,19 +228,206 @@
        cuando finalmente consuma todo el Q inicial vuelve a la cola menos prioritaria.
     4. HRRN: fuera de que privilegia a los procesos de ráfagas cortas, al meter en la
        ecuación el tiempo de espera hace que los procesos largos no sufran de inanición
-** Pregunta (9)
+* Cuestionario (3)
+** Pregunta (1)
    #+BEGIN_QUOTE
+   V/F
+   ¿En caso de utilizar jacketing sería lo mismo utilizar ULTs/KLTs?
    #+END_QUOTE
 *** Respuesta Correcta
+    F
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-** Pregunta (10)
+    Ya que el SO sigue sin "ver" dichos ULTs no puede planificarlos (ej, asignarles un Q, o ejecutarlos en distintas CPUs)
+    Recordar que lo único que soluciona jacketing es que el KLT/Proceso asociado a los ULTs no se bloquee y la biblioteca pueda planificar otro ULT en caso de tener alguno LISTo.
+** Pregunta (2)
    #+BEGIN_QUOTE
+   Indique cuáles de las siguientes afirmaciones son VERDADERAs sobre planificación con biblioteca de ULTs
+   
+   1. Si hay varios KLTs con ULTs todos los KLTs deben usar la misma biblioteca de ULTs
+   2. Si decidimos usar ULTs es igual de útil usar directo syscalls (ej write) que usar los wrappers de las sycalls provistas por la biblioteca
+   3. Cuando un ULT necesita realizar una IO se lo pide al SO con una syscall. En este caso, el SO puede diferenciar cuál ULT lo está pidiendo.
+   4. Todas son correctas
+   5. Ninguna es correcta
    #+END_QUOTE
 *** Respuesta Correcta
+   - Ninguna es correcta
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-* Cuestionario (1)
+    Son todas falsas:
+    - Cada KLT puede usar una biblioteca distinta, y por ende tener distintos criterios de planificación
+    - Si llamamos directo a syscalls bloqueantes desde el código de nuestros ULTs no permitimos que la biblioteca replanifique cuando sea necesario para el algoritmo usado
+    - El SO no "ve" ni sabe de la existencia de los ULTs, cuando le llega el pedido de una sycall, sólamente sabe que vino de una entidad de planificación que conoce, como un KLT o un proceso
+** Pregunta (3)
+   #+BEGIN_QUOTE
+   Un proceso posee 3 KLTs y cada uno 3 ULTs asociados.
+   Si un ULT necesita hacer una syscall bloqueante (ej read) ...
+   ¿cuáles de las siguientes afirmaciones PODRÍAN ser ciertas?
+
+   1. Por default todo el KLT se bloquea
+   2. Por default todo el KLT y el proceso asociado se bloquean
+   3. Podría no bloquearse todo el KLT
+   4. Al finalizar la operación bloqueante y ser seleccionados por el planificador del SO vuelve a ejecutar el mismo ULT
+   5. Al finalizar la operación bloqueante y ser seleccionados por el planificador del SO ejecuta el ULT que seleccione la biblioteca de ULTs
+   #+END_QUOTE
+*** Respuesta Correcta
+    Todas
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    El SO por default "ve" que la syscall llega del KLT asociado, por lo que lo bloquea. Por otro lado, en caso de utilizar jacketing, podría ejecutar otro ULT del mismo KLT sin bloquearse.
+    Luego de finalizar la operación bloqueante:
+    - Si se realizó la syscall directo -> va a continuar con el ULT que hizo la llamada
+    - Si se realizó la syscall desde una función wrapper de la biblioteca -> la bilioteca podrá seleccionar al siguiente ULT a ejecutar (que igualmente podría ser el que originó la llamada)
+    En caso de que justo el último KLT de un proceso se bloquee, quedaría todo el proceso en estado bloquado
+** Pregunta (4)
+   #+BEGIN_QUOTE
+   V o F.
+   En caso de elegir usar ULTs con jacketing vs KLTs, la única desventaja sería no poder aprovechar el multiprocesamiento.
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Otra desventaja es que en caso de tener un algoritmo con quantum, todos los ULTs deberán compartirlo vs en un esquema con KLTs cada uno recibiría 1 Q
+** [TODO] Pregunta (5)
+   #+BEGIN_QUOTE
+   Considere el siguiente sistema en el que en un momento (está empezada la ejecución) tenemos el siguiente estado. Sabiendo que el SO planifica con SJF, que el estimado anterior de KAA fue 3 y que los 3 ULTs ya estaban ready. Responda cuáles de las siguientes afirmaciones son verdaderas. (aclaración alpha = 0,5)
+
+    1. El próximo estimado de KAA será 4
+    2. KAA nunca llega a bloquearse
+    3. KAA utiliza una biblioteca de ULTs con jacketing
+    4. La biblioteca de ULTs de KAA utiliza SJF
+   #+END_QUOTE
+
+   [[./img/cuestionario-plani-1.png]]
+*** Respuesta Correcta
+    - El próximo estimado de KAA será 4
+    - KAA utiliza una biblioteca de ULTs con jacketing
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    - Como el estimado anterior fue de 3, y ejecutó 5 unidades hasta bloquearse (entre todos los ults) su próximo estimado es de (3+5)/2
+    - Hay un momento en el que todos los ULTs están bloqueados, por lo que el KLT se bloquea (la biblioteca no tiene nada más para ejecutar)
+    - La biblioteca de KAA usa jacketing ya que vemos que hay un ULT ejecutando mientras otro realiza una IO
+    - No podemos afirmar que la biblioteca de KAA utilice SJF ya que depende un poco de los estimados, bien podría ser FIFO
+
+* Cuestionario (4)
+** Los planificadores de largo y mediano plazo pueden afectar el orden de los procesos
+   a. En la lista de procesos suspendidos.
+   b. En lista de procesos listos para ejecutar.
+   c. En la lista de procesos nuevos. 
+*** Respuesta elegida
+   c. En la lista de procesos nuevos. 
+*** Respuesta correcta
+   b. En lista de procesos listos para ejecutar.
+*** Observaciones
+    - El *planificador de largo plazo*, al momento de admitir un proceso nuevo, 
+      puede afectar el orden de los procesos de Listos.
+    - El *planificador de medio plazo*, puede afectar el orden de los procesos listos 
+      cuando un proceso es pasado de disco a memoria.
+** El planificador de corto plazo es invocado cuando
+   a. Se realiza una llamada al sistema o una interrupción. 
+   b. Se realiza una llamada al sistema y una interrupción.
+   c. Ninguna de las anteriores.
+*** Respuesta elegida
+   a. Se realiza una llamada al sistema o una interrupción. 
+*** Respuesta elegida
+   a. Se realiza una llamada al sistema o una interrupción. 
+*** Respuesta correcta
+   a. Se realiza una llamada al sistema o una interrupción. 
+*** Observaciones
+    - Cuando un proceso realiza una *llamada al sistema*, podría cambiar su estado a *Bloqueado*.
+    - Una *interrupción* puede provocar que un proceso se desbloquee y
+      quede en *estado Listo* o que cambie de estado *Ejecutando a Listo*.
+ 
+    <<DUDA 1>>: Ejemplo de Ejecutando a Listo?
+** El Response Time es un criterio de planificación
+   a. Ninguna de las anteriores.
+   b. Orientado al sistema.
+   c. Orientado al usuario. 
+*** Respuesta elegida
+   c. Orientado al usuario. 
+*** Respuesta correcta
+   c. Orientado al usuario. 
+*** Observaciones
+    Es el tiempo que el usuario espera desde que realiza una operación hasta recibe alguna respuesta del sistema.
+
+** Al utilizar el algoritmo Round Robin, el quantum
+   a. Ninguna de las anteriores. 
+   b. Debería ser lo más grande posible.
+   c. Debería ser lo más chico posible.
+*** Respuesta elegida
+   a. Ninguna de las anteriores. 
+*** Respuesta correcta
+   a. Ninguna de las anteriores. 
+*** Observaciones
+    - Si el *quantum es muy grande*, el algoritmo degenera en FIFO.
+    - Si el *quantum es muy chico*, el algoritmo se vuelve más justo porque los procesos avanzan 
+    de manera más pareja, pero genera mucho *Overhead* por todas las intervenciones necesarias del sistema operativo.
+** La interrupción de Clock permite
+   a. Que el procesador realice un cambio de proceso. 
+   b. Ninguna de las anteriores.
+   c. Que un proceso pueda realizar una llamada al sistema.
+*** Respuesta elegida
+   a. Que el procesador realice un cambio de proceso. 
+*** Respuesta correcta
+   b. Ninguna de las anteriores.
+*** Observaciones
+    La *interrupción de Clock* permite que el SO, tome el control del procesador 
+    para que realice alguna tarea.
+    Esa tarea puede ser realizar un cambio de proceso, o no.
+    El procesador no realiza cambios de proceso.
+** [TODO] Para algoritmos que usan la próxima ráfaga de CPU, como el SJF
+   a. Generalmente solo se pueden implementar con un estimador de ráfagas.
+   b. Generalmente se pueden implementar «de una», porque los procesos proveen esa información.
+   c. Ninguna de las anteriores. 
+*** Respuesta elegida
+   c. Ninguna de las anteriores. 
+*** Respuesta correcta
+   a. Generalmente solo se pueden implementar con un estimador de ráfagas.
+*** Observaciones
+    El SO no conoce de antemano cuál será el tiempo de cada ráfaga.
+    Por lo tanto es necesario estimarla.
+** [#A] Starvation (inanición) es una problemática que
+   a. Ocurrirá siempre que se utilizen algoritmos como SJF.
+   b. Ninguna de las anteriores. 
+   c. Podría nunca ocurrir, independientemente del algoritmo utilizado.
+*** Respuesta elegida
+   b. Ninguna de las anteriores. 
+*** Respuesta correcta
+   c. Podría nunca ocurrir, independientemente del algoritmo utilizado.
+*** Observaciones
+    Algunos algoritmos no sufren inanición. Otros algoritmos PODRÍAN sufrirla, 
+    pero tienen que darse ciertas condiciones. 
+    Por ejemplo SJF puede sufrir inanición, pero si todas las ráfagas de 
+    los procesos son iguales, entonces no habrá inanición.
+** En un algoritmo multinivel realimentado (Feedback Multinivel)
+   a. La prioridad de los procesos es estática.
+   b. Ninguna de las anteriores.
+   c. La prioridad de los procesos es dinámica. 
+*** Respuesta elegida
+   c. La prioridad de los procesos es dinámica. 
+*** Respuesta correcta
+   c. La prioridad de los procesos es dinámica. 
+*** Observaciones
+    Cuando se utiliza "feedback multinivel", durante el ciclo de vida de un proceso, 
+    este puede moverse entre las diferentes listas de "ready" que pueden tener 
+    diferentes prioridades entre sí. 
+    El sistema operativo seleccionará los procesos de la lista más prioritaria. 
+    En caso que esta última lista este vacía, se continúa por la siguiente en orden de prioridad.
+** [#B] En un SO con RR y procesos CPU-Bound y I/O-Bound se verían perjudicados
+   a. Ninguna de las anteriores.
+   b. Los procesos CPU Bound.
+   c. Los procesos I/O Bound. 
+*** Respuesta elegida
+   c. Los procesos I/O Bound. 
+*** Respuesta correcta
+   c. Los procesos I/O Bound. 
+*** Observaciones
+    Los I/O Bound (o Limitados por E/S) serán perjudicados porque sus ráfagas de CPU son cortas.
+    Por lo tanto, no suelen aprovechar todo el quantum asignado.
+    Además estarán compitiendo por el uso del procesador, con otros procesos que podrían estar 
+    aprovechando más tiempo el procesador. Para atenuar este problema está el algoritmo Virtual Round Robin.
+* Cuestionario (5)
 ** Pregunta 1
    En que momento se atienden las interrupciones?
    (Suponiendo que NO están deshabilitadas)
@@ -263,7 +546,7 @@
    Es VERDADERO, 
    porque el switcheo no hay *cambio de contexto* ni *cambio de modo*
 
-* Cuestionario (2)
+* Cuestionario (6)
 ** Pregunta 1
    Cual de los sig. podrian ser sintomas de que esta ocurriendo
    una *Condición de carrera*?
@@ -409,11 +692,7 @@
     1. estemos usando recursos con *mutua exclusión*
     2. tener *planificador* que elije el más prioritario
 *** Observaciones
-* Cuestionario (3)
-** Pregunta N
-*** Respuesta elegida
-*** Respuesta correcta
-*** Observaciones
+* Cuestionario (7)
 ** Pregunta 1
    Multiprocesamiento implica:
    a) Procesamiento Distribuido 
