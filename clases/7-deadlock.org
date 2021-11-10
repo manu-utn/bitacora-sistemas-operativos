@@ -1,0 +1,631 @@
+#+TITLE: Clase 07 - Interbloqueo - Deadlock
+#+STARTUP: inlineimages
+* Repaso clase anterior
+** Soluciones de Software
+*** Conceptos
+    + Todas tenian de problema el ~while()~ que actua como *espera activa*
+*** Solución 1
+    - Una era con turnos, se turnaban para usar el recurso.
+    - Cumplía con la *mutua exclusión* pero NO con el *progreso*
+    - Tenía el problema de *velocidad* si uno no ingresaba a su SC,
+       el otro tampoco podía.
+*** Solución 2
+    - Otra era con interesado, sólo si estaba interesado usaba el recurso.
+    - Cumplia con la *mutua exclusión* pero NO con el *progreso*
+    - Tenía el problema que si ambos estaban interesados al mismo tiempo
+      ninguno podia ingresar a la SC se quedaban en el while
+*** Solución de Peterson
+    - Integraba la solución (1) y (2) es decir *turnos* y lo de *interesado*
+    - *Ventajas:*
+      1. cumple con Mutua exclusión
+      2. cumple con Progreso
+      3. cumple con Espera limitada
+    - *Desventajas:*
+      Estaba limitado a solo dos procesos
+** Soluciones de Hardware
+*** Deshabilitar las interrupciones
+    + *Ventajas:*
+      1. Evita que las instrucciones de la SC sean interrumpidas
+         con las de otros procesos
+      2. Fácil de implementar
+    + *Desventajas:*
+      1. Bloquea "todos" los procesos
+      2. un costo muy grande para sistemas con multiprocesadores
+         (porque habia que deshabilitar cada uno de los procesadores,
+         enviandole un mensaje a cada CPU)
+*** Instrucciones atómicas
+    + Aparecen ~TEST AND SET~ (ó ~SWAP AND EXCHANGE~)
+    + Mejor que la solución de *deshabilitar interrupciones*
+    + *Ventajas*: 
+      - Fáciles de usar, eficientes incluso en sistemas multiprocesador
+    + *Desventajas:*
+      - NO solucionaban la *espera activa* (a confirmar ???)
+      - NO todos los sistemas lo soportaban
+** Anging (envejecer)
+   - Soluciona el problema de *starvation* (inanición)
+   - Cada un período de tiempo se aumentaba la prioridad de los procesos
+** Semáforos
+*** Conceptos
+**** Syscalls
+     - Los *semáforos* NO son gestionados por el SO
+     - Uno los puede usar y liberar mediante ~syscalls~
+       1. Con ~wait~ decrementaba en uno el valor
+       2. Con ~signal~ incrementaba en uno el valor
+**** Valores
+     - se pueden inicializar solo en 0 o valores positivos, (NUNCA NEGATIVOS)
+     - Si el valor es > 0: Indica la cant. de recursos disponibles del *semáforo contador*
+     - Si el valor es < 0: Indica la cant. de *procesos bloqueados* esperando
+**** Thread Safes
+     nos aseguran que no tendremos problemas de *mutua exclusión*
+*** Tipos
+**** Semáforo Mutex
+     - Soluciona el problema de la *mutua exclusión*
+     - SIEMPRE están inicializados en ~1~
+**** Semáforo Contador
+     - Permiten controlar el acceso a una det. cant. de recursos
+     - SIEMPRE se inicializan en N (cant. de instancias), siendo N >= 0
+**** Semáforo Binario
+     - Garantizan un orden de ejecución
+     - Tienen dos estados
+       1. libre (=0)
+       2. ocupado (=1)
+*** Implementación
+**** Conceptos
+       Se podía implementar dos posibles opciones
+       1. COn espera activa
+       2. COn bloqueo
+**** Con Espera activa
+     Los procesos se quedan ejecutando en la CPU, esperando en *estado Ready* (Ej. ~while(1)~ )
+**** Con Bloqueo
+     Los procesos quedan en *estado Bloqueado* (cuando hacen ~wait()~)
+     hasta que algún otro proceso me despierte (con un ~signal()~)
+     y pasen a *estado Ready*.
+**** con Espera Activa Vs. con Bloqueo
+     - La *espera activa* NO siempre es mala, lo es en un sistema con un único procesador (cpu).
+     - Con *bloqueo* NO siempre es eficiente, si tenemos un sistema multiprocesador
+
+     #+BEGIN_QUOTE
+     La implementación de semáforos *con bloqueo* puede NO ser eficiente siempre...
+
+     Si un proceso (A) se bloquea con ~wait()~ y otro proceso (B) lo despierta a ese con ~signal()~,
+     entonces el proceso (A) pasará a la *cola de ready* pero.. deberá esperar a que el *Planificador*
+     lo elija para pasar a la *cola de running*
+
+     En cambio.. si hubiese sido *con espera activa* el proceso (A) al ya estar en la *cola de Ready*
+     por estar ejecutando un ~while(1)~, cuando el otro proceso (B) lo llame con ~signal()~
+     este proceso (A) pasará a *estado running* de inmediato.
+     #+END_QUOTE
+** Inversión de prioridades
+   - Cuando un proceso de mayor prioridad está *penalizado* (está en *estado bloqueado* esperando
+     porque otro de menor prioridad está siendo ejecutando, utilizando ese recurso)
+   - La solución a esto era la *herencia de prioridades* (temporalmente) para que el *planificador* lo elija
+** Monitores
+   - Se evitaba proteger al recurso en todos lados con el ~wait~ y ~signal~
+     (si nos olvidamos de colocarlos, sonamos..)
+   - Si se quería acceder al recurso, debían hacerlo mediante el *monitor*
+   - Exponen *métodos/funciones* para acceder a los recursos, asegurando la *sincronización*
+** Requerimientos Solución Problemas de Sincronización
+*** Conceptos
+    Los requerimientos de solución a un problema de Sincronización eran
+    - Mutua exclusión
+    - Progreso
+    - Espera limitada
+    - Velocidad de los procesos
+*** Mutua exclusión
+    Que sólo un proceso pueda acceder al recurso por vez
+*** Progreso
+    QUe solo los interesados ingresen a la sección crítica
+*** Espera limitada
+    Que en algun momento se puede ingresar
+    que no exista Starvation (inanición)
+*** Velocidad de los procesos
+    Que no interese cuantas veces un proceso quiera entrar
+    a la sección critica, que no tenga problemas
+* Recursos del Sistema
+** Procesos piden Recursos
+*** Conceptos
+   Cuando los *procesos* necesitan *recursos* deben 
+   1. Solicitarlos
+   2. luego Liberarlos (a través de ~syscalls~)
+
+   #+BEGIN_QUOTE
+   Los procesos cuando solicitan recursos usan ~fopen~, ~wait~, ~malloc~
+
+   mientras que cuando liberan recursos usan ~fclose~, ~signal~, ~free~
+   #+END_QUOTE
+*** Recursos gestionados por el SO
+    - Para al manejo de archivos el ~fopen~ y ~fclose~
+    - Para el manejo de memoria ~malloc~ y ~free~
+*** Recursos NO gestionados por el SO
+    - Son las que usamos en los semáforos (~wait~ y ~signal~)
+** Recursos Vs. Instancias
+   - Los *recursos* pueden tener más de una *instancia* (/es la cant. disponible que hay de ese recurso específico/)
+   - Las *instancias* si tengo N, sólo tengo N instancias y no más.
+** Tipos de recursos 
+*** Recursos Consumibles
+    - Recursos que pido, uso, y se pierden, tienen un uso temporal.
+    - Ejemplos: Interrupción, Señal, mensaje, info en IO buffers
+
+    #+BEGIN_COMMENT
+    Por qué un "mensaje" ó "info en IO de buffers" no serían "reusables"?
+    No podría otro proceso reutilizarlo?
+    #+END_COMMENT
+*** Recursos Reusables
+    - Recursos que pido, uso, libero y los puede reutilizar otro proceso
+    - Ejemplos: Memoria, archivos, dispositivos IO
+* Deadlock/Interbloqueo
+** Intro
+   - Recursos limitados (cpu, memoria, dispositivos, ...)
+   - El flujo de los Procesos con los recursos es
+     1. solicitan (ej. fopen, wait, malloc)
+     2. usan
+     3. liberan (ej. fclose, signal, free)
+** Concepto
+   - Representa el bloqueo permanente de un conjunto de procesos (al menos 2)
+   - Cuando varios procesos NUNCA terminan de ejecutarse, 
+     quedando los *recursos* del sistema ocupados
+   - Impide que se inicien otros trabajos
+
+   #+BEGIN_QUOTE
+   Si tenemos dos procesos (A) y (B), y dos recursos (R1) y (R2)
+   si (A) pide a (R1) y (B) pide a (R2)
+
+   luego (A) pide a (R2) pero el SO no se lo da porque lo está usando (B)
+   luego (B) pide (R1) pero tampoco se lo da, porque lo está usando (A)
+
+   entonces ambos procesos (A) y (B) NUNCA terminan su ejecución,
+   pretenden usar recursos que NO podrán acceder, porque el otro ya lo está usando
+   #+END_QUOTE
+** Ejemplo
+   En el siguiente ejemplo vemos que el *orden* en que colocamos
+   los *mutex* y los *semaforos* produce un *DEADLOCK*
+
+   1. El proceso (1) empieza (xq su semáforo vale 1)
+   2. El proceso (2) BLOQUEA la SC
+   3. El proceso (1) NO puede acceder a la SC, porque el otro lo esta bloqueando
+   4. El proceso (2) está bloqueado hasta que (P1) lo habilite
+      y.. eso no va a suceder, porque (P1) tambien está
+      esperando que (P2) libere la SC para usarla y habilitarlo a (P2)
+
+   #+BEGIN_SRC C
+     mutex = 1;
+     sem1  = 1;
+     sem2  = 0;
+
+     // Proceso (1)
+     wait(sem1);  // <--------- instante t=1 (empieza p1), como (sem1 > 0) then sem-- y avanza a la sig. instrucción
+     wait(mutex); // <--------- instante t=3 (espera que P2 libere el recurso), como (mutex == 0) se bloquea el proceso
+     /** (Sección Crítica) **/
+     signal(mutex);
+     signal(sem2);
+
+     // Proceso (2)
+     wait(mutex); // <--------- instante t=2 (bloquea el recurso), como el (mutex > 0) then mutex-- (lo bloquea) y avanza
+     wait(sem2);  // <--------- instante t=4 (espera que P1 lo habilite con signal), como el (sem == 0) se bloquea el proceso
+     /** (Sección Crítica) **/
+     signal(mutex);
+     signal(sem1);
+   #+END_SRC
+** Grafo de asignación de recursos
+*** Conceptos
+   - Cada *arista* indica la _cant. de recursos que un proceso solicita_
+   - Los *recursos* se _representan con cuadrados_
+   - Los *procesos* se _representan con circulos_
+*** Ciclos
+   - si NO hay ningún ciclo => NO hay *deadlock*
+   - si hay un ciclo y cada recurso tiene solo una instancia => habrá *deadlock*
+   - si hay ciclo => quizás hay *deadlock* (es condición necesaria pero NO suficiente)
+
+   #+BEGIN_COMMENT
+   si hay un ciclo y cada recurso tiene 2 o más instancias => puede o no haber *deadlock*
+   #+END_COMMENT
+
+   #+BEGIN_COMMENT
+   cada instancia es la cant N que tenemos de un recurso,
+   cada instancia de un recurso,
+   donde cuando un proceso piden un recurso => pueden usar cualquiera de esas instancias del recurso
+
+   Ej. 20 pantalones, cada instancia sería un pantalón
+   #+END_COMMENT
+   
+   #+BEGIN_EXAMPLE
+   si dos procesos (A) y (B), solicitan el recurso (R),
+   entonces el recurso (R) tiene 2 instancias
+   #+END_EXAMPLE
+** Condiciones necesarias y suficientes
+*** Conceptos
+    - Las 3 primeras, son las causas que implican que haya *espera circular*
+    - Las siguientes 3 condiciones son necesarias para que ocurra deadlock
+*** Exclusión Mutua
+    - Que un recurso pueda ser usado sólo por un proceso a la vez (/otro proceso no lo puede usar mientras tanto/)
+    - Si un proceso solicita un recurso compartido que está siendo usado, deberá esperar
+      hasta que sea liberado
+*** Retención y espera
+    - Cuando usamos el ~wait(semaforo)~
+      (/si hay una instancia disponible del recurso, el wait hace sem-- y lo usa, si sem<=0 se bloquean los procesos que quieran usar el recurso/)
+    - Un proceso es parte del *deadlock* cuando
+      1. está reteniendo un recurso
+      2. y también está esperando por otro recurso
+
+    *Observaciones:*
+    - Si un proceso está bloqueado esperando, pero NO está reteniendo recursos, NO es *Deadlock*, es *Starvation* (inanición)
+
+    #+BEGIN_QUOTE
+    Es la doble flechita en el grafo
+    
+    Si está reteniendo un recurso
+    - hizo ~mutex_lock(&recurso)~ bloqueando que otro proceso/hilo acceda a este
+    - ningún proceso/hilo podrá acceder hasta que haga un ~mutex_unlock(&recurso)~
+    
+    Si está esperando por usar un recurso
+    - hizo ~wait(&semaforo)~ que puede ser un semáforo_contador que limita la cant. de instancias del recurso asociado al semáforo
+    - si ~sem <= 0~ => se quedará bloqueado esperando hasta que otro recurso haga ~signal(&sem)~ indicando que terminó de usarlo
+      y que otro proceso/hilo ya puede usarlo, aunque previo al signal hizo ~mutex_unlock(&recurso)~
+    #+END_QUOTE
+*** Sin desalojo de recursos
+    - Si hubiese desalojo, NO habría problema de *deadlock*
+      (/evitaría que dos o más procesos retengan recursos por mucho tiempo, recursos que requieren otros procesos/)
+    - Un recurso puede ser liberado voluntariamente por el proceso que lo utiliza
+    - Los recursos NO pueden ser desalojados (por el SO)
+
+    #+BEGIN_QUOTE
+    El Sistema Operativo NO puede sacarle los recursos a un proceso (A) porque si, 
+    y luego darselo a otro proceso (B)
+    #+END_QUOTE
+*** Espera circular
+    - Se representa en el grafo con un *ciclo* (/ida y vuelta, mismo concepto que en discreta/)
+    - Cuando uno o varios procesos *en espera* tratan de usar un recurso compartido
+      que está siendo retenido por alguno de ellos
+** Tratamiento del deadlock
+*** Tabla comparativa
+    |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+    |                          | *PREVENCION*                      | *EVASION*                | *DETECCION Y RECUPERACION*       |
+    |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+    | Flexibilidad en          | *restrigindas*                    | *intermedio*             | Completamente flexible           |
+    | las peticiones           | por ser el mas                    | los procesos deben       | no tiene restricciones           |
+    |                          | restricto                         | decir la cant. de        | cualquier solicitud              |
+    |                          |                                   | peticiones máx.          | puede realizarse                 |
+    |                          |                                   | de recursos              |                                  |
+    |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+    | Puede ocurrir ~Deadlock~ | NO                                | NO                       | SI                               |
+    |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+    | ~Overhead~ requerido     | *BAJO*                            | *MUCHO*                  | *intermedio*                     |
+    |                          |                                   | con cada solicitud se    | _depende la frecuencia_          |
+    |                          |                                   | debe ejecutar el         | del algoritmo de detección       |
+    |                          |                                   | ~algoritmo banquero~     | (también opera con matrices,     |
+    |                          |                                   | (opera con las matrices) | y debe elegir entre procesos)    |
+    |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+    | Utilización correcta     | *INEFICIENTE* segun               | por ser pesimista        | Puede llegar a ser *ineficiente* |
+    | de los recursos          | la estrategia de solución elegida | puede evitar asignar     | en caso de desalojos frecuentes  |
+    |                          | (/ej. pedir todos los recursos/)  | un recurso               |                                  |
+    |--------------------------+-----------------------------------+--------------------------+----------------------------------|
+*** Cuando aplicar las técnicas
+    |------------------------+---------------------------------------------------------------------------------------------|
+    | Técnica                | Cuando aplicar la técnica                                                                   |
+    |------------------------+---------------------------------------------------------------------------------------------|
+    | PREVENCION             | Durante las *peticiones* de asignación de recursos de los procesos (condiciones necesarias) |
+    |------------------------+---------------------------------------------------------------------------------------------|
+    | EVASION                | Durante la *asignación* de recursos (se analiza con el algoritmo del banquero)              |
+    |------------------------+---------------------------------------------------------------------------------------------|
+    | DETECCION+RECUPERACION | Cuando ya hay *deadlock*                                                                    |
+    |------------------------+---------------------------------------------------------------------------------------------|
+*** [WAITING] Prevención de deadlock
+    - Garantiza que NUNCA ocurra un deadlock
+    - Impide que ocurra alguna de las 4 condiciones necesarias para la existencia de un deadlock
+    - Con atacar alguna de las 4 condiciones => ya no habrá deadlock
+    - Se enfoca en atacar una de las condiciones necesarias
+**** Condicion 1 - Exclusión mutua
+     - Evitar la mutua exclusión sobre *recurso compartibles*
+
+     #+BEGIN_QUOTE
+     Se permite que varios procesos/hilos accedan a un recurso
+     pero de una manera particular para que NO haya *condición de carrera* que genere problemas de *concurrencia*
+
+     Un ejemplo sería que el recurso compartido esté en *modo lectura*
+     (si estuviese en modo escritura, y varios procesos/hilos intentaran acceder a éste habría problemas de concurrencia)
+     #+END_QUOTE
+**** [WAITING] Condición 2 - Retención y espera
+     - Solicitar todos los recursos al mismo tiempo
+       (/nos asegura que no se va a bloquear, porque ya pidió todos los que iba a necesitar/)
+     - Solicitar recursos de a uno o varios, utilizarlos y liberarlos
+       (/solicitar recursos sin bloquearse, puede generar una demora porque va a tener que pedir nuevamente los recursos/)
+
+     #+BEGIN_COMMENT
+     Esto evitaria que ocurra *starvation* (inanición) (?)
+     Creo que no
+     #+END_COMMENT
+**** Condición 3 - Sin desalojo de recursos
+     - Si un proceso (A) que tiene recursos asignados solicita uno que NO está disponible,
+       éste debe liberar todos sus recursos (/de forma voluntaria/) y seguir esperando
+     - Si un proceso (A) solicita un recurso que está asignado a otro proceso (B), 
+       y (B) está a la espera de más recursos... Se desaloja el recurso asignado (B)
+       para asignarselo a (A)
+
+     *Observaciones:*
+     - Es posible, pero NO se puede con cualquier tipo de recursos
+     - Puede llegar a demorar un tanto, porque los procesos deberían volver a pedir los recursos
+     - Podría generar *starvation* si siempre le desalojamos los recursos al mismo proceso
+       
+     #+BEGIN_QUOTE
+     Ejemplos de recursos que pueden ser desalojables podrían ser la CPU, la memoria.
+
+     El caso de la CPU es factible porque guardamos la información del contexto en el PCB.
+
+     El caso de desalojar de la memoria, para colocar otro proceso también lo es
+     y se utiliza el concepto de *SWAP* (swap out) pasando la información al disco
+     #+END_QUOTE
+**** Condición 4 - Espera circular
+     - Asignar un número de orden a los recursos
+     - Los recursos solo pueden solicitarse en orden creciente
+     - Establecer orden petición de recursos (el diagrama de transitividad)
+*** Evasión de deadlock
+**** Conceptos
+    - Garantiza que NO habrá DEADLOCK
+    - Se lo considera como pesimista, porque evalúa el peor peor de los casos
+      (/evalúa en base al máximo instancias de recursos que podría usar un proceso, no de lo que usó/)
+    - Mantiene al sistema SIEMPRE en un *estado seguro*
+    - _El proceso le dice al SO el *máximo de recursos* que utilizará_
+    - _El SO decidirá si se los asignará ó lo dejará esperando_
+      (decide en base a una simulación que hace de futuras solicitudes y liberaciones
+       de recursos del resto de los procesos del sistema)
+
+    #+BEGIN_QUOTE
+    Un estado es *seguro* si el sistema puede asignar recursos a cada proceso
+    (hasta su máximo de instancias de recursos que puede pedir)
+    en determinado orden.. Sin que eso produzca un *deadlock*
+    
+    Cuando dice "hasta su máximo", sería que simula/calcula a futuro en base a todos los recursos
+    que cada proceso necesitaba para todo su ciclo de ejecución,
+    por más que "quizas" luego no los usara todos, analizá el PEOR PEOR de los casos
+
+    Si esto se cumple => existe una *Secuencia Segura*
+    
+    y... una *secuencia* es *segura* si se puede asegurar/garantizar que TODOS los procesos terminen.
+    (OJO! esto no asegura que se ejecuten rápido, y puede producir OVERHEAD)
+    #+END_QUOTE
+**** Estados seguro/inseguro
+     *ESTADO SEGURO* => NO HABRA DEADLOCK
+     (se asigna el recurso al proceso)
+     
+     *ESTADO INSEGURO* => podría existir DEADLOCK
+     (no se asigna el recurso al proceso, y ese proceso deberá esperar)
+**** Técnicas
+     1. denegar el inicio de un proceso
+     2. denegar la asignacion de un recurso (algoritmo del banquero)
+**** Algoritmo del banquero (ó de seguridad)
+***** Conceptos
+     - Es el algoritmo que utiliza el SO para realizar una *simulación de asignación*
+     - _Se ejecuta cada vez que un proceso haga una solicitud de asignación de recursos_
+     - En cada ejecución actualiza las estructuras y evalúa si esa asignación deja al sistema en un *estado seguro*
+     - La idea es tener SIEMPRE un *estado seguro*
+     - No le puedo dar todos los recursos a un proceso, se debe tener una reserva
+     - Tiene un alto costo de procesamiento (CPU) al operar con matrices, produce *overhead*
+***** Procedimiento
+      - Los procesos al ingresar al sistema dicen el *máximo de recursos* que utilizará
+      - El SO determinará si al asignarle esos recursos al proceso en que estado lo deja al sistema
+        - si lo lleva a un *estado seguro*   => se los asigna
+        - si lo lleva a un *estado inseguro* => lo deja esperando (hasta que otros procesos liberen esos recursos)
+
+      #+BEGIN_QUOTE
+      Cuando decimos que dejamos esperando la asignación de recursos a un proceso,
+      es porque definimos un orden específico de asignacion de recursos
+      para lograr una *secuencia segura*
+      #+END_QUOTE
+***** Resolución de ejercicios
+      1. Obtengo situación actual (datos en los vectores y matrices)
+      2. La petición es válida?
+         - Si es menor a los recursos totales   => SI
+         - Si es menor a lo que queda por pedir => SI
+      3. Tengo esa cantidad disponible?
+      4. Deja a mi estado en estado seguro? (Simulamos asignación, y ve si el estado resultante es seguro)
+         - Si lo hace  => asigno los recursos que pidió
+         - Si no...    => NO le asigno los recursos (debe esperar a que se liberen recursos)
+      
+      Una secuencia es *segura* si se puede aseguar/garantizar que TODOS los procesos terminen.
+***** Estructuras necesarias (estado del sistema)
+      + 2 vectores
+        + de recursos totales
+        + de recursos disponibles (que no tengo asignados) <- ~recursos_disponibles=recursos_totales - recursos_asignados~
+      + 3 matrices
+        - de peticiones máximas
+        - de recursos asignados
+        - de necesidad (ó necesidades pendientes, recursos que aún no se pidieron) ~necesidad = solicitudes_maximas - recursos_asignados~
+      
+      #+BEGIN_QUOTE
+      Lo que quedaría estático, que no se modifica es
+      - el vector de recursos totales
+      - matriz de peticiones máximas
+      
+      Los que vamos a modificar es
+      - matriz de necesidad <----- ~necesidades_pendientes = peticiones_maximas - recursos_asignados~
+      - matriz de recursos asignados <-- simulamos la asignación de recursos a un proceso, actualizamos su fila según lo que necesita
+      - vector de recursos disponibles <- ~recursos_disponibles=recursos_totales - recursos_asignados~
+      #+END_QUOTE
+**** Ejemplo 1
+     Recordando que la *matriz de necesidad* es lo máximo de recursos que me puede pedir
+     un proceso en todo su ciclo de ejecución.
+     También que ~NECESIDAD = PETICIONES_MAXIMAS - RECURSOS_ASIGNADOS~
+
+     Supongamos que (P3) pide 1 del recurso (R2).. puedo asignarselo inmediatamente?
+     
+     #+name: matriz-de-recursos-asignados
+     |----+----+----+----|
+     |    | R1 | R2 | R3 |
+     |----+----+----+----|
+     | P1 |  1 |  0 |  0 |
+     | P2 |  0 |  1 |  1 |
+     | P3 |  1 |  1 |  0 |
+     |----+----+----+----|
+
+     #+name: matriz-de-necesidad
+     |----+----+----+----|
+     |    | R1 | R2 | R3 |
+     |----+----+----+----|
+     | P1 |  1 |  0 |  1 |
+     | P2 |  1 |  2 |  0 |
+     | P3 |  0 |  0 |  1 |
+     |----+----+----+----|
+
+     #+name: recursos-disponibles
+     |----+----+----|
+     | R1 | R2 | R3 |
+     |----+----+----|
+     |  0 |  1 |  1 |
+     |----+----+----|
+
+     La secuencia de la siguiente tabla donde evaluamos si esta *secuencia es segura*,
+     de si lo deja al sistema en un *estado seguro* es: P3 - P2 - P1
+
+     #+name: buscamos-posible-secuencia-segura
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+     |                   | R1 | R2 | R3 |                                                                        |
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+     | Inicial           |  0 |  1 |  1 |                                                                        |
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+     | Elijo P3          |  0 |  1 |  0 | <--- necesitaba [0 0 1] lo resto al inicial                            |
+     | Finaliza P3       |  1 |  2 |  1 | <--- tenia asignados [1 1 0] los libero y los sumo al anterior         |
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+     | Elijo P2          |  0 |  0 |  1 | <--- necesitaba [1 2 0] lo resto al anterior [1 2 1]                   |
+     | Finaliza P2       |  1 |  3 |  2 | <--- tenia asignados [0 1 1] lo sumo al anterior [0 0 1]               |
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+     | Elijo P1          |  0 |  3 |  1 | <--- necesitaba [1 0 1] lo resto al anterior [1 3 2]                   |
+     | Finaliza P1       |  2 |  3 |  2 | <--- tenia asignados [1 0 0], los libero y los sumo al anterior        |
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+     | estado resultante |  2 |  3 |  2 | <--- la secuencia P3,P2,P1 deja al sistema queda en un *estado seguro* |
+     |-------------------+----+----+----+------------------------------------------------------------------------|
+
+
+  #+BEGIN_SRC plantuml :exports results :file img/deadlock-ejemplo-prevencion1.png
+    @startuml
+
+    title Ejemplo de Prevención de Deadlock
+
+    rectangle matrices_vectores #lightblue{
+
+            note as m1
+            Matriz de recursos asignados
+            |    |= R1 |= R2 |= R3 |
+            | P1 |  1 |  0 |  0 |
+            | P2 |  0 |  1 |  1 |
+            | P3 |  1 |  1 |  0 |
+            endnote
+
+            note as m2
+            Matriz de necesidad
+            |    |= R1 |= R2 |= R3 |
+            | P1 |  1 |  0 |  1 |
+            | P2 |  1 |  2 |  0 |
+            | P3 |  0 |  0 |  1 |
+            endnote
+
+            note as m3
+            vector de recursos disponibles
+            |= R1 |= R2 |= R3 |
+            |  0 |  1 |  1 |
+            endnote
+    }
+
+
+    rectangle secuencia #lightgreen{
+            note as m4
+            evaluando posible secuencia segura
+            |                   |= R1 |= R2 |= R3 |
+            | Inicial           |  0 |  1 |  1 |
+            | Elijo P3          |  0 |  1 |  0 |
+            | Finaliza P3       |  1 |  2 |  1 |
+            | Elijo P2          |  0 |  0 |  1 |
+            | Finaliza P2       |  1 |  3 |  2 |
+            | Elijo P1          |  0 |  3 |  1 |
+            | Finaliza P1       |  2 |  3 |  2 |
+            | estado resultante |  2 |  3 |  2 |
+            endnote
+    }
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/deadlock-ejemplo-prevencion1.png]]
+
+**** Ejemplo 2
+     Supongamos que (P2) pide 2 del recurso (R2).. puedo asignarselo inmediatamente?
+     
+     En este ejemplo vemos que en la matriz de *recursos disponibles* no tenemos los
+     recursos necesarios para asignarselos a (P2), y... no hay ninguna secuencia de asignación 
+     podria dejar al sistema en un *estado seguro* por tanto..
+     1. NO puedo atender a NINGUN recurso
+     2. NO existe *secuencia segura*
+     3. Deja al sistema en un *estado inseguro*
+     Por tanto *NO PUEDO ASIGNAR* a P2 lo que pedia, y lo dejamos esperando hasta que esa asignación 
+     sea *segura* (cuando se liberen recursos)
+
+     #+name: matriz-de-recursos-asignados
+     |----+----+----+----|
+     |    | R1 | R2 | R3 |
+     |----+----+----+----|
+     | P1 |  1 |  0 |  0 |
+     | P2 |  0 |  2 |  1 |
+     | P3 |  1 |  0 |  1 |
+     |----+----+----+----|
+
+     #+name: matriz-de-necesidad
+     |----+----+----+----|
+     |    | R1 | R2 | R3 |
+     |----+----+----+----|
+     | P1 |  1 |  0 |  1 |
+     | P2 |  1 |  0 |  0 |
+     | P3 |  0 |  1 |  1 |
+     |----+----+----+----|
+
+     #+name: recursos-disponibles
+     |----+----+----|
+     | R1 | R2 | R3 |
+     |----+----+----|
+     |  0 |  0 |  1 |
+     |----+----+----|
+     |    |    |    |
+*** Detección y recuperación de deadlock
+**** Conceptos
+    - Es también otro *algoritmo* pero para la *DETECCIÓN de deadlock*
+    - Este algoritmo se ejecuta periódicamente
+    - Puede producir mucho *overhead*
+    - Puede ocurrir *deadlock*
+    - _NO hay restricciones_ para asignar recursos disponibles <---
+**** Opciones de recuperación
+***** Finalizar procesos
+      - Terminar TODOS los procesos involucrados
+        (/tiene un alto precio, pierden todo lo que estaban ejecutando/)
+      - Terminar cada proceso involucrado hasta que deje de existir el deadlock
+        (/es costoso, elige la victima+ejecutar algoritmo de detección de nuevo/)
+
+      #+BEGIN_QUOTE
+      Al finalizar procesos víctimas que generan deadlock, y se liberan los recursos que tenían asignados
+      pudiendo ejecutar otro proceso con mayor prioridad
+      #+END_QUOTE
+***** Desalojar recursos
+       - Lleva a un proceso a su *estado anterior* (/puede generar inconsistencia/)
+       - Puede generar *inanición* si se elije a un mismo proceso continuamente
+       - Expropiar recursos hasta que no exista deadlock
+         (es decir volver a un *estado seguro* del que pueda reanudar su ejecución)
+**** Criterios de selección de procesos para terminar (victimas)
+     - Menor prioridad
+     - Menor numero de total de recursos asignados
+     - Menor tiempo de procesador consumido
+     - Menor cant. de salida producida
+**** Factores para seleccionar víctimas
+     - Prioridad y tipo de proceso
+     - Tiempo actual de ejecución
+     - Cuantos y que tipo de recursos utilizó ó necesita
+**** Estructuras necesarias
+    - Tiene la mismas matrices y vectores que el *algoritmo de Evasión* (el del banquero)
+      (excepto la matríz de *peticiones máximas*, porque _NO tiene restricciones_)
+*** No tratarlo
+*** Estrategia integrada
+    - Agrupación de recursos
+    - A cada grupo se le aplica alguna de las técnicas
+
+    La simulación de fin de cada proceso es: recurso disponible+ recurso asignados
+*** Livelock
+    - Situación similar al *deadlock* pero.. SON MAS DIFICILES DE DETECTAR
+    - Varios procesos NO pueden ejecutar su trabajo, pero se siguen ejecutando
+    - Como los procesos *NO están bloqueados*, resulta más dificil/complejo su detección
+
