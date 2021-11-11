@@ -6,7 +6,6 @@ Te quedaste en clase 9 - algoritmos y casos especiales - 35:42
 con el *clock modificado*
 #+END_COMMENT
 
-
 * Problema
   #+BEGIN_QUOTE
   El *proceso* tiene que estar TODO cargado en (RAM) para poder ejecutar,
@@ -163,9 +162,10 @@ con el *clock modificado*
       2. Es quien traduce las direcciones para que la MP las entienda (de DL a DF)
 *** Bit modificado (M)
     - Asegura la consistencia y evitar hacer operaciones de disco innecesarias
+    - Se habilita siempre que se acceda a una página en *modo escritura* (hubo un acceso a disco)
     - Indica si una *página* la última vez que se trajo fue modificada o no
       - Si ~M=0~: 
-      - Si ~M=1~: Indica que fue modificada (/y tenemos que bajar los cambios a disco/)
+      - Si ~M=1~: Indica que la página fue modificada (/y tenemos que bajar los cambios a disco/)
 *** Swapping
     - Concepto de mover *paginas* entre *SWAP* (disco) y *RAM* (MP)
     - Evita tener que mover un proceso entero a RAM
@@ -461,137 +461,369 @@ con el *clock modificado*
       <<DUDA>>: Las referencias son los marcos que apuntan a las páginas?
     - Lo más importante de la secuencia serán los *número de página*
       <<DUDA>>: Porque?
-** Anomalia de Belady
-   mayor cant. de *frames* => "implica" mayor cant. de *PFs*
-   (ocurre en algunos algoritmos ante determinadas secuencias de *referencias*)
+** Anomalía de Belady
+   - Mayor cant. de *frames* (/asignar más recursos/) => implíca mayor cant. de (PF) *Page Faults* (/se comporta peor/)
+   - Ocurre en algunos algoritmos ante determinadas secuencias de *referencias*
 
    #+BEGIN_QUOTE
-   Por lo general a mayor cant. de *frames* a una secuencia, 
+   Por lo general a mayor cant. de *frames* a una secuencia
    se tiende a generar igual o menor cant. de *PFs*
-   pero puede en ciertos casos darse la *anomalia de belady*
+   pero puede en ciertos casos darse la *Anomalía de Belady*
    #+END_QUOTE
+
+   #+BEGIN_COMMENT
+   <<DUDA>>: secuencia de que? de asignación?
+   #+END_COMMENT
 ** Tips Resolución de Ejercicios
    1. Un conjunto de páginas que necesita cada proceso
    2. Cuando no hay páginas cargadas, se cargarán en el primer *frame* libre
    3. Cuando haya una *página* que NO esté cargada en un *frame* (osea, NO está en MP)
-      1. Habrá un *Page Fault* (PF)
-      2. Habrá un acceso a SWAP (disco) para escribir/cargarlo en MP (en un frame) <-- operación de escritura
-   4. En las primeras *referencias* no habrá sustitución, habrá *PF* (porque no está la página) y se cargará
-   5. Se realiza una operación de escritura en SWAP (disco)
+      1. Ocurrirá *Page Fault* (PF)
+      2. Habrá un acceso a *SWAP* (disco) para escribir/cargarla la página a MP (/en un frame/) <-- _operación de escritura_
+   4. En las primeras *referencias* no habrá sustitución, ocurrirá *Page Fault* (PF) porque no está la página y se cargará
+   5. Se realiza una _operación de escritura_ en *SWAP* (disco)
       1. Cada vez que se carga una página en un *frame*
       2. Cada vez que haya un *Page Fault* (PF)
-   6. Cuando se carga una página en *modo de escritura* (M=1 ???) y se quiere sobreescribir por otra (requiere 2 accesos a disco)
-      <<DUDA>>: Cada vez que se carga en modo escritura, es modificado=1 ?
+   6. Cuando se carga una página en *modo de escritura* (M=1) y se quiere sobreescribir por otra (requiere 2 accesos a disco)
       1. Se debe escribir en la página que estaba en modo escritura en *SWAP* (disco)
       2. Luego escribir la nueva página nueva en el *frame* (en la *MP*)
-      <<DUDA>>: Mas en detalle como sería esto (??)
+      
+   #+BEGIN_COMMENT
+   <<DUDA>>: Cada vez que se carga en modo escritura, es modificado=1 ?
+   
+   <<DUDA>>: Cómo sería el 6.2 ?
+   #+END_COMMENT
 * [DOING] Tipos de Algoritmos de Sustitución de Páginas
 ** [TODO] Algoritmo FIFO
-   - Se reemplazan las *páginas* en los *frame* en..
-** Algoritmo OPTIMO
 *** Conceptos
-    - Se reemplazará (en los *frames* de MP) a la página que *referenciamos* (usaremos) mas lejos en el futuro
-      (osea que luego no se referencia, ó que está como último, respecto de la posición actual en la secuencia)
-    - Intenta minimizar la cantidad de *Page Fault* (PF)
-    - Intenta hacer como el algoritmo *SJF* de planificación, pero NO se puede estimar...
-
-      #+BEGIN_QUOTE
-      Si tenemos la siguiente secuencia de páginas: 7,2,3,(4),5,2,1,4,1
-      Si en esa secuencia estamos parados en el 4, elegirá al 1 (porque es el más lejano al 4)
-
-      Si tenemos esta otra secuencia de páginas: 7,(2),3,4,5,1
-      Si en esa secuencia estamos parados en el 2, elegirá al 1 (porque es el más lejano al 2)
-      #+END_QUOTE
+    - Elige como víctima a la *pagina* que está cargada en MP hace más tiempo
+*** Implementación
+    - Guardando en que instante de tiempo se cargó la *página* a MP y eligiendo la de menor valor
+    - Cola FIFO, eligiendo la *página* que primero se agregó a la cola de FIFO
+*** Desventajas
+    - Sufre la *Anomalía de Belady*
 *** Ejemplo
     Si tenemos la siguiente secuencia de páginas
 
-    |------------------------+----+----+---+----+------+---+---+---+----|
-    | Secuencia de Páginas   |  2 | 3' | 2 |  1 | ~5'~ | 2 | 3 | 4 | 2' |
-    |------------------------+----+----+---+----+------+---+---+---+----|
-    | 1º Frame (marco en MP) |  2 |  2 | 2 |  2 | 2    |   |   |   |    |
-    | 2º Frame (marco en MP) |    |  3 | 3 |  3 | 3    |   |   |   |    |
-    | 3º Frame (marco en MP) |    |    |   |  1 | ~5~  |   |   |   |    |
-    |------------------------+----+----+---+----+------+---+---+---+----|
-    | PFs                    | PF | PF | - | PF | PF   |   |   |   |    |
-    |------------------------+----+----+---+----+------+---+---+---+----|
-    | Acceso a SWAP (disco)  |  1 |  1 | 0 |  1 | 1    |   |   |   |    |
-    |------------------------+----+----+---+----+------+---+---+---+----|
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Secuencia de Páginas      |   2 |  3' |   2 |   1 | ~5'~ |   2 |  4' |   5 |   3 |  2' |   5 |   2 | TOTAL |
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
+    | 1º Frame (marco en MP)    | ->2 | ->2 | ->2 | ->2 | ~5~  |   5 | ->5 | ->5 |   3 |   3 |   3 |   3 |       |
+    | 2º Frame (marco en MP)    |     |   3 |   3 |   3 | ->3  | ~2~ |   2 |   2 | ->2 | ->2 | ~5~ |   5 |       |
+    | 3º Frame (marco en MP)    |     |     |     |   1 | 1    | ->1 |   4 |   4 |   4 |   4 | ->4 | ~2~ |       |
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Page Faults               |   1 |   1 |   0 |   1 | 1    |   1 |   1 |   0 |   1 |   0 |   1 |   1 |     9 |
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Acceso a SWAP (disco)     |   1 |   1 |   0 |   1 | 1    |   2 |   1 |   0 |   2 |   0 |   2 |   2 |    13 |
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Operación de Lectura en   | p=2 | p=3 |     | p=1 | p=5  | p=2 | p=4 |     | p=3 |     | p=5 | p=2 |       |
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Operación de Escritura en |     |     |     |     |      | p=3 |     |     | p=5 |     | p=2 | p=4 |       |
+    |---------------------------+-----+-----+-----+-----+------+-----+-----+-----+-----+-----+-----+-----+-------|
 
-    Podemos ver que en la posición 5 de la secuencia, cuando evaluamos la página ~5~ que está en modo de escritura
+    #+BEGIN_COMMENT
+    Cada vez que se accede en modo escritura, se modifica el BIT de modificado
+    agregar ḿás detalles de esto...
+    #+END_COMMENT
+    
+    *Observaciones:*
+    - Las secuencias que tengan el apóstrofe, son páginas que se acceden en *modo de escritura* esto implíca
+      1. modificar el *BIT de modificado*
+      2. habrá una *operación de escritura* osea un acceso a disco (por lo anterior del BIT)
+    - Las páginas marcadas con ~->~ indican que son víctimas a ser sustituídas (según el algoritmo)
+    - Siempre que ocurra un *Page Fault* (PF) implíca una *operación de lectura* porque
+      1. Hay que traerse esa página de SWAP (disco)
+      2. Para luego cargarla a MP (memoria)
+    - Siempre que haya una *pagina* en *modo escritura*
+    
+    #+BEGIN_QUOTE
+    Desde la posicion=1 ... posicion=4, es sólo *Paginación bajo demanda*,
+    no estamos aplicando ningún *Algoritmo de Sustitución*
+    
+    En la posicion=1 de la secuencia
+    1. Intentamos acceder a la página=2
+    2. Cómo no está cargada en memoria (no está en ningun frame) => ocurre *Page Fault* (PF)
+    3. Se hace la lectura de la pagina=2 por tanto accede a SWAP (disco)
+    4. Se asigna la página=2 al frame=1 (porque era el primer frame disponible)
+
+    En la posicion=3 de la secuencia
+    1. Intentamos acceder nuevamente a la pagina=2
+    2. Como ya está cargada en memoria (está en el frame=2) => NO ocurre *Page Fault* (PF) + NO hay acceso a SWAP
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    Desde el principio ya se marca a la *página 2* como víctima con el ~->~
+    será la primera en ser sustituída.
+    
+    En la posicion=5 de la secuencia, comienza el *Algoritmo de Sustitución* (FIFO)
+    1. Se elige sustituir la *página 2* que está en el frame=1, porque es la que estuvo más tiempo en la cola de FIFO,
+       fue el primero en ser cargado a memoria. Entonces la reemplazamos por la *página 5*
+    2. Marcamos a la *página 3* que está en el frame=2 como próxima víctima,
+       porque fue la segunda en ser cargada a memoria.
+    #+END_QUOTE
+** Algoritmo OPTIMO
+*** Conceptos
+    - Se reemplazará (en los *frames* de MP) a la página que *referenciamos* (usaremos) más lejos en el futuro
+      (osea que luego no se referencia, ó que está como último, respecto de la posición actual en la secuencia)
+    - Intenta minimizar la cantidad de *Page Fault* (PF)
+
+    #+BEGIN_QUOTE
+    Si tenemos la siguiente secuencia de páginas: 7,2,3,(4),5,2, ~1~ ,4,1
+    Si en esa secuencia estamos parados en el 4, elegirá al 1 (porque es el más lejano al 4)
+    
+    Si tenemos esta otra secuencia de páginas: 7,(2),3,4,5, ~1~
+    Si en esa secuencia estamos parados en el 2, elegirá al 1 (porque es el más lejano al 2)
+    #+END_QUOTE
+*** Ejemplo
+    Si tenemos la siguiente secuencia de páginas
+
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+    | Secuencia de Páginas      |   2 |  3' | 2 |   1 | ~5'~ | 2 |  4' | 5 | 3 |  2' | 5 | 2 | TOTAL |
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+    | 1º Frame (marco en MP)    |   2 |   2 | 2 |   2 |    2 | 2 | ~4~ | 4 | 4 |   4 | 4 | 4 |       |
+    | 2º Frame (marco en MP)    |     |   3 | 3 |   3 |    3 | 3 |   3 | 3 | 3 | ~2~ | 2 | 2 |       |
+    | 3º Frame (marco en MP)    |     |     |   |   1 |  ~5~ | 5 |   5 | 5 | 5 |   5 | 5 | 5 |       |
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+    | PFs                       |   1 |   1 | 0 |   1 |    1 | 0 |   1 | 0 | 0 |   1 | 0 | 0 |  6    |
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+    | Acceso a SWAP (disco)     |   1 |   1 | 0 |   1 |    1 | 0 |   1 | 0 | 0 |   2 | 0 | 0 |  7    |
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+    | Operación de Lectura en   | p=2 | p=3 |   | p=1 |  p=5 |   | p=4 |   |   | p=2 |   |   |       |
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+    | Operación de Escritura en |     |     |   |     |      |   |     |   |   | p=3 |   |   |       |
+    |---------------------------+-----+-----+---+-----+------+---+-----+---+---+-----+---+---+-------|
+
+    *Observación:*
+    - Las secuencias que tengan el apóstrofe, son páginas que están en *modo de escritura*
+    
+    #+BEGIN_QUOTE
+    Desde la posicion=1 ... posicion=4, es sólo *Paginación bajo demanda*,
+    no estamos aplicando ningún *Algoritmo de Sustitución*
+    
+    En la posicion=1 de la secuencia
+    1. Intentamos acceder a la página=2
+    2. Cómo no está cargada en memoria (no está en ningun frame) => ocurre *Page Fault* (PF)
+    3. Se hace la lectura de la pagina=2 por tanto accede a SWAP (disco)
+    4. Se asigna la página=2 al frame=1 (porque era el primer frame disponible)
+
+    En la posicion=3 de la secuencia
+    1. Intentamos acceder nuevamente a la pagina=2
+    2. Como ya está cargada en memoria (está en el frame=2) => NO ocurre *Page Fault* (PF) + NO hay acceso a SWAP
+    #+END_QUOTE
+    
+    #+BEGIN_QUOTE
+    En la posicion=5 de la secuencia, comienza el *Algoritmo de Sustitución*
+
+    Cuando evaluamos la página=5 (que está en *modo de escritura*)
     al decidir que *página* reemplazar (entre la 2,3,1) se elije la ~1~ (que estaba en el *3º Frame*)
-    Porque la ~1~ no está cerca de la posición actual, respecto a las próximas páginas que le siguen 2,3,4,2,..
-    (si estuviera al final, también se elegiría al ~1~, porque estaría lejos.. y si estuviera luego del ~4~ también, porque aún sería
-    la página las lejana respecto de la ~5~)
+    porque la ~1~ no está cerca de la posición actual, respecto a las próximas páginas que le siguen 2,3,4,2,..
+    
+    Si estuviera al final, también se elegiría al ~1~, porque estaría lejos..
+    y si estuviera luego del ~4~ también, porque aún sería la página las lejana respecto de la ~5~
+    #+END_QUOTE
+*** Ventajas
+    - NO sufre la *Anomalía de Belady*
+*** Desventajas
+    - NO se puede implementar, al igual que el *SJF* de planificación que no se podía estimar
 ** Algoritmo Least Recent use (LRU)
 *** Conceptos
-    - La página que usé hace más tiempo (si la usé hace mucho tiempo, en el futuro seguramente tampoco la use tanto)
-    - Elige a la página menos recientemente utilizada (hace mas tiempo que no se referencia)
+    - Refiere a la página que usé hace más tiempo (si la usé hace mucho tiempo, en el futuro seguramente tampoco la use tanto)
+    - Elige a la página menos recientemente utilizada (hace más tiempo que no se referencia)
     - Utiliza el pasado reciente como una aprox. del futuro
 *** Implementación
 **** Con Pila
-     - Una pila de los números de paginas
+     - Una pila de los números de páginas
      - Con cada referencia se coloca la pag. superior (asi actúa una pila, se apila/encimando, y arriba va el más reciente)
-     - Se elige la pagina de la parte inferior (porque sería el que se usó antes)
-**** [TODO] Con un puntero contador
-     - Se elige el que tiene menor valor (por
+     - Se elige la página de la parte inferior (porque sería el que se usó antes)
+**** Con un puntero contador
+     - Se elige el que tiene menor valor
      - Crear un puntero al menor
+
+     #+BEGIN_COMMENT
      <<DUDA>>: Pero el menor no sería el más reciente?
+     Rta: Si, pero el más reciente en el pasado, en el ejemplo hago una demostración.
+     #+END_COMMENT
+*** Ventajas
+    - NO sufre la *Anomalía de Belady*
 *** Ejemplo
     #+name: algoritmo-lru
-    |------------------------+----+----+----+----+------+---+----+---+---|
-    | Secuencia de Páginas   |  2 | 3' |  2 |  1 | ~5'~ | 2 | 4' | 5 | 3 |
-    |------------------------+----+----+----+----+------+---+----+---+---|
-    | 1º Frame (marco en MP) |  2 | 2  |  2 |  2 |    2 |   |    |   |   |
-    | 2º Frame (marco en MP) |    | 3' | 3' | 3' | ~5'~ |   |    |   |   |
-    | 3º Frame (marco en MP) |    |    |    |  1 |    1 |   |    |   |   |
-    |------------------------+----+----+----+----+------+---+----+---+---|
-    | PFs                    | PF | PF |  - | PF |   PF |   |    |   |   |
-    |------------------------+----+----+----+----+------+---+----+---+---|
-    | Acceso a SWAP (disco)  |  1 | 1  |  0 |  1 |    1 |   |    |   |   |
-    |------------------------+----+----+----+----+------+---+----+---+---|
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
+    | Secuencia de Páginas      |   2 |  3' |  2 |   1 | ~5'~ |  2 | 4'   |  5 | 3    | 2'   |  5 |  2 | TOTAL |
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
+    | 1º Frame (marco en MP)    |   2 |   2 |  2 |   2 |    2 |  2 | 2    |  2 | ~3'~ | 3'   | 3' | 3' |       |
+    | 2º Frame (marco en MP)    |     |  3' | 3' |  3' | ~5'~ | 5' | 5'   | 5' | 5'   | 5'   | 5' | 5' |       |
+    | 3º Frame (marco en MP)    |     |     |    |   1 |    1 |  1 | ~4'~ | 4' | 4'   | ~2'~ | 2' | 2' |       |
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
+    | Page Fault                |   1 |   1 |  0 |   1 |    1 |  0 | 1    |  0 | 1    | 1    |  0 |  0 |     7 |
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
+    | Acceso a SWAP (disco)     |   1 |   1 |  0 |   1 |    2 |  0 | 1    |  0 | 1    | 2    |  0 |  0 |     9 |
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
+    | Operación de Lectura en   | p=2 | p=3 |    | p=1 |  p=5 |    | p=4  |    | p=3  | p=2  |    |    |       |
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
+    | Operación de Escritura en |     |     |    |     |  p=3 |    |      |    |      | p=4  |    |    |       |
+    |---------------------------+-----+-----+----+-----+------+----+------+----+------+------+----+----+-------|
 
-    *Situación A:* En ~5'~  hay 2 accesos a disco porque
-    1. por *leer de swap* por el *Page Fault* (PF)
-       (/La pagina ~5'~ la tengo que leer de *SWAP* (disco) para pasarla al *frame* de *MP* (RAM)/)
-    2. y *escribir en swap*
-       (/porque la la pag. ~3'~ que estoy reemplazando estaba modificada (m=1), y antes de reeemplazar/
-        /se debe escribir en SWAP para no perder esos cambios/)
+    #+BEGIN_QUOTE
+    *Situación A:* En la posición=5 de la secuencia, cuando se accede a ~5'~ ocurren 2 accesos a disco porque
+    1. Por *LEER de swap* por causa del *Page Fault* (PF) ya que esa página no estaba en MP
+       (/la pagina ~5'~ la tengo que leer de *SWAP* (disco) para luego pasarla al *frame* de *MP* (RAM))
+    2. Por *ESCRIBIR en swap*
+       (porque la pag. ~3'~ que estoy reemplazando estaba modificada ~m=1~ (es decir tenía el BIT de modificado de TP en 1),
+       y antes de reeemplazar se debe escribir en SWAP para no perder esos cambios)
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    Un ejemplo de _como se podría implementar con un contador_, sería tener asociado a cada página un contador.
+    Mientras se avanza en la secuencia de acceso de las páginas, se incrementa en 1 la página,
+    la de menor valor sería la más reciente del pasado
+
+    Por ejemplo hasta el tiempo=6 de la secuencia dada {2,3',2,1,5',2} tendríamos
+    
+    | Página | valor contador asociado |
+    |--------+-------------------------|
+    |      2 |                       6 |
+    |      5 |                       5 |
+    |      1 |                       4 |
+
+    La página 1 sería la más reciente en el pasado, su valor es menor
+    #+END_QUOTE
 ** Algoritmo Clock
 *** Conceptos
     - Basado en FIFO, se aproxima al *LRU*
-    - Se aplica el algoritmo cuando se debe reemplazar, hasta tanto se aplica FIFO (al principio, cuando hay frames libes)
-    - Tiene menos ~overhead~ que el LRU
-    - Si PF = 0 => no elige a nadie, y avanza al sig. numero de pagina de la secuencia
+    - Se aplica el algoritmo cuando se debe reemplazar, hasta tanto se aplica FIFO (al principio, cuando hay frames libres)
+    - Tiene menos ~overhead~ que el *LRU*
+    - Si ~PF=0~ => NO elige a nadie, y avanza al sig. número de página de la secuencia
 *** Puntero
-    Tiene un *puntero* que indica cual es la siguiente *pagina* víctima a ser sustituída
-    (<<DUDA>>: la cola es circular??? Osea que vuelve al primer frame?)
+    - Tiene un *puntero* que indica cual es la siguiente *página* víctima a ser sustituída
+    - Cambia la referencia (a una página que está un frame) sólo cuando se aplica el algoritmo de sustitución
+    - Se compara el puntero 
+
+    #+BEGIN_COMMENT
+    <<DUDA>>: la cola es circular??? Osea que vuelve al primer frame?
+    cola circular, se selecciona a la siguiente victima
+    Rta: Si, va evaluando cada frame y si es necesario vuelve al principio, al primer frame
+    #+END_COMMENT
 *** Bit de uso
     - Trata de aproximar el algoritmo
-    - Las páginas que usé de nuevo se le da una 2da opotunidad :)
-    - Si ~U=1~ => Cambia U=0  y avanza el puntero al sig. frame
-      (si el la pagina del sig. frame tiene U=1, lo pasa a 0 y avanza el puntero al sig frame, y asi..)
-    - Si ~U=0~ => Sustituye esa pagina y avanza el puntero al sig. frame
-*** Ejemplo
-    #+name: algoritmo-clock
-    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
-    | Secuencia de Páginas   | 2     | 3'    | 2     | 1     | 5'     | 2     | 4' | 5 | 3 |
-    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
-    | Bits                   | P U   | P U   | P U   | P U   | P U    | P U   |    |   |   |
-    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
-    | 1º Frame (marco en MP) | ~2^¹~ | ~2^¹~ | ~2^¹~ | ~2^⁰~ | 5'^¹   | 5'^¹  |    |   |   |
-    | 2º Frame (marco en MP) |       | 3'^¹  | 3'^¹  | 3'^⁰  | ~3'^¹~ | 2^¹   |    |   |   |
-    | 3º Frame (marco en MP) |       |       |       | 1^⁰   | 1^⁰    | ~1^⁰~ |    |   |   |
-    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
-    | PFs                    | PF    | PF    | -     | PF    | PF     | PF    |    |   |   |
-    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
-    | Acceso a SWAP (disco)  | 1     | 1     | 0     | 1     | 1      | 2     |    |   |   |
-    |------------------------+-------+-------+-------+-------+--------+-------+----+---+---|
+    - Se modifica sólo cuando hay que sustituir páginas (se aplica el algoritmo)
+    - Se habilita cada vez que se acceda a la página, cuando se acceda de cualquier manera (lectura/escritura)
+    - Las páginas que use de nuevo se les da una 2da oportunidad :)
+    - Comportamiento del algoritmo según el valor del *Bit de uso*
+      1) Si ~U=1~ (pagina usada) => Se modifica ~U=0~  y avanza el puntero al sig. frame
+         (si la *página* del sig. *frame* tiene ~U=1~ => lo pasa a 0 y avanza el puntero al sig frame, y asi..)
+      2) Si ~U=0~ => Sustituye esa página y avanza el puntero al sig. frame
 
-    *Caso (A): Cuando el puntero avanza, cuando se cambia el bit de uso y cuando se ejecuta el algoritmo*
-    En la secuencia vemos que en la página número ~1~ 
+    #+BEGIN_COMMENT
+    El *bit de uso* se denota con la ~U~ pudiendo variar su valor
+    - Si ~U=1~ (habilitado) la página fue usada, se accedió recientemente
+    - Si ~U=0~ (deshabilitado) la página no fue usada aún
+    #+END_COMMENT
+*** Ejemplo
+    *Observaciones:*
+    - Siempre que cargamos una nueva página, va a tener el bit de uso activado osea ~u=1~
+    - Si el cursor apunta a una página N^⁰ con ~u=0~ y en la secuencia se va a cargar esa página N,
+      entonces se habilita el *bit de uso* pasando a ~u=1~ y avanzando el cursor y analizar el resto
+    
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Secuencia de Páginas      |     2 | 3'    |     2 | 1     | 5'     | 2     | 4'    | 5     | 3     | 2'    | 5     | 2     | TOTAL |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Bits                      |   P U | P U   |   P U | P U   | P U    | P U   | P U   | P U   | P U   | P U   | P U   | P U   |       |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | 1º Frame (marco en MP)    | ->2^¹ | ->2^¹ | ->2^¹ | ->2^¹ | ~5^¹~  | 5^¹   | ->5^¹ | ->5^¹ | ~3^¹~ | 3^¹   | ->3^¹ | ->3^¹ |       |
+    | 2º Frame (marco en MP)    |       | 3'^¹  |  3'^¹ | 3'^¹  | ->3'^⁰ | ~2^¹~ | 2^¹   | 2^¹   | ->2^⁰ | ->2^¹ | 2^⁰   | 2^¹   |       |
+    | 3º Frame (marco en MP)    |       |       |       | 1^¹   | 1^⁰    | ->1^⁰ | ~4^¹~ | 4^¹   | 4^⁰   | 4^⁰   | ~5^¹~ | 5^¹   |       |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | PFs                       |     1 | 1     |     0 | 1     | 1      | 1     | 1     | 0     | 1     | 0     | 1     | 0     |     8 |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Acceso a SWAP (disco)     |     1 | 1     |     0 | 1     | 1      | 2     | 1     | 0     | 2     | 0     | 2     | 0     |    11 |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Operación de Lectura en   |   p=2 | p=3   |       | p=1   | p=5    | p=2   | p=4   |       | p=3   |       | p=5   |       |       |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Operación de Escritura en |       |       |       |       |        | p=3   |       |       | p=5   |       | p=4   |       |       |
+    |---------------------------+-------+-------+-------+-------+--------+-------+-------+-------+-------+-------+-------+-------+-------|
+    #+TBLFM: @6$14=vsum($2..$-1)::@7$14=vsum($2..$-1)
+
+    *Referencias:*
+    - En la 2da fila Bits
+      1. P: página
+      2. U: BIT de Uso
+    - Las páginas que estén marcadas así ~numero~ indica como va avanzar el *puntero* entre los *frames*
+    - Las potencias en ^¹ se refieren a bit_de_uso=1 (habilitado)
+    - Las potencias en ^⁰ se refieren a bit_de_uso=0 (deshabilitado)
+      
+    #+BEGIN_QUOTE
+    Un ejemplo de que ocurrió entre la posicion=4 y posicion=5 de la secuencia de páginas
+    
+    En la posicion=5 de la secuencia de páginas, inicia el algoritmo de sustitución
+    1. Observamos que el puntero en estaba apuntando a la página=2 en el frame=1 en la posicion anterior (->2^¹)
+    2. En el frame 1, modifica el BIT de uso de la página 2 a ~u=0~, y avanza el cursor al siguiente frame (->3'^¹)
+    3. En el frame 2, modifica el BIT de uso de la página 3 a ~u=0~  y avanza el cursor al siguiente frame (->1^¹)
+    4. En el frame 3, modifica el BIT de uso de la página 1 a ~u=0~ y avanza el cursor al siguiente frame
+       pero.. como no hay más frames y se comporta como una *cola circular* coloca el cursor al *frame 1*
+       
+    En los pasos (1) (2) (3) (4) el algoritmo avanzó en cada frame, y actualizó el bit de uso en cada página, quedando así
+    | 1º FRAME | ->2^⁰ |
+    | 2º FRAME | 3^⁰   |
+    | 3º FRAME | 1^⁰   |
+    
+    5. El algoritmo elige la página 2 es la víctima, porque el puntero volvió a la página 2, y su bit de uso es ~u=0~
+    6. El algoritmo sustituye la *página 2* por la *página 5* y avanza el cursor al siguiente frame quedando
+    |          | 5'    |
+    |----------+-------|
+    | 1º FRAME | 5^¹   |
+    | 2º FRAME | ->3^⁰ |
+    | 3º FRAME | 1^⁰   |
+
+    El bit de uso de la página 3 y página 1 quedó en ~u=0~ porque el algoritmo recorrió cada frame avanzando el puntero,
+    cuando el bit de uso era 1.
+    Bit de uso es 1? Ok lo cambio a 0 y avanzo el cursor a la página del siguiente frame,
+    Bit de uso es 1? Ok lo cambio a 0 y avanzo el cursor a la página del siguiente frame,
+    y asi.. pudiendo volver hasta el principio si todas las paginas tenian el bit de uso en 1
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    En la posicion=9 de la secuencia de páginas, ocurre lo mismo que en la posicion=5..
+
+    1. Analizamos la posición anterior, el puntero apunta a la *página 5* y éste tiene bit de uso ~u=1~
+       entonces lo modifica a ~u=0~, avanza el puntero a la página del siguiente frame (frame=2)
+    2. El puntero apunta a la página 2, tiene bit de uso ~u=1~ lo modifica a ~u=0~ y avanza el puntero al sig. frame
+    3. Se repite lo mismo, el puntero apunta a la página 3, tiene bit de uso ~u=1~ lo modifica a ~u=0~ y avanza el puntero al sig. frame
+       como es una cola circular, vuelve primer frame
+    4. En este momento todas las páginas quedaron con el bit de uso ~u=0~,
+       como el puntero apunta a la *página 5* y su bit de uso es ~u=0~ entonces es víctima,
+       entonces se sustituye la *pagina 5* por la *página 3*
+
+    En resumen, todas las páginas se les modificó el bit de uso a ~u=0~ porque el puntero fue avanzando frame por frame
+    y las páginas tenian el bit de uso en 1, cuando el puntero volvió al primer frame que tenia la *página 5* (la victima)
+    la sustituyó por la *pagina 3*
+    
+    Nota 1: Como se carga la página 3, ésta va a tener el bit de uso en ~u=1~
+    Nota 2: Como la página 5 estaba modificada xq tenía el apóstrofe de que estaba en *modo de escritura*,
+    se debe hacer un acceso a disco para guardar los cambios (operación de escritura)
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    En la posicion=9,10,11 la *página 2* cambió el bit de uso de ~u=0~ a ~u=1~ y luego a ~u=0~
+    
+    en la posicion=10
+    1. se accedía la página ~2'~ que ya estaba en memoria (en la posicion anterior)
+       pero tenía el *bit de uso* desactivado osea ~u=0~ entonces sólo se volvió a activar
+       cambiandolo a ~u=0~ quedando (->2^¹)
+
+    
+    en la posicion=11
+    1. se accedía a la *pagina 5* como el puntero apuntaba a la *página 2* (->2^¹)
+       y tenía el *bit de uso* en ~u=1~ se lo cambio a ~u=0~ para darle otra oportunidad,
+    2. avanzó el cursor al siguiente frame que tenía la *pagina 4* (->4^⁰)
+       pero como tenía el *bit de uso* en ~u=0~ era víctima, y sustituyó la *pagina 4* por la *pagina 5*
+    #+END_QUOTE
+    
+    #+BEGIN_COMMENT
+    *Caso (A): Cuando el puntero avanza, cuando se cambia el BIT de Uso y cuando se ejecuta el algoritmo*
+    En la posición=4 de la secuencia observamos la página ~1~ 
     1. Al ingresar el número de página en el 3º Frame, ya puede iniciar el algoritmo
-    2. El puntero estaba en el 1º frame que contiene al ~2~ y este tiene bit_uso=1, 
-       lo modifica a cero y avanza el puntero al 2º frame
+    2. El puntero estaba en el 1º frame que contiene al ~2~ y este tiene ~BIT_uso=1~, 
+       entonces lo modifica a cero ~bit_uso=0~ y avanza el puntero al 2º frame
     3. El puntero está en el 2º frame que contiene a ~3'~ este tiene ~bit_uso=1~
        lo cambia a cero y avanza el puntero al 3º frame
     4. El puntero está en el 3º frame que contiene a ~1~ este también tiene ~bit_uso=1~
@@ -599,18 +831,17 @@ con el *clock modificado*
     5. El puntero está en el 1º frame que contiene a la pag. ~2~
        pero.. como su ~bit_uso=0~ aplicará la sustitución de página por ~5~
        y cambia el ~bit_uso=1~ y avanza el puntero al 2º frame
+    #+END_COMMENT
 
+    #+BEGIN_COMMENT
+    validar
+    
     *Caso (B): Dos accesos a SWAP (disco)*
-    EN la secuencia notamos que en la página número ~2~ que está seguido del ~5~
+    En la posicion=6 de la secuencia notamos que en la página ~2~ que está seguido del ~5~
     hay dos accesos a disco (swap) porque
     1. El frame que se sustituye es el 2º y tiene a la página ~3~ que estaba modificada
        osea tenia bit_modificado=1, por tanto se debe guardar el valor de esa página ~3~
        en SWAP para no perder los datos(primer acceso a disco). Y luego escribir en SWAP
        por el propio PF (xq no estaba en el espacio de direcciones del proceso) la página ~2~ 
        en el mismo 2º frame (2do acceso a disco)
-
-    *Referencias:*
-    - En la 2da fila Bits, P:pagina, U: Bit de uso
-    - Las páginas que estén marcadas así ~numero~ indica como va avanza el *puntero* entre los *frames*
-    - Las potencias en ^¹ se refieren a bit_de_uso=1
-    - Las potencias en ^⁰ se refieren a bit_de_uso=0
+    #+END_COMMENT
