@@ -448,23 +448,21 @@
 ** TLB (Memoria Caché de HW)
 *** Conceptos
     - Es el *Translation look-aside buffer*
-    - Es como una *caché* para la *tabla de páginas*
+    - Es como una *caché* pero para la *Tabla de Páginas*
     - Se guardan los valores cada vez que se accede a la (TP, Tabla de Páginas)
     - Primero se tiende a acceder primero a esta *caché*, caso contrario va a la *tabla de páginas*
     - Es una memoria asociativa de alta velocidad a nivel de hardware (actúa de *caché*)
     - Guardan _entradas de tablas de páginas_
     - Agilizan el acceso, aumenta la velocidad de acceso
  
-    TP: Tabla de paginas
-
-    #+BEGIN_QUOTE
+    #+BEGIN_COMMENT
     Un acceso a una dirección fisica, implica 2 accesos a memoria porque
-    1. primer acceso en la tabla de paginas (TP)
-    2. segundo acceso a la dirección física (DF) byte (???)
+    1. primer acceso a la Tabla de Páginas (TP)
+    2. segundo acceso a la Dirección Física (DF)
 
-    En cada entrada de pagina puede guardar tambien el identificador del proceso
+    En cada entrada de página puede guardar tambien el identificador del proceso
     (para proteger otros procesos, y evitar vaciar la cache en cada switch process)
-    #+END_QUOTE
+    #+END_COMMENT
 *** TLB Miss
     Si accedi a la TLB, NO encontré el valor, y luego fui a la TP
     (por tanto accedi 2 veces)

@@ -318,7 +318,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
    #+RESULTS:
    [[file:img/fcfs-1.png]]
-** [WAITING] (SJF) sin desalojo ó (SPN) Short Job First
+** [WAITING] (SJF) sin desalojo Short Job First
 *** Conceptos
     - Lo llamaremos *Primero con rafaga más corta*
     - El (SO) Sistema Operativo interviene ante
@@ -331,6 +331,11 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     #+BEGIN_COMMENT
     <<DUDA>>
     Por que no se puede aplicar aging? porque los procesos man
+
+    aging era cambiar prioridad, 
+    
+    *Rta:*
+    
     #+END_COMMENT
 *** Prioridad
     El que tenga *ráfaga de cpu más corta*
@@ -391,7 +396,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
         
 
      El P1 a ejecucion, el P2 a bloqueado y el P3 a la cola de listos
-** [DONE] (SJF) Con desalojo ó (SRT)
+** [DONE] (SJF) Con desalojo
    CLOSED: [2021-09-04 sáb 09:30]
 *** Prioridad
     - El *siguiente con menos rafagas de CPU* (/del estimado/)
@@ -629,9 +634,14 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     + Requiere estimación
 *** Fórmula
      ~RR = (W+S) / S~  => ~RR = 1+W/S~
-     
-     *Observación:* El ratio NUNCA va a tener un valor menor a 1
-        
+
+    #+BEGIN_QUOTE
+    (+) prioridad: a mayor es W => mayor RR => mayor sera el tiempo de espera
+    (-) prioridad: a menor es S => menor RR =>menor será la duración de ráfaga
+    #+END_QUOTE
+    
+    *Observación:* El ratio NUNCA va a tener un valor menor a 1
+              
     |---------------------+---------------------------------|
     |                     | Descripción                     |
     |---------------------+---------------------------------|
@@ -641,6 +651,7 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     |---------------------+---------------------------------|
     | RR (ratio response) | Tasa de respuesta               |
     |---------------------+---------------------------------|
+
 ** [DONE] Por Prioridades
    CLOSED: [2021-09-10 vie 16:28]
 *** Conceptos
@@ -884,10 +895,29 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
    *Observación:*
    - los 3 klt representan 3 hilos
+* [WAITING] Hilos
+** Hilos KLTs
+*** Conceptos
+    - Como el (SO) puede verlos => los puede planificar
+    - el Quantum va al PCB del proceso <--- (?)
+** Hilos ULTs
+*** Conceptos
+    - Como el (SO) NO puede verlos => NO los puede planificar
+    - El quantum se asigna el KLT
+    - El (SO) ejecutará la biblioteca ULT que tenga el KLT asociada,
+      que tiene la lógica de cual ULT ejecutar
+*** Planificación según quien hace Llamada a Syscall
+    Según quien haga la llamada a la ~syscall~ dependerá que ULT seguirá ejecutando
+    + Si es a partir del ULT directamente
+      - la biblioteca ULT NO podrá replanificar, porque no llega a guardar el CTX
+      - la biblioteca ULT NO podrá guardar en el (PC) program counter la prox. ult
+    + Si es a partir de la *Biblioteca ULT* con un wrapper
+      - podrá guardar el CTX y replanificar
+      - la biblioteca ULT podrá guardar ok en el (PC) program counter el prox. ult
 
-
-   
-   
+    *Observaciones:*
+    Como en el (PC) Program Counter se guarda la sig. instrucción
+*** Jacketing
 * Repaso zoom
   + en los GANTT no se grafican los *cambios de modo* 
     porque el SO ya comienza con ese cambio de modo, eso es a nivel hardware
