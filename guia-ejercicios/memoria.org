@@ -1,28 +1,40 @@
 #+TITLE: Guia Ejercicios - Memoria
 #+STARTUP: inlineimages
 * Conceptos Básicos
+** Referencias
+   1. https://www.rapidtables.com/convert/number/hex-to-decimal.html
+   2. http://cv.uoc.edu/UOC/a/moduls/90/90_574b/web/main/m1/c1/4.html
+
+   pendientes a revisar si dejar
+   1. http://ryan.gulix.cl/dw/miscelaneos/notacion_de_bytes
+   2. https://es.stackoverflow.com/questions/175436/por-qu%C3%A9-2-elevado-a-n-el-resultado-est%C3%A1-en-bytes
 ** Tips
 *** Diferenciar bits de un hexadecimal
-   Si nos dan el hexadecimal ~0BEEFh~ para representarlo el binario...
-   recordemos que cada valor de ahí equivale a 4 bits, que en binario
-   podria ser cualquiera de estos valores.. 0000, 0001, 1000, etc..
+   Si nos dan el hexadecimal ~0BEEFh~ para representarlo el *binario*...
+   recordemos que cada valor *hexadecimal* equivale a ~4 bits~,
+   que en binario podría ser cualquiera de estos valores.. 0000, 0001, 1000, etc..
 
    La ~h~ sólo hace referencia a que la expresión dada, es *hexadecimal*
 
    ~0BEEFh~ equivale a ~0000 1011 1110 1110 1111~ en binario
 
-   |-------------+--------+--------+--------+--------+--------|
-   | Hexadecimal |      0 | B      | E      | E      | F      |
-   |-------------+--------+--------+--------+--------+--------|
-   | Binario     |   0000 | 1011   | 1110   | 1110   | 1111   |
-   |-------------+--------+--------+--------+--------+--------|
-   |             | 4 bits | 4 bits | 4 bits | 4 bits | 4 bits |
-   |-------------+--------+--------+--------+--------+--------|
+   - B (hexadecimal) = 11 (decimal) = 2^3*1 + 2^2*0 + 2^1 + 2^0 (potencias de 2) = 1011 (binario) = 4 bits
+   - F (hexadecimal) = 15 (decimal) = 2^3*1 + 2^2*1 + 2^1*1 + 2^0*1 (potencias de 2) = 1111 (binario) = 4 bits
+
+   |-------------+--------+------------+--------------+--------+--------------|
+   | Decimal     |        | 11=8+0+2+1 | 14 (8+4+2+0) |     14 | 15 (8+4+2+1) |
+   |-------------+--------+------------+--------------+--------+--------------|
+   | Hexadecimal |      0 | B          | E            |      E | F            |
+   |-------------+--------+------------+--------------+--------+--------------|
+   | Binario     |   0000 | 1011       | 1110         |   1110 | 1111         |
+   |-------------+--------+------------+--------------+--------+--------------|
+   |             | 4 bits | 4 bits     | 4 bits       | 4 bits | 4 bits       |
+   |-------------+--------+------------+--------------+--------+--------------|
 
    Retomando el ejemplo anterior
    - Si nos piden los primeros 4 bits del hexadecimal sería ~0~
    - Si nos piden los primeros 2 bits serían ~00~
-   - Si nos piden los ultimos 16 bits en binario serían ~1011 1110 1110 1111~
+   - Si nos piden los ultimos 16 bits en binario serían ~1011 1110 1110 1111~ (nos salteamos el ~0000~)
    - Si nos piden los últimos 16 bits en hexadecimal ~BEEF~
 *** Bits de relleno al comienzo
     Si tenemos el hexadecimal ~0BEEFh~ y sabemos que en binario 
@@ -31,7 +43,7 @@
     Podes obviar/ignorar los primeros 4 bits ~0000~ porque son de relleno
 
     *IMPORTANTE...!:*
-    Si ese ~0000~ estuviese al final, NO PODEMOS IGNOARLOS. porque nos daría
+    Si ese ~0000~ estuviese al final, NO PODEMOS IGNORARLOS. porque nos daría
     otro valor en binario...
 
     Ej.:
@@ -69,8 +81,7 @@
    | ~MSB~ |     |     |     |     |     |     | ~LSB~ |
    |-------+-----+-----+-----+-----+-----+-----+-------|
 ** Tablas de Conversiones
-   La potencia 2^N ese N representa la cant. de ~bits~ 
-   es deci 2^(N bits)
+   La potencia 2^N ese N representa la cant. de ~bits~ es decir 2^(N bits)
 
    |---------+---------+------------|
    | (B)ytes | (b)its  | en binario |
@@ -79,11 +90,11 @@
    | 2 Bytes | 16 bits |            |
    |---------+---------+------------|
 
-   |-------+---------+-------------------|
-   | KiB   | bits    | bytes             |
-   |-------+---------+-------------------|
-   | 1 Kib | 10 bits | 2^10 = 1024 bytes |
-   |-------+---------+-------------------|
+   |-------+---------+----------------------------------------------------------------------------|
+   | KiB   | bits    | bytes                                                                      |
+   |-------+---------+----------------------------------------------------------------------------|
+   | 1 Kib | 10 bits | 2^10 = 1024 bytes (1024 combinaciones para representar valores diferentes) |
+   |-------+---------+----------------------------------------------------------------------------|
 
    #+name: hexadecimal-binario
    |--------------+-----------+-------------+-----------------------------|
@@ -112,7 +123,7 @@
    1. A1 es 1010 0001 <-- Conversión: (2^3 + 2^1)  (2^0)
    2. AA es 1010 1010 <-- Conversión: (2^3 + 2^1)  (2^0)
 
-   Recordamos la tabla de conversión donde 1 hexadecimal se puede representar con 4 bits,
+   Recordamos la tabla de conversión donde 1 hexadecimal se puede representar con ~4 bits~,
    y que sumamos los múltiplos de 2 (lo podemos ver similar a un polinomio de grado 3),
    donde en la suma multiplicamos por 1 sólo aquellos que nos interesa su valor,
    y el resto por cero.
@@ -128,18 +139,44 @@
     1. 3 es 001 <-- Conversión: 2^1 
     2. 9 es 101 <-- Conversión: 2^3 + 2^1 = 8 + 1
 ** Potencias de 2
-   Cuando representamos en *potencias de 2* son ~bytes~
-   (/Ej. 2^3 son 3 bytes, 2^5 son 5 bytes, 2^10 son 10 bytes, .../)
+   - El sistema de numeración binario (ó en base 2) se representa con *potencias de 2*
+   - El exponente ~N~ de ~2^N~ representan los ~bits~ de información (max. longitud del valor que se puede generar)
+
+     |-------+----------------------+--------------------------------------------------------------------|
+     |       | Cant. de información | para representar X cantidad de valores distintos ó combinaciones   |
+     |-------+----------------------+--------------------------------------------------------------------|
+     | ~2^1~ | ~1 bit~              | ~2^1=2~ => 2 combinaciones para representar valores (0 y 1)        |
+     | ~2^2~ | ~2 bits~             | ~2^2=4~ => 4 valores posibles (00, 01, 10, 11)                     |
+     | ~2^3~ | ~3 bits~             | ~2^3=8~ => 8 valores posibles  (000, 001, 010, 100, 101, 110, 111) |
+     |-------+----------------------+--------------------------------------------------------------------|
+
+   #+BEGIN_QUOTE
+   De ~2^10~ tenemos ~10 bits~ de información = 1024 Bytes (1024 combinaciones)
+   Se necesitan ~10 bits~ para representar 1024 elementos distintos
+
+   Otro ejemplo es ~2^8~ donde ~8 bits~ equivale a ~1 Byte~
+   ~2^8~ necesitamos ~8 bits~ de información para representar 2^3 = 256 valores diferentes
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   Los binarios 1000, 1100, 1001, 1010 equivalen a ~4 bits~
+   
+   Si tenemos el valor ~1111~ en binario equivale a ~4 bits~
+   2^3*1 + 2^2*1 + 2^1*1 + 2^0*1 = 8 + 4 + 2 + 1 = ~15~ en Decimal, ~Fh~ e Hexadecimal
+   
+   Por tanto si tenemos el binario ~1000~
+   equivale a ~8h~ en Hexadecimal porque (2^3*1 + 2^2*0 + 2^1*0 + 2^0*0 = 8 + 0 + 0 + 0 es 8)
+   #+END_QUOTE
 ** Tamaño entre DL y DF
    - Puede pasar que la *dirección lógica* (DL) sea del mismo tamaño que la *dirección física* (DF)
      (/En este caso tenemos un proceso que ocupa tanto como el tamaño de la memoria principal/)
    - El tamaño es siempre DL <= DF (puede ser igual o menor)
 ** Segmentación
-   - Para calcular el número de segmento: ~numero_segmento = Base / Limite~ (lo mismo aplica para paginación)
    - Para calcular la dirección física (DF): ~direccion_fisica = base + offset~
+   - Para calcular el número de segmento: ~numero_segmento = Base / Limite~ (lo mismo aplica para paginación)
 ** Direccionamiento Logica y Fisica
-   - Definir Dirección lógica: ~direccion_logica = numero_pagina | offset~
-   - Definir la dirección física: ~direccion_fisica = numero_marco | offset~
+   - Definir Dirección lógica: ~direccion_logica = numero_pagina | offset~ ??? porque el | ?
+   - Definir la dirección física: ~direccion_fisica = numero_marco | offset~ ??? porque el | ?
 ** Tamaño de Marco
    Si sabemos la cant. de marcos => Será la potencia de 2 que resulte en la cant. de marcos
    (/Ej. si la memoria física tiene 32 marcos => 2^5 = 32 => los marcos son de 5 bits/)
