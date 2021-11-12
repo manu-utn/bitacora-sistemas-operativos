@@ -1,7 +1,7 @@
 * Cuestionario (1)
 ** Pregunta (1)
    #+BEGIN_QUOTE
-   ¿En qué momento tiene que realizarse el linkeo de direcciones para que se cumpla que DL = DF?
+   ¿En qué momento tiene que realizarse el *linkeo de direcciones* para que se cumpla que ~DL = DF~ ?
 
    1. En tiempo de ejecución
    2. En tiempo de compilación
@@ -13,51 +13,61 @@
    - 3) En tiempo de carga
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-    Sólo en el caso de en tiempo de ejecución la DL será distinta a la DF
-    y se realizará la traducción con la ayuda de la MMU con cada acceso.
+    #+BEGIN_QUOTE
+    Sólo en *tiempo de ejecución* se cumple que ~DL != DF~
+    y se realizará la traducción con la ayuda de la (MMU) con cada acceso.
+    #+END_QUOTE
 ** Pregunta (2)
    #+BEGIN_QUOTE
-   ¿Cuál/és de las siguientes afirmaciones son correctas sobre Particiones Fijas?
-
+   ¿Cuál/és de las siguientes afirmaciones son correctas sobre *Particiones Fijas*?
+   
    1. Al momento de la asignación se define el tamaño de la partición en forma dinámica entre una serie de tamaños posibles
-   2. Puede generar fragmentación externa
-   3. Puede generar fragmentación interna
+   2. Puede generar *fragmentación externa*
+   3. Puede generar *fragmentación interna*
    4. Es compleja la administración de las particiones
-   5. Toda la imagen del proceso es alocado en una partición contigua
-   6. Se requiere saber la base o número de cada partición
-   7. Se requiere saber el límite de cada partición
-   8. Limita el nivel de multiprogramación
-   9. Un proceso en un sistema con este esquema podría ser tan grande como la memoria física.
+   5. Toda la imagen del proceso es alocado en una *partición contigua*
+   6. Se requiere saber la *base* o número de cada partición
+   7. Se requiere saber el *límite* de cada partición
+   8. Limita el *nivel de multiprogramación*
+   9. Un proceso en un sistema con este esquema podría ser tan grande como la *memoria física*.
    #+END_QUOTE
 *** Respuesta Correcta
-    - 3) Puede generar fragmentación interna
-    - 5) Toda la imagen del proceso es alocado en una partición contigua
-    - 6) Se requiere saber la base o número de cada partición
-    - 7) Limita el nivel de multiprogramación
+    - 3) Puede generar *fragmentación interna*
+    - 5) Toda la imagen del proceso es alocado en una *partición contigua*
+    - 6) Se requiere saber la *base* o número de cada partición
+    - 8) Limita el *nivel de multiprogramación*
 *** Justificación Respuestas Incorrectas
+    - 2) NO, la *fragmentación externa* sólo puede ocurrir en un esquema de asignación dinámica,
+       en este esquema sólo puede ocurrir *fragmentación interna* que ocurre si los procesos son mas chicos que la partición
+    - 4) NO, no es compleja la administración porque sólo se divide la memoria en N particiones de un tamaño fijo
+    - 7) NO, porque en este esquema todas las particiones tienen el mismo tamaño
+      sólo se necesita conocer el número de la partición
+    - 9) NO, porque en este esquema la imagen de un proceso puede entrar sólo en una única partición
 *** Observaciones
     #+BEGIN_QUOTE
-    En particiones fijas nunca habrá fragmentación externa ya que cualquier partición libre puede ser asignada,
+    En *particiones fijas* nunca habrá *fragmentación externa* ya que cualquier partición libre puede ser asignada,
     lo que sí es cierto que podría generar interna ya que lo más probable es que los procesos sean de
     distinto tamaño por lo que a muchos les va a sobrar espacio.
     
-    La administración de las particiones es bastante simple ya que con un bitmap se puede indicar si cada partición está libre u ocupada.
-    Necesitamos saber para un proceso la partición asignada, el límite será el mismo para todos
+    La administración de las particiones es bastante simple ya que con un *bitmap*
+    se puede indicar si cada partición está libre u ocupada.
+    
+    Necesitamos saber para un proceso la partición asignada, el *límite* será el mismo para todos
     Al definir a priori las particiones limita la cantidad de procesos en memoria y el tamaño máximo de un proceso.
     #+END_QUOTE
 ** Pregunta (3)
    #+BEGIN_QUOTE
-   ¿Cuál/és de las siguientes afirmaciones son correctas sobre Particiones Dinámicas?
-
+   ¿Cuál/és de las siguientes afirmaciones son correctas sobre *Particiones Dinámicas*?
+   
    1. Se define el tamaño de la partición en forma dinámica entre una serie de tamaños posibles
-   2. Puede generar fragmentación externa
-   3. Puede generar fragmentación interna
+   2. Puede generar *fragmentación externa*
+   3. Puede generar *fragmentación interna*
    4. Es compleja la administración de las particiones
-   5. Toda la imagen del proceso es alocado en una partición contigua
-   6. Se requiere saber la base o número de cada partición
-   7. Se requiere saber el límite de cada partición
-   8. Limita el nivel de multiprogramación
-   9. Un proceso en un sistema con este esquema podría ser tan grande como la memoria física. 
+   5. Toda la imagen del proceso es alocado en una *partición contigua*
+   6. Se requiere saber la *base* o número de cada partición
+   7. Se requiere saber el *límite* de cada partición
+   8. Limita el *nivel de multiprogramación*
+   9. Un proceso en un sistema con este esquema podría ser tan grande como la *memoria física*
    #+END_QUOTE
 *** Respuesta Correcta
     - 2) Puede generar fragmentación externa
@@ -67,9 +77,11 @@
     - 7) Se requiere saber el límite de cada partición
     - 9) Un proceso en un sistema con este esquema podría ser tan grande como la memoria física.
 *** Justificación Respuestas Incorrectas
+    - 1) NO, se define el tamaño de partición que el proceso necesita,
+      decidir entre una serie de tamaños posible ocurriría en *Buddy System*
 *** Observaciones
     #+BEGIN_QUOTE
-    En particiones dinámicas nunca habrá fragmentación interna ya que a cada proceso le damos
+    En *particiones dinámicas* NUNCA habrá *fragmentación interna* ya que a cada proceso le damos
     una partición del tamaño que necesite, lo que sí es cierto que podría generar externa
     ya que al ir creando y finalizando procesos se van generando huecos.
     
@@ -77,7 +89,8 @@
     de distintos tamaños y hay que tener una estrategia de cuál partición asignar
     (además de que es a veces necesario consolidar al liberar una partición)
     
-    Necesitamos saber para un proceso la base en la cual la partición fue cargada y el límite para proveer protección.
+    Necesitamos saber para un proceso la *base* en la cual la partición fue cargada (y para la traducción)
+    y el *límite* (longitud) para proveer protección.
     
     Inicialmente es una gran partición por lo que podría cargarse un proceso que ocupe toda la memoria;
     por otro lado, habrá distinta cantidad de procesos en memoria dependiendo de su tamaño.
@@ -85,18 +98,19 @@
 ** Pregunta (4)
    #+BEGIN_QUOTE
    V/F
-   En particiones dinámicas, en caso de querer cargar un proceso nuevo y detectar que no podemos
-   porque hay fragmentación externa no nos queda otra opción que esperar que otro proceso finalice y libere memoria
+   En *particiones dinámicas*, en caso de querer cargar un proceso nuevo y detectar que no podemos
+   porque hay *fragmentación externa* no nos queda otra opción que esperar que otro proceso finalice y libere memoria
    #+END_QUOTE
 *** Respuesta Correcta
     Falso
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-    No es barato, pero se puede compactar la memoria para poder dejar todas las particiones libres en forma contigua y ahí poder cargarlo.
-** Pregunta (5)
+    No es barato, pero se puede *compactar* la memoria para poder dejar todas las particiones libres
+    en forma contigua (para tener una partición más grande) y ahí poder cargarlo.
+** [#A] Pregunta (5)
    #+BEGIN_QUOTE
    V o F.
-   La tabla de páginas invertida tiene como ventaja sobre la tabla de páginas convencional que al ser
+   La *Tabla de Páginas Invertida* tiene como ventaja sobre la *Tabla de Páginas* convencional que al ser
    una única tabla en el sistema ocupa menos espacio.
    Por otro lado, única desventaja que tiene es que por default no permite compartir memoria.
    #+END_QUOTE
@@ -104,24 +118,29 @@
     Falso
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-    Otra gran desventaja es que el acceso es muy poco eficiente (es lineal) a menos que nos ayudemos con una tabla de hash.
+    Otra gran desventaja es que el acceso es muy poco eficiente, es lineal
+    (porque no accedemos a la tabla usando el *número de página*,
+    si no que buscamos por *frame* hasta encontrar uno libre donde guardar la página)
+    a menos que nos ayudemos con una *Tabla de Hash*
 ** Pregunta (6)
    #+BEGIN_QUOTE
    V o F.
-   La paginación jerárquica no genera mucha penalización en los accesos en caso de usar una TLB. En caso contrario es mucho más lento.
+   La *paginación jerárquica* no genera mucha penalización en los accesos en caso de usar una *TLB*.
+   En caso contrario es mucho más lento.
    #+END_QUOTE
 *** Respuesta Correcta
     Verdadero
 *** Justificación Respuestas Incorrectas
 *** Observaciones
     #+BEGIN_QUOTE
-    En caso de no usar TLB se agrega un acceso extra a la tabla de páginas global (acceso a RAM)
-    penalizando bastante los accesos. Por otro lado, agregando una TLB, en el mejor de los casos (TLB hit)
-    el T de acceso es igual que si no usáramos ese nivel extra.
+    En caso de no usar *TLB* se agrega un acceso extra a la *Tabla de Páginas Global* (acceso a RAM)
+    penalizando bastante los accesos. Por otro lado, agregando una *TLB*, en el mejor de los casos (TLB hit)
+    el tiempo de acceso es igual que si no usáramos ese nivel extra.
     #+END_QUOTE
 ** Pregunta (7)
    #+BEGIN_QUOTE
-   Teniendo un sistema que divide a su memoria en frames de 1KiB, si se accede a la DL 443322 (decimal) ¿a qué página se está intentando acceder?
+   Teniendo un sistema que divide a su memoria en *frames* de ~1KiB~, si se accede a la *DL* ~443322~ (decimal)
+   ¿a qué página se está intentando acceder?
    - 44
    - 432
    - 433
@@ -131,8 +150,12 @@
    - 432
 *** Justificación Respuestas Incorrectas
 *** Observaciones
-    443322 / 1024 (tam página) = 432 ( 954 resto - offset)
-** Pregunta (8)
+    ~443322 / 1024 (tam página) = 432 ( 954 resto - offset)~
+
+    - 1KiB = 1024 Bytes   => ~tamanio_pagina = 1024 Bytes~
+    - 443322 / 1024 = 432 => ~numero_pagina = 432~ <- "cociente de la división"
+    - 443322 % 1024 = 954 => ~offset (desplazamiento) = 954~ <- "resto de la división"
+** [#A] Pregunta (8)
    #+BEGIN_QUOTE
    En un sistema que posee direcciones físicas (que permiten direccionar toda la memoria) de 32 bits
    y se sabe está dividida en 1024 frames... Si una DL generó la DF 004DEF12h, qué marco se asignó?
@@ -147,9 +170,19 @@
 *** Justificación Respuestas Incorrectas
 *** Observaciones
     #+BEGIN_QUOTE
+    Cuando dice "direcciones fisicas de 32 bits, que permiten direccionar toda la memoria"
+    quiere decir que es suficientemente grande para abarcar TODAS las direcciones de la RAM,
+    por tanto la memoria es de 2^32
+
+    la repesentación de una *dirección física* a nivel de bits
+    - los bits de mayor peso representan el *numero de marco/frame*
+    - los bits de menor peso representan el *offset*
+    #+END_QUOTE
+    
+    #+BEGIN_QUOTE    
     Tam DF = 32 bits
     direcciona a toda la Memoria -> 4 GiB (2^32)
-    1024 frames -> primeros 10 bits
+    1024 frames -> primeros 10 bits (porque 2^10 = 1024)
 
     o
     2^32/ 2^10 = 2^22 => tam frame = tam pág => 22 bits para el offset
@@ -164,20 +197,25 @@
     4(d) -> 0100(b)
     0000 0000 01 -> FRAME 1
     #+END_QUOTE
-** Pregunta (9)
+** [#A] Pregunta (9)
    #+BEGIN_QUOTE
    V o F.
-   Paginación presenta fragmentación interna pero no externa; segmentación exactamente lo opuesto.
-   Por lo tanto, segmentación paginada presenta ambos problemas pero en menor medida.
+   *Paginación* presenta *Fragmentación interna* pero no externa;
+   *Segmentación* exactamente lo opuesto.
+   Por lo tanto, *Segmentación paginada* presenta ambos problemas pero en menor medida.
    #+END_QUOTE
 *** Respuesta Correcta
     Falso
 *** Justificación Respuestas Incorrectas
 *** Observaciones
     #+BEGIN_QUOTE
-    La primera afirmación es cierta. Sin embargo, en segmentación paginada la memoria física se divide en frames,
-    por lo que nunca ocurrirá fragmentación externa.
+    La primera afirmación es cierta.
+
+    Sin embargo, en *Segmentación paginada* la memoria física se divide en frames,
+    por lo que NUNCA ocurrirá *Fragmentación externa*.
+    (porque los frames tienen igual tamaño que las páginas)
     
-    Por otro lado, sí es cierto que hay fragmentación interna como paginación pero el problema es un poco mayor
-    ya que ocurre en la última pág de cada segmento.
+    Por otro lado, sí es cierto que en la *Segmentacion paginada* hay *Fragmentación interna* como *Paginación*
+    pero el problema es un poco mayor ya que ocurre en la última pág de cada segmento.
     #+END_QUOTE
+    
