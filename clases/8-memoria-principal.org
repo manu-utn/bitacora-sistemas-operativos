@@ -158,14 +158,14 @@
   pero.. la posición REAL en Memoria es la *dirección física* que se calcula con ~base + DL~
   #+END_QUOTE
 ** Base
+   - Representa el *principio de la partición*
    - Es la *dirección física* (real) en la *Memoria Principal* (MP)
-   - Representa el principio de la partición
    - Desde donde nos desplazamos (con el límite ó longitud)
 
    #+BEGIN_qUOTE
-   ~Base (dirección física) + Límite (offset) = Dirección lógica~
+   ~Dirección lógica = Base (principio de la particon, dirección física) + Límite (offset)~
 
-   no es DL+offset = DF?
+   <<DUDA>>: DF = Base (principio de la partición) + DL ()
 
    En el PCB de c/proceso se guardaría la *Base*
    #+END_QUOTE
