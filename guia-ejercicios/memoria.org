@@ -170,13 +170,19 @@
 ** Tamaño entre DL y DF
    - Puede pasar que la *dirección lógica* (DL) sea del mismo tamaño que la *dirección física* (DF)
      (/En este caso tenemos un proceso que ocupa tanto como el tamaño de la memoria principal/)
-   - El tamaño es siempre DL <= DF (puede ser igual o menor)
+   - El tamaño es siempre ~DL <= DF~ (puede ser igual o menor)
 ** Segmentación
    - Para calcular la dirección física (DF): ~direccion_fisica = base + offset~
    - Para calcular el número de segmento: ~numero_segmento = Base / Limite~ (lo mismo aplica para paginación)
-** Direccionamiento Logica y Fisica
-   - Definir Dirección lógica: ~direccion_logica = numero_pagina | offset~ ??? porque el | ?
-   - Definir la dirección física: ~direccion_fisica = numero_marco | offset~ ??? porque el | ?
+** [#A] Direccionamiento Logica y Fisica
+   - Definir Dirección lógica: ~direccion_logica = numero_pagina | offset~
+   - Definir la dirección física: ~direccion_fisica = numero_marco | offset~
+
+   #+BEGIN_QUOTE
+   El símbolo ~|~ se está usa como separador de bits entre el número_pagina/numero_marco con offset,
+   siendo los primeros N bits de mayor peso los que indican el numero_pagina/numero_marco
+   y los bits restantes el offset
+   #+END_QUOTE
 ** Tamaño de Marco
    Si sabemos la cant. de marcos => Será la potencia de 2 que resulte en la cant. de marcos
    (/Ej. si la memoria física tiene 32 marcos => 2^5 = 32 => los marcos son de 5 bits/)
@@ -184,53 +190,278 @@
    Si sabemos el tamaño de página => Será la potencia de 2 que resulte en ese tamaño
    (/Ej. si el tamaño de página es 1Kib => 1Kib=10 bits porque 2^10bits=1024 bytes/)
 
+   #+BEGIN_COMMENT
+   #+END_COMMENT
+   
    *Observación:*
    Si sabemos el tamaño del marco => ~tamanio_pagina = tamanio_marco~
 ** Tamaño de Memoria fisica
    Si sabemos la cant de marcos => Será la cant. de marcos * tamaño de marco (ó de página)
    (/Ej. si la ram tiene 32 marcos, y c/página es de 1Kib => 32*KiB=32Kib=>2^15bits => memoria=15bits/)
+* Observaciones
+  #+BEGIN_COMMENT
+  DL = num_pagina | offset
+  DF = num_marco | offset
+  
+  - ~DF = Base + DL~
+  - ~DL = Base + Offset~
+  - ~DL <= DF~
+  - ~numero_pagina = DL/tamanio_pagina~
+  - ~DF = numero_marco * tamanio_marco + offset~
+  #+END_COMMENT
 * Ejercicio 1
+** Problema
   #+BEGIN_QUOTE
-  Considere el espacio de ~direccionamiento lógico~ de 8 ~páginas~ de 1024 bytes cada una, mapeado en una ~memoria física~
-  de 32 ~frames~.
-  #+END_QUOTE
+  Considere el espacio de ~direccionamiento lógico~ de 8 ~páginas~ de 1024 bytes cada una,
+  mapeado en una ~memoria física~ de 32 ~frames~.
 
-  1. ¿Cuántos bits hay en la dirección lógica?
-  2. ¿Cuántos bits hay en la dirección física?
+  1. ¿Cuántos bits hay en la *dirección lógica*?
+  2. ¿Cuántos bits hay en la *dirección física*?
   3. En un esquema de paginación sin memoria virtual, ¿Como tendría que ser la relación entre los tamaños de las
      direcciones calculadas anteriormente? (dirección lógica menor, igual o mayor que dirección física)
-** Respuesta
-   1. 
+  #+END_QUOTE
+** Solución
+*** Punto 1
+   - ~DL = numero_pagina | offset~
+   - ~DF = numero_marco | offset~
 
-* Ejercicio 1
+   |-------+-----------------+----------------------------------------------------------------------------|
+   | KiB   | bits requeridos | bytes                                                                      |
+   |-------+-----------------+----------------------------------------------------------------------------|
+   | 1 KiB | 10 bits         | 2^10 = 1024 bytes (1024 combinaciones para representar valores diferentes) |
+   |-------+-----------------+----------------------------------------------------------------------------|
+
+   #+BEGIN_QUOTE
+   *Calculamos la DL*
+
+   1) Calculamos el *tamaño de cada página*
+   Sabemos que ~1024 Bytes = 1KiB~ y que ~1KiB = 2^10 Bytes~,
+   entonces necesitamos ~10 bits~ para redireccionar ~1024 Bytes~ (1024 combinaciones diferentes)
+   por tanto ~tamaño_pagina = 10 bits~
+
+   2) Calculamos por la cantidad_páginas
+   Luego como son 8 páginas de ~1KiB~ (por proceso) => son procesos de ~8 KiB~
+   por tanto necesitamos ~3 bits~ porque ~8 KiB = 2^3~
+
+   3) Calculamos la DL 
+   2^10 * 2^3 = 2^13 = 13 bits => ~DL = 13 bits~
+
+   Por tanto necesitamos ~13 bits~ para redireccionar procesos de ~8KiB~,
+   
+   *Nota:*
+   El valor en bits entre el paso 1) y 2) difiere porque el primero es para representar 8 páginas diferentes,
+   y el segundo para representar 1024 direcciones diferentes
+
+   *Alternativa para calcular la DL*
+   numero_pagina | offset
+   
+   - si para 8 paginas => necesito 3 bits para representar 8 paginas diferentes (combinaciones)
+   - si la pagina es de 1024 Bytes => necesito 10 bits para representar 1024 direcciones diferentes (combinaciones)
+   entonces 3+10 = 13 bits
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   2^1=2 => solo 2 combinaciones {1,0}
+   2^2=4 => sólo 4 combinaciones {00,01,11,10}
+   2^3=8 => solo 8 combinaciones {000,001,011, 111, 110, 100, 101}
+   #+END_QUOTE
+*** Punto 2
+    #+BEGIN_QUOTE
+   *Calculamos la DF*
+   1) tamanio_marco = 1KiB => ~tamanio_marco = 10 bits~ (igual esto ya era dato, porque tamaño_pagina=tamaño_frame)
+   2) son 32 frames => necesitamos ~5 bits~ para representar 32 frames diferentes (porque 2^5 Bytes = 32 Bytes)
+   3) por tanto ~DF = 15 bits~
+
+   *Alternativa para calcular la DF*
+   32 frames * 1KiB => RAM 32 KiB => necesitamos 15 bits para referenciar 32KiB
+   #+END_QUOTE
+*** Punto 3
+    - DL < DF, si los procesos son más chicos que la memoria física
+    - DL = DF, si un proceso es tan grande como la memoria física
+    - DL > DF, NO se puede dar en un esquema sin *memoria virtual* que un proceso sea más grande que la RAM
+
+    Por tanto queda DL <= DF, pudiendo ser los procesos de menor o igual tamaño que la memoria real
+* [WAITING] Ejercicio 2
+** Problema
   #+BEGIN_QUOTE
+  Dado un sistema con una *administración de memoria paginada simple* (o sea, sin memoria virtual),
+  con ~256 KiB~ de memoria real, ~20 bits~ de *direccionamiento lógico* y páginas de ~4 KiB~, se pide:
+  1. Tamaño máximo posible de un programa a ejecutar en el sistema (ignorando el espacio ocupado por el SO).
+  2. Cantidad máxima en bytes de *fragmentación interna* (por proceso) y *fragmentación externa* que podría existir.
+  #+END_QUOTE
+** Solución
+*** Planteos + Casos a analizar
+   Analizar
+   1. Restricciones? (tamaño de la memoria 256 KiB)
+   2. Cuanto puedo redireccionar? (esto nos da el Tamaño de la DL) -> 20 bits
+      
+   1) Como son páginas de 4 KiB,
+   entonces ~4KiB = 2^12~ => necesitamos ~12 bits~
+
+   - 1 KiB = 2^10 = 1024 Bytes => necesitamos 10 bits para representar 1024 combinaciones diferentes
+   - 2^2 = 4 => necesitamos 2 bits para representar 4 páginas diferentes
+   - 2^10 * 2^2 = 2^12 => necesitamos 12 bits para representar 4 paginas de 4 KiB
+   
+   3) Como son 20 bits entonces
+   - los ultimos 12 bits seran los de menor peso (representarán el offset/desplazamiento)
+   - los primeros 8 bits serán los de mayor peso (repesentarán el número de página)
+
+   4) La DL resulta
+   ~DL = numero_pagina (8 bits) | offset (12 bits)~
+*** Punto 1
+   #+BEGIN_QUOTE
+   Como son 20 bits de direccionamiento lógico,
+   entonces ~2^20 = 1MiB~ (c/proceso) => DL 20 bits permite redireccionar ~1MiB~ (es 2^20 porque siempre es en potencias de dos)
+
+   *Respuesta:*
+   El tamaño máximo que puede tener un programa a ejecutar en el sistema es de ~1MiB~
+   #+END_QUOTE
+*** [WAITING] Punto 2
+    #+BEGIN_QUOTE
+    De *fragmentación interna* ...
+    
+    NO tiene *fragmentación externa* por ser *paginación simple*,
+    se solucionaba porque divide la RAM en frames que pueden ser asignados a cualquier página (parte de un proceso)
+    y los frames como las páginas son de igual tamaño
+    #+END_QUOTE
+* Ejercicio 3
+** Problema
+   Dada la siguiente tabla de segmentos, determine las direcciones físicas:
+   
+   |----------+------+---------------------+---+------------------+----------------------|
+   | Segmento | Base | Largo/Limite/Tamaño |   | Dirección Lógica | Dirección Física     |
+   |----------+------+---------------------+---+------------------+----------------------|
+   |        0 |  219 |                 600 |   | 0, 430           | ~649~                |
+   |        1 | 2300 |                  14 |   | 1, 10            | ~2310~               |
+   |        2 |   90 |                 100 |   | 2, 500           | *Segmentation Fault* |
+   |        3 | 1327 |                 580 |   |                  |                      |
+   |----------+------+---------------------+---+------------------+----------------------|
+** Solución
+*** Observaciones
+    - La *base* representa el principio de la dirección
+    - El *limite* (tamaño,largo,..) es la cantidad de *direcciones válidas*
+*** Solución (1)
+    #+BEGIN_QUOTE
+    1) Usamos los datos de la DL para acceder a la *Tabla de Segmentos*
+    Datos de la DL, segmento=0 con offset=430
+
+    2) Accedo a la Tabla de Segmentos con esos datos
+    obtengo Base=219 / Limite=600
+
+    3) Validamos si (offset < limite) como protección
+    430 < 600 ? Si => podemos calcular la DF
+
+    4) Calculamos la DF que se estimaba como ~DF = base + offset~
+    DF = 219+430 => ~DF = 649~
+
+    La base era el principio de la DF, y el offset sería el limite/longitud/tamaño
+    #+END_QUOTE
+*** Solución (2)
+    #+BEGIN_QUOTE
+    1) Usamos los datos de la DL
+    numero_segmento=1, offset=10
+    
+    2) Con el numero_segmento obtenemos datos de la Tabla de Segmentos
+    base=2300, limite=14,
+
+    3) Validamos si (offset < limite) como protección
+    10 < 14 ? Si => calculamos la DF
+
+    4) DF = base + offset => DF = 2300 + 10 => ~DF = 2310~
+    #+END_QUOTE
+*** Solución (3)
+    #+BEGIN_QUOTE
+    1) Usamos los datos de la DL para acceder a la *Tabla de Segmentos*
+    DL=2|500 => numero_segmento=2, offset=500
+
+    2) Obtenemos los datos de la Tabla de Segmentos, accediendo con el numero_segmento=2 como índice
+    base=90, limite=100
+
+    3) Validamos si (offset < limite) como protección
+    500 < 100? NO..! => NO se puede acceder, generaría un *Segmentation Fault*
+    #+END_QUOTE
+* Ejercicio 4
+** Problema
+  #+BEGIN_QUOTE
+  Considere una máquina con direcciones de 18 bits. Los primeros 2 bits se utilizan para identificar el segmento, y los
+  últimos 16, el offset dentro del segmento. Asumir que las bases y los limites de la tabla de segmentos están configuradas
+  de la siguiente forma que aparece en la tabla.
+
+  Responder en forma clara y concisa que sucede cuando el proceso intenta escribir en cada una de las siguientes
+  direcciones virtuales: 20000h, 10000h, 0BEEFh, 00ACEh
   #+END_QUOTE
 
-** Respuesta
-* Ejercicio 1
-  #+BEGIN_QUOTE
-  #+END_QUOTE
+  |----------+--------+--------+------------|
+  | Segmento | Base   | Largo  | Protección |
+  |----------+--------+--------+------------|
+  |        0 | 00000h | 0ABCDh | Read­only  |
+  |        1 | 1B000h | 007FFh | Exec­only  |
+  |        2 | 1B800h | 00FFFh | Read­write |
+  |        3 | 30000h | 01234h | Read­write |
+  |----------+--------+--------+------------|
+** Solución
+*** Solución 1
+    #+BEGIN_QUOTE
+    Recordemos que
+    2h (en hexadecimal) = 0010 (en binario)
+    Ah (en hexadecimal) = 1010 (en binario)
+    ...
 
-** Respuesta
-* Ejercicio 1
-  #+BEGIN_QUOTE
-  #+END_QUOTE
+    Como dice que las direcciones son de 18 bits.. y nos dan la DL 20000h (en hexadecimal)
 
-** Respuesta
-* Ejercicio 1
-  #+BEGIN_QUOTE
-  #+END_QUOTE
+    cada valor hexadecimal representa 4 bits,
+    entonces los 2 primeros bits los sacamos del primer valor hexa que es 2
+    2 (hexa) = 0010 (binario) => los últimos dos que es 10 se usa para identificar el segmento
+    por tanto ~numero_segmento = 2~
 
-** Respuesta
-* Ejercicio 1
-  #+BEGIN_QUOTE
-  #+END_QUOTE
+    lo que le sigue al 2 hexa que son los 0000h representan el offset,
+    por tanto ~offset=0h~
 
-** Respuesta
-* Ejercicio 1
-  #+BEGIN_QUOTE
-  #+END_QUOTE
+    2) Accedemos a la *Tabla de Segmentos* por numero_segmento=2 como índice
+    y calculamos la DF, recordando que ~DF=base+offset~
 
-** Respuesta
+    DF = 1B800h+ 0h  => ~DF = 1B800h~
 
+    *Respuesta:* Se accede en modo lectura a esa dirección de memoria
+    #+END_QUOTE
+*** Solución 2
+    #+BEGIN_QUOTE
+    1) Obtenemos el *número de segmento* y el *offset* de la DL ~0BEEFh~
+    los primeros 2 bits de ~0h~ son ~00~
+    por tanto ~numero_segmento = 0h~
+    
+    2) los siguientes representan el offset => ~offset = BEEFh~
+
+    3) Accedemos a la *Tabla de Segmentos* con el numero_segmento=0 como índice
+    y validamos si (offset < limite) como protección
+       
+    ~(BEEFh < 0ABCDh)~ ? NO, porque A>B => SegFault, error.. no se puede acceder
+
+    *Respuesta:* NO se puede acceder a la dirección de memoria
+    #+END_QUOTE
+*** Solución 3
+    #+BEGIN_QUOTE
+    1) Obtenemos el *número de segmento* y *offset* de la DL ~10000h~
+       - 1h (hexa) = 0001 (binario) => ~01~ son los 2 primeros bits => ~numero_segmento = 1h~
+       - el offset son los bits restantes, ~offset=0h~
+
+    2) Accedemos a la *Tabla de segmentos* usando numero_segmento=1 como índice
+       y validamos si (offset_seg < limite_seg) como protección
+
+    ~(0h < 007FFh)~ ? SI, todo ok
+
+    *Respuesta:* Se accede en modo lectura y escritura a esa dirección de memoria
+    #+END_QUOTE
+*** Solución 4
+    #+BEGIN_QUOTE
+    1) Obtenemos el *número de segmento* y *offset* de la DL ~00ACEh~
+       - 0h (hexa) = 0000 (binario) => ~numero_segmento = 0~
+       - offset son los bits restantes, ~offset=0ACEh~
+
+    2) Accedemos a la *Tabla de Segmentos* usando numero_segmento=0 como índice
+       y validamos si (offset_segmento < limite_segmento) como protección
+       - ~(0ACEh < 0ABCDh)~ ? SI
+
+    *Respuesta:* Se accede en modo lectura y escritura a esa dirección de memoria
+    #+END_QUOTE
 
