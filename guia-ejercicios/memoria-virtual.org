@@ -563,12 +563,12 @@
       - cuando accedió a la TP no la encontró y ocurrió el *Page Fault* (PF)
      
       Llendo más en detalle de los primeros 5 accesos, en cada uno ocurrió estos accesos a memoria/disco
-      1) *acceso a memoria*: Lectura TLB (miss)
-      2) *acceso a memoria*:Lectura TP (si generó Page Fault, por no estar la página en la TP del proceso)
-      3) *acceso a disco*: operación de lectura, descargar la página de disco que no estaba en MP
-      4) *acceso a memoria*: Si en el último acceso a disco, si el bit de modificado es ~M=0~ => se debe actualizar la TP del *proceso victima*, marcar la página como ausente (p=0???)
-      5) *acceso a memoria*: Actualizar la TP(cargar la página), y la TLB(cargar la pagina)
-      6) *acceso a memoria*: Lectura TLB => traducción (...) => acceso a la RAM
+      1. *acceso a memoria*: Lectura TLB (miss)
+      2. *acceso a memoria*:Lectura TP (si generó Page Fault, por no estar la página en la TLB caché de acceso rápido)
+      3. *acceso a disco*: operación de lectura, descargar la página de disco que no estaba en MP (sólo si tenía el bit de presencia P=0)
+      4. *acceso a memoria*: Si en el último acceso a disco, si el bit de modificado es ~M=1~ (de la pagina victima) => se debe actualizar la TP del *proceso victima*, marcar la página como ausente (quedando el bit de presencia como p=0)
+      5. *acceso a memoria*: Actualizar la TP (cargar la página a la que se quiere acceder), y actualizar la TLB (cargar la pagina acá también)
+      6. *acceso a memoria*: Lectura TLB => traducción (...) => acceso a la RAM
 
       *Observación:* En la posicion=6 de la sec. de paginas, reducimos esos accesos
       #+END_QUOTE
