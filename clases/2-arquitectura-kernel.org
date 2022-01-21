@@ -1,8 +1,7 @@
 #+TITLE: Clase 04 - Arquitectura de kernel
 * Conceptos
   - es apropiado *dividirlo en componentes* más pequeños
-* [DONE] Arquitectura Monolítica
-  CLOSED: [2021-08-30 lun 16:31]
+* Arquitectura Monolítica
 ** Conceptos
    - Es el más utilizado por los *sistemas operativos* (/utilizado por Linux, Windows, .../)
    - Todo el código del SO está dentro del kernel
@@ -12,8 +11,7 @@
   - funciona en *modo kernel* (si hay errores, es algo grave)
   - *NO hay paso de mensajes*, solo buscaba lo q necesitaba
 ** Ventajas
-* [DONE] Arquitectura Micro-Kernel
-  CLOSED: [2021-08-30 lun 16:31]
+* Arquitectura Micro-Kernel
 ** Conceptos
   + Se separan las funcionalidades en
     * modo usuario
@@ -30,8 +28,7 @@
    1. Usa ~syscalls~ para comunicarse entre los módulos, el kernel es el puente entre ellos
    2. Guarda *contexto*
    3. Hace *cambios de modo*
-* [DONE] Arquitectura Multicapa
-  CLOSED: [2021-08-30 lun 16:31]
+* Arquitectura Multicapa
 ** Conceptos
    - Se comunican entre las capas adyacentes (/las que estén juntas/)
    - Las capas están muy acopladas entre si

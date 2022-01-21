@@ -271,17 +271,17 @@
      |-------+-------+-----+-----+-----+-----+----+-----+-----+-------+---|
 ** [WAITING] Jacketing y ULTs Bloqueados
    + La traducción de *jacketing* es *revestimiento*
-   + Convierte una E/S bloqueante en una E/S NO bloqueante
-      (mediante un ~wrapper de biblioteca~ que le agrega comportamiento extra 
-       a una ~sycall~ que es bloqueante)
-   + La *biblioteca de usuario* utilizará E/S NO bloqueantes
+   + *La biblioteca de usuario utilizará E/S NO bloqueantes*
+   + *Convierte una E/S bloqueante en una E/S NO bloqueante*
+      (mediante un ~wrapper de biblioteca~ que le agrega comportamiento extra a una ~sycall~ que es bloqueante)
    + Mientras hayan ULTs para ejecutar el *KLT* que los contiene NO se bloqueará
-   + Esto es sólo a nivel de hilos, el proceso no se entera
+   + Esto es sólo a nivel de hilos, el SO no se entera
 
    Con esto se previene que no se bloqueen el resto de los hilos
 
    #+BEGIN_COMMENT
-   El no-bloqueante tiene más *overhead*
+   <<DUDA>>:
+   El no-bloqueante tiene más *overhead* (???) no es al reves? ya que no interviene tanto el cpu?
    #+END_COMMENT
    
    *IMPORTANTE:*

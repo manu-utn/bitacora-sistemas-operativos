@@ -279,7 +279,7 @@
 ** Tratamiento del deadlock
 *** Tabla comparativa
     |--------------------------+-----------------------------------+--------------------------+----------------------------------|
-    |                          | *PREVENCION*                      | *EVASION*                | *DETECCION Y RECUPERACION*       |
+    |                          | *PREVENCION*                      | *EVASION* (banquero)     | *DETECCION Y RECUPERACION*       |
     |--------------------------+-----------------------------------+--------------------------+----------------------------------|
     | Flexibilidad en          | *restrigindas*                    | *intermedio*             | Completamente flexible           |
     | las peticiones           | por ser el mas                    | los procesos deben       | no tiene restricciones           |
@@ -305,7 +305,7 @@
     |------------------------+---------------------------------------------------------------------------------------------|
     | PREVENCION             | Durante las *peticiones* de asignación de recursos de los procesos (condiciones necesarias) |
     |------------------------+---------------------------------------------------------------------------------------------|
-    | EVASION                | Durante la *asignación* de recursos (se analiza con el algoritmo del banquero)              |
+    | EVASION (banquero)     | Durante la *asignación* de recursos (se analiza con el algoritmo del banquero)              |
     |------------------------+---------------------------------------------------------------------------------------------|
     | DETECCION+RECUPERACION | Cuando ya hay *deadlock*                                                                    |
     |------------------------+---------------------------------------------------------------------------------------------|

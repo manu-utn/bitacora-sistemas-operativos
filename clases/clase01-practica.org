@@ -1,10 +1,12 @@
 #+TITLE: Clase 01 - Parte Práctica
 
+#+BEGIN_QUOTE
 no podemos usar *instrucciones privilegiadas* en los programas
 
 el usuario puede hacer *llamadas al sistema*, 
 pero por lo general lo hacemos con *wrappers* (porque es más fácil)
 pero NO podemos llamar a llamadas al sistema que tengan *instrucciones privilegiadas*
+#+END_QUOTE
 
 #+BEGIN_SRC c
   // - printf() hace una llamada al syscall write

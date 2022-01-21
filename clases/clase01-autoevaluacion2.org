@@ -1,4 +1,3 @@
-EL de natasha
 * Pregunta 1
   #+BEGIN_QUOTE
   #+END_QUOTE

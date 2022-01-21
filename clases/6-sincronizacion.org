@@ -136,8 +136,8 @@ contador(0 hasta n recursos) puede ser compartido entre procesos
 **** Espera limitada
      Que un proceso no deba esperar tanto tiempo evita la *inanición* (starvation)
 **** Velocidad Relativa
-     No se sabe en que orden se ejecutaran los procesos, ó cuando se cortara un proceso
-     NO hacer suposiciones,
+     No se sabe en que orden se ejecutaran los procesos, ó cuando se finalizará un proceso
+     NO hacer suposiciones
 *** [DONE] Soluciones a esos requerimientos
     CLOSED: [2021-09-27 lun 18:06]
 **** de Software
@@ -259,7 +259,7 @@ contador(0 hasta n recursos) puede ser compartido entre procesos
 ***** Soluciones que SI funcionan
       Ambos tienen *espera activa* que es algo NO deseable, pero resuelven el problema
 ****** Algoritmo de Dekker
-****** [DONE] Algoritmo de Peterson
+****** [DONE] Algoritmo de Peterson (Interesados+Turnos)
        CLOSED: [2021-09-18 sáb 09:21]
        
       |--------------------+---------+-----------------------------------------------------------------|
@@ -342,8 +342,9 @@ contador(0 hasta n recursos) puede ser compartido entre procesos
        - Desactivar las interrupciones en todos los procesadores, genera overhead
        - NO es bueno para sistemas con *multiprocesadores*
 ***** TestAndSet - Instrucciones Atómicas
-      + Soluciona el problema del *deshabilitar interrupciones*
-      + El preguntar si poder ingresar en la sección critica se hará en una instrucción
+      + Sufre *espera activa* <---
+      + Soluciona el problema del *deshabilitar interrupciones* (el overhead)
+      + El preguntar si se puede ingresar en la sección critica se hará en una instrucción,
          en un *ciclo de instrucción* que nos asegura que NO se va a interumpir
          (es atómica, como una transacción de SQL)
       + Son sencillos de usar, y sirven para sistemas con multiprocesadores
@@ -1019,12 +1020,13 @@ contador(0 hasta n recursos) puede ser compartido entre procesos
      #+END_SRC
 ** [DONE] Inversión de prioridades
    CLOSED: [2021-09-26 dom 23:14]
-   + Si un proceso con baja prioridad ocupa la CPU, se desaloja si aparece otro con más prioridad
+   + Si un proceso con baja prioridad ocupa la CPU => se desaloja si aparece otro con más prioridad
    + Utilizando *planificadores* con prioridad, para _desalojar procesos menos prioritarios_
    + Evita que un *proceso* con baja prioridad tome el control de un *semaforo mutex*
      (si uno con menor prioridad lo está usando, el SO lo desaloja, si otro de mayor prioridad lo necesita) 
 
    #+BEGIN_COMMENT
+   <<DUDA>>:
    cada proceso que ingresa tiene misma prioridad, y luego según el tipo de proceso que caiga en ready
    se sube/baja prioridad?
 

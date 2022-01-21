@@ -728,7 +728,7 @@ con el *clock modificado*
 *** Criterio para seleccionar víctima
     - Si ~U=0~ => Encontró su víctima y sustituye esa página y avanza el puntero al sig. frame
     - Si ~PF=0~ => NO elige a nadie, y avanza al sig. número de página de la secuencia
-    - Desempata por *tiempo de carga* (como el de FIFO)
+    - Desempata por *tiempo de carga* (como el de FIFO) <- el que menor TC tenga
 *** Puntero
     - Tiene un *puntero* que indica cual es la siguiente *página* víctima a ser sustituída
     - Cambia la referencia (a una página que está un frame) sólo cuando se aplica el algoritmo de sustitución

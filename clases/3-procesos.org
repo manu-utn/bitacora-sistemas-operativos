@@ -11,14 +11,12 @@
      (NO es lo mismo que al mismo tiempo, porque eso requiere tener
       más de un procesador, porque este puede trabajar con un proceso
       a la vez)
-** Multiprogramación
+** Multiprogramación (concurrentemente)
    - Permite que dos o más programas se ejecuten de forma *concurrente*
-     (Se ejecutan con mismos intervalos de tiempo,
-      pero NO ejecutan en el mismo tiempo)
-   - Desde la perspectiva del usuario, aparenta que hay varios procesos 
-     ejecutando al mismo tiempo, pero NO esa realidad.
-     (esto se debe a la velocidad en la que hace el *procesador*)
-** Multiprocesamiento
+     (/Se ejecutan con mismos intervalos de tiempo, pero NO ejecutan en el mismo tiempo/)
+   - Desde la perspectiva del usuario, aparenta que hay varios procesos ejecutando al mismo tiempo, pero NO es esa la realidad.
+     (/esto se debe a la velocidad en la que hace el *procesador*/)
+** Multiprocesamiento (en paralelo)
    - Permite que varios programas se ejecuten al mismo tiempo
      (NO confundir con *multiprogramación*)
    - Se requiere de varios *procesadores*
@@ -682,8 +680,7 @@
         ,*/
        kill(pid, signal);
      #+END_SRC
-* [DONE] Cambio de Contexto - Cambio de Proceso - Cambio de Modo
-  CLOSED: [2021-08-31 mar 18:29]
+* Cambio de Contexto - Cambio de Proceso - Cambio de Modo
 ** Escenarios Comunes
    El recíproco de los dos ejemplos NO siempre se cumple
    
@@ -833,3 +830,4 @@
 
 * Obs con LINUX
   En linux el estado *bloqueado* de un proceso es *suspendido*
+  

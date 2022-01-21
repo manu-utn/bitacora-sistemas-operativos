@@ -1,0 +1,1082 @@
+#+TITLE: File System
+#+STARTUP: inlineimages
+* links
+  1. https://drive.google.com/drive/folders/1QlbL5lZ9gMuvk-hJYsYoTR2cXuIixUxG <- te faltó el ej parcial 2 - con variante
+     (y tmb la clase de preparcial...)
+   
+  3. [[https://docs.google.com/document/d/1PMgZshedmGS94nfMNqK_g_qixoB3D9B_IVTACg1I4GM/edit][Ejercicios de la guia]
+  4. [[https://drive.google.com/drive/folders/15rB6wQj8bnm2rpI56S5kPvTjJ6lQMB0x][teoria que estas viendo]
+  5. https://www.utnianos.com.ar/foro/tema-c%C3%B3mo-calcular-el-tama%C3%B1o-de-las-entradas-en-fat
+* Conceptos
+  - Da servicio de uso de archivos para
+    - SO
+    - Usuarios
+    - Aplicaciones
+* Objetivos
+  - Almacenar/Operar datos
+  - Garantizar la *integridad* de los datos
+  - Minimizar ó eliminar la perdida ó destrucción de datos
+  - Optimizar desempeño para
+    - Usuarios (tiempo de respuesta)
+    - Sistema (aprovechamiento de recursos)
+  - Dar soporte para distintos *tipos de almacenamiento*
+  - Proveer una interfaz estandarizada para el usuario
+* Archivo
+** Conceptos
+   - Conjunto de datos/registros relacionados
+     - etiquetados con un nombre
+     - almacenados en un medio secundario
+   - Compartible entre procesos (archivo = nombre + permisos)
+   - Existencia de larga duración
+     
+   #+BEGIN_QUOTE
+   _El nombre no es un atributo del archivo_,
+   forma parte del directorio como si fuese un índice,
+   para acceder a éste más rápido
+   #+END_QUOTE
+** Estructura - FCB (File Control Block)
+   - Para administrar los archivos
+   - Similar al PCB pero para archivos
+
+   #+NAME:fcb-estructura
+   |--------------------------------------------------|
+   | file permissions                                 |
+   | file dates (Create/access/write)                 |
+   | file owner, group, ACL (all control list)        |
+   | file size                                        |
+   | file data blocks or pointers to file data blocks |
+   |--------------------------------------------------|
+* Directorios
+** Conceptos
+   - Son un tipo de archivo
+   - Es un archivo que contiene un listado de nombres de otros archivos/directorios
+   - Guardan la referencia a otros archivos
+** Implementación
+   - Lista lineal (/más fácil de programar/)
+   - Lista enlazada ordenada (/más complejo de agregar/remover entradas/)
+   - Arbol-B (/minimiza el tiempo de búsqueda/)
+   - Tabla de Hash (/lista lineal + estructura de hash/)
+* Operaciones sobre archivos
+** Crear
+   - se debe crear el FCB
+   - se define un archivo
+   - se lo posiciona dentro de la estructura de archivos
+
+   #+BEGIN_COMMENT
+   La asignación es en *bloques*
+   #+END_COMMENT
+** Eliminar
+** Abrir
+   - Se declara un archivo existente como *abierto* por un proceso
+     
+  #+BEGIN_QUOTE
+  Cuando hacemos un ~fopen <ruta> <modo>~
+  1. Busca el identificador en la ruta (osea el File Descriptor)
+  2. Accede al archivo en disco
+  2. Mueve el FCB a RAM (archivos abiertos)
+  #+END_QUOTE
+** Cerrar
+   - Cierra un archivo asociado a un proceso
+   - Se liberan recursos (/Ej. los bloques donde estaban contenidos/)
+** Leer/Escribir
+** Posicionar puntero (seek)
+   - 
+** Operaciones compuestas
+*** Copiar
+    #+BEGIN_COMMENT
+    Implíca que se debe crear un archivo, agregar el contenido, y eliminar el anterior
+    #+END_COMMENT
+*** Mover
+    #+BEGIN_COMMENT
+    Si es dentro del mismo FileSytem => es más rápido el proceso, sólo cambia la ruta
+    Si es entre dos FS (Disco a Pendrive) => es más lento, se debe crear el archivo, copiar el contenido, ...)
+    #+END_COMMENT
+*** Renombrar
+* Locks
+** Conceptos
+  - Permite regular el acceso a un archivo
+  - Evita que dos procesos escriban en un archivo en simultaneo
+  - Evita que un proceso lea información desactualizada
+
+  #+BEGIN_COMMENT
+  Es una feature que ofrece el FileSytem,
+  se podría usar *mutex* pero no sería lo mejor porque haría esperar más tiempo
+  a los procesos
+
+  Además estos lockeos de FS, permiten bloquear partes del archivo
+  mientras que con un mutex se bloquearia el recurso archivo
+  #+END_COMMENT
+** Tipos
+*** Exclusivo (lock de escritura)
+    - Se puede usar de forma Obligatoria ó Sugerida
+    - Un proceso por vez puede acceder
+    - El resto no puede acceder mientras tanto
+*** Compartido (lock de lectura)
+    - Se puede usar de forma Obligatoria ó Sugerida
+    - Muchos procesos pueden usarlo *concurrentemente*
+    - Un proceso NO puede solicitar un uso exclusivo mientras esté en este modo
+*** Obligatorio (mandatory)
+    - Ningún proceso puede usar el archivo a menos que cumpla con el *lock* (el SO lo asegura)
+    - Más tiempo esté bloqueado el archivo => más tiempo deben esperar los procesos que lo necesitan
+    - Es más seguro, pero más costoso porque lo realiza el SO
+*** Sugerido (advisory)
+    - Los *Lock* se deben solicitar/liberar sin generar deadlock (el SO no lo valida)
+    - el programador es el encargado de *garantizar la integridad*
+
+    #+begin_quote
+    Es igual que usar un *Mutex* con semáforos, pero con archivos
+    1. Se estará usando el *lock* antes
+    2. Se accede al archivo
+    3. Se libera el lock
+    #+end_quote
+* Manipulación de archivos
+* Tabla de archivos abiertos
+** Tabla Global de archivos abiertos
+   - Es una _estructura que está en memoria_
+   - Contiene información general del archivo
+     1) El (FD) *File Descriptor* (el identificador)
+     2) El (FCB) *File Control Block*
+     3) Un _contador de apertura_ para validar si se puede borrar de la tabla (cuando un proceso lo cierra, éste decrementa)
+** Tabla de archivos abiertos por proceso
+   - Es una _estructura que está en memoria_
+   - Contiene atributos específicos del archivo
+     1) Modo de apertura (Lectura, Escritura)
+     2) Un puntero al (FCB) de la *Tabla Global de archivos abiertos*
+* Protección del Filesystem
+** Acceso total
+   - NO se aplica _ninguna estrategia de protección_
+** Acceso Prohibido
+   - Solo el propietario puede usarlo
+** Acceso Controlado
+*** Conceptos
+    - Se indica _QUIEN/COMO puede operar_
+*** Tipos
+**** Esquema Propietario | Grupo | Universo (Others)
+    - Es el más simple
+    - Requiere poco almacenamiento
+    - Cada uno se representa con 3 bits (Propietario | Grupo | Others)
+      - r: read (1 bit)
+      - w: write (1 bit)
+      - x: execue (1 bit)
+    - Podria no ser suficiente para dar permisos
+      1) No soporta que varios grupos tengan distintos permisos
+      2) No soporta asignarle a un propietario asignarle otros permisos
+**** Matriz de Acceso
+     - Se tiene más detalle
+     - Requiere más mantenimiento + espacio
+     - (usuario, recurso) => permisos
+**** ACL (Access Control List)
+     - Cada _archivo tiene una lista de usuarios con los permisos_
+     - La estructura dinámica es una lista
+     - Ocupa menos espacio que una *Matriz de acceso*
+     - Es más detallado que el *Esquemo Propietario|Grupo|Otros*
+**** ACL + Esquema Propietario|Grupo|Others
+     - Se pueden combinar ambas estrategias
+** Permisos en Unix
+*** Conceptos
+    - los permisos se manejan con ~9 bits~
+    - el primer bit indica si es directorio/link/archivo
+      - si es d es directorio
+      - l si es link
+      - caso contrario es archivo
+    - permisos
+      - (R) read: para ver el contenido del directorio (Ej. ~ls~ para listar los archivos)
+      - (W) write: para modificar el contenido del directorio (crear/eliminar archivos)
+      - (X) execute: posicionarse dentro de un directorio (Ej. ~cd nombre~ para ingresar a un directorio)
+   
+    |-----------+----------------+----------------+----------------------|
+    | file type | owner (3 bits) | group (3 bits) | other users (3 bits) |
+    |-----------+----------------+----------------+----------------------|
+    | - o d     | r w x          | r w x          | r w x                |
+    |-----------+----------------+----------------+----------------------|
+*** Ejemplo
+    #+BEGIN_SRC shell
+      #-----------------------
+      # Modificación Parcial
+      #-----------------------
+      
+      # Al grupo agregarle permisos de escritura
+      chmod g+w archivo
+      
+      # Al propietario sacarle los permisos de lectura/escritura
+      # - la 'u' se refiere al usuario owner
+      # - la 'o' se refiere a others
+      chmod u-rw archivo
+      
+      # Al resto (que no son del grupo, ni propietario) sacarle los permisos de escritura
+      # - la 'a' se refiere a 'all'
+      chmod a-w archivo
+      
+      
+      #-----------------------
+      # Modificación Total
+      #-----------------------
+      
+      # modifica los permisos: rwx r-x r-x (donde r=4, w=2, x=1)
+      # como es notación octal
+      #  rwx = 2^2+2^1+2^0 = 4+2+1 = 7
+      #  r-x = 2^2+0*2^1+2^0 = 4+0+1 = 5
+      chmod 755 archivo
+    #+END_SRC
+* [WAITING] Archivos mapeados a Memoria
+** Conceptos
+   - Se tratan las Entradas/Salidas de archivo como *accesos a memoria*
+     1) Se *asocia logicamente* una parte del *espacio virtual de direcciones de proceso* con el archivo
+     2) Lo anterior se realiza mapeando cada *bloque de disco* sobre una *página/s de memoria*
+     3) Luego las E/S del archivo se gestionan como cualquier otro acceso a memoria
+** Ventajas
+   - Disminuye el *overhead* por usar las syscall ~read~ y ~write~
+   - Se *comparten archivos entre procesos*, porque *comparten páginas*
+   - Las escrituras en disco no se realizarían necesariamente de forma sincrónica
+** Ejemplos
+*** Ejemplo 1 - Con mmap
+    #+BEGIN_QUOTE
+    Usar el ~mmap~ nos evita tener que hacer varias ~syscall~ (fopen, fseek, ...)
+    se posiciona directo donde queremos, y podemos escribir sobre esta, o podemos hacer ~memcpy~, ..
+
+    Es decir nos reduce la cantidad de llamadas al sistema
+    #+END_QUOTE
+* Metodos de Acceso
+** Conceptos
+   - Secuencial: Un registro después del otro
+   - Directo: Se accede a cualquier registro sin recorrer los anteriores
+   - Indexado: Se coloca un índice para acceder más rápido
+   - Hashed: Se utiliza una función de hash, para acceder directamente a un bloque.
+* Organización Datos en Disco
+  - El disco puede tener varias *particiones*
+  - Si a una *partición* se le aplica un *formato* => se conoce como *volumen*
+
+  #+BEGIN_QUOTE
+  El disco tendría esta estructura
+  |-----+------------------------------------------+--------------------+-----------+----------|
+  | MBR | Bloque de Control de Arranque de Volumen | Control de Volumen | Meta-data | Archivos |
+  |-----+------------------------------------------+--------------------+-----------+----------|
+
+  Cada volumen contiene
+  |------------------------------------------+--------------------+-----------+----------|
+  | Bloque de Control de Arranque de Volumen | Control de Volumen | Meta-data | Archivos |
+  |------------------------------------------+--------------------+-----------+----------|
+
+  La *Meta-data* _tiene las estructuras "parcialmente" en memoria_ para administrar el espacio libre, para administrar un archivo, ...
+
+  EL *Control de Volumen* _está SIEMPRE en memoria_, y tiene información del FileSytem para que el SO lo pueda administrar
+  #+END_QUOTE
+* Asignacion de espacio en Disco a archivos
+** Conceptos
+   - Archivo
+   - Bloques lógicos (en disco virtual) <- un bloque es la asignación mínima del FileSystem
+   - Sectores (en disco físico) <- un sector es la mínima asignación del Disco Rigido
+** Unidad de Asignación
+   - La unidad de asignación del FileSytem será *bloque lógico* (A un archivo se le asignan N bloques lógicos)
+** Fórmulas
+   #+BEGIN_QUOTE
+   ~tamaño_bloque = N * tamaño_sector~
+   #+END_QUOTE
+* [WAITING] Estrategias de Asignación de bloques
+** Asignación de Bloques Contigua
+*** Conceptos
+    - Trae los problemas similares que asignacion dinámica de memoria
+    - Se asignan bloques contiguos (/podríamos necesitar 5 bloques, y quizás los tenemos pero si NO están contiguos no se pueden asignar/)
+*** Ventajas
+    - Se necesita _poca info para administrar los espacios libres_
+    - Es bueno para *acceso directo* y *acceso secuencial*
+    - Requiere pocos movimientos del cabezal del disco
+*** Desventajas
+    - Fragmentación Externa (/se puede resolver similar como en memoria con Compactación, pero es más lento porque el disco es mecánico/)
+    - El tamaño se define en el momento de creación (prealocación) (/porque uno no sabe de antemano que tamaño tendrá/)
+    - Problemas para aumentar el tamaño del archivo (porque es dificil encontrar un hueco libre, al ser bloques contiguos, pisarían al qe tenga al lado)
+** Asignación de Bloques Enlazada/Encadenada
+*** Conceptos
+    #+BEGIN_QUOTE
+    Esta seria la (FAT) *File Allocation Table*
+    tendriamos los archivos el inicio del bloque y su longitud
+    #+END_QUOTE
+    
+    |-----------+-------------+--------|
+    | File name | start block | length |
+    |-----------+-------------+--------|
+    | Archivo1  |           1 |      5 |
+    | Archivo2  |             |        |
+    | Archivo3  |             |        |
+    |-----------+-------------+--------|
+*** Ventajas
+    - NO hay problemas para aumentar el tamaño del archivo => NO hay prealocación
+    - NO hay *Fragmentación Externa* (/porque los bloques están enlazados, ya no es asignación contigua/)
+    - Es bueno para *acceso secuencial*
+*** Desventajas
+    - Requiere más movimientos del cabezal del disco (/porque los punteros están dispersos en distintos lugares/)
+    - Es MALO para el *acceso directo* (/porque es acceso secuencial, se debe recorrer los bloques anteriores/)
+    - Espacio ocupado por punteros => se pueden usar clusters
+    - Corrupción de punteros => problemas de *fiabilidad* (/cualidad de algo cumpla una determinada función bajo determinadas condiciones durante un tiempo determinado/)
+** Asignación de Bloques Indexada
+*** Conceptos
+    - Se accede y leer un *bloque de índices* que tiene el puntero al acceso a disco
+    - Los *punteros* que teníamos en la *estrategia de asignación de bloques enlazada* pasa a una estructura de *tabla de índices*
+
+    #+BEGIN_QUOTE
+    Cada archivo va a tener un *bloque de índice*
+    - Si el bloque es muy grande => se desperdicia mucho espacio en disco
+    - Si el bloque es muy chico => se limita el tamaño del archivo
+    #+END_QUOTE
+*** Ventajas
+    - NO hay *prealocación* => NO hay problemas para aumentar el tamaño del archivo
+    - NO hay *Fragmentación Externa*
+    - Es bueno para *acceso secuencial* y *acceso directo*
+*** Desventajas
+    - Requiere muchos movimientos del cabezal del disco (/porque los bloques están dispersos/)
+    - Mayor cantidad de *punteros* ocupando espacio
+    - Corrupción de punteros (Si falla el bloque que tenía los punteros, se pierde referencia a los datos que aún siguen en disco)
+
+    #+BEGIN_QUOTE
+    Hay Mayor cantidad de *punteros* ocupando espacio
+    
+    Por ejemplo si teníamos una tabla de indices de 100 entradas,
+    y si uno de los archivos tiene sólo un bloque se desperdician 99 entradas)
+    #+END_QUOTE
+*** Un mix con lo anterior
+**** Esquema Enlazado
+     - Cada *bloque de índice* ocupa un *bloque de disco* => permite que pueda leer/escribir directamente
+     - Para archivos de gran tamaño enlazamos varios *bloques de índice*
+**** Indice Multinivel
+     - Un *bloque de índice* de 2º nivel apunta a -> Un conjunto de *bloques de índice* de 1º nivel que apuntan a -> los *bloques del archivo*
+     - Se tienen *bloques de indices* que apuntan a otros *bloques de indice* de otro nivel
+     - Similar a lo de paginación en memoria
+**** Esquema combinado
+     - Es una mejora del *Indice Multinivel*
+     - Mantener los primeros N *punteros del bloque de índice* en el *nodo del archivo*
+       - Algunos *punteros a bloques de datos* (BD)
+       - otros *punteros a bloques de punteros* (BP)
+* Estrategias - Gestión de espacio libre
+** Bit Vector
+   - Como un *bitmap* pero de bloques (/similar a los frames de memoria, pero con bloques/)
+
+   |--------+--------+------+-------------|
+   | bloque | bloque | .... | bloque[n-1] |
+   |--------+--------+------+-------------|
+
+   #+BEGIN_QUOTE
+   el bloque indicará si está libre/ocupado según el valor del bit
+   
+   bit[i] = { 0 => block[i] libre
+            { 1 => block[i] ocupado
+   #+END_QUOTE
+** Bloques Libres enlazados
+** Otras Estrategias
+*** Bloques indexados
+    - Espacio libre tratado como un archivo
+*** Lista de bloques
+    - Se almacena en los *bloques libres* las direcciones de los siguientes N-1 *bloques libres*
+*** Lista de bloques contiguos
+    - Se almacena el *bloque inicial* y el número de *bloques contiguos libres* a partir del mismo
+* Journaling
+** Conceptos
+   - La *información de las estructuras del filesytem están más actualizadas en MP* que en Disco
+   - Si hay un fallo en el sistema ó HW  => puede generar inconsistencias
+   - Para llevar al filesytem a un estado seguro si éste fallara, para recuperarse
+** Ejemplo
+   #+BEGIN_QUOTE
+   Es como un *log* de las tareas administrativas en memoria, 
+   guarda un histórico de las operaciones como transacciones que son aplicadas en memoria,
+   a medida que crece en memoria se persisten en disco las que ya se fueron aplicando
+   
+   si hay algún fallo en el sistema hace un rollback de la última transacción de operaciones,
+   porque alguna de las operaciones de esa transacción falló. El rollback lo hace para mantener la integridad
+   del filesystem y no es apliquen cambios por la mitad
+
+   El journal aplica el rollback cuando se vuelve a levantar el SO,
+   osea luego de haber ocurrido la falla,
+   para que el filesystem quede consistente
+
+   Si la computadora se apagó normalmente, sólo se aplican las últimas operaciones y se apaga
+   #+END_QUOTE
+* Implementación de Ext (Extended)
+** Inodos
+*** Conceptos
+    - Tiene una estructura similar al FCB, pero adiciona *bloques directos, bloques indirectos simples, bloques indirectos dobles, ...*
+    - Si el FileSystem está formateado como *Ext2* => los *bloques indexados* se llaman *inodos*
+    - Persisten información del archivo
+    - Persisten punteros (directos/indirectos)
+      - Usa un *esquema de indexado*
+      - Se indexan los *bloques de índice*
+      - Usa un *esquema mixto* (punteros directos a bloques)
+
+    #+BEGIN_QUOTE
+    Los punteros pueden
+    - Pueden ser *punteros indirectos* apuntan a otros *bloques de punteros*
+    - Pueden ser *punteros directos a bloques de datos*
+
+   Podemos referenciar a un Filesytem muy grande,
+   pero si la configuración del inodo referencia pocos punteros,
+   podriamos tener archivos más chicos
+    #+END_QUOTE
+*** Ejemplo - Esquema combinado - Multinivel de Bloques Indexados
+    [[./img/ext2-inodos.png]]
+** Estructura de Ext
+*** Conceptos
+    - Si a una partición le aplicamos un formato (Ej. ext, ext2) => La partición se denomina *Volumen*
+
+    #+NAME: estructura-ext
+    |-------------+---+----------------------+---------------+-----------------+------------------|
+    | superbloque |   | bitmap bloques datos | bitmap inodos | tabla de inodos | bloques de datos |
+    |-------------+---+----------------------+---------------+-----------------+------------------|
+*** Superbloque
+    - Tiene información de las *estructuras administrativas* del FS, para saber su estado (similar al FCB)
+    - Contiene información general del Filesystem
+      1) Total de inodos
+      2) Total de bloques
+      3) total de bloques libres
+      4) total de inodos libres
+      5) Tamaño del bloque
+      6) Tamaño del inodo
+*** Tabla de Inodos 
+    - Son los FCB
+    - Contiene como información
+      1) Tipo y Dueño
+      2) Tamaño
+      3) Timestamp
+      4) Número de bloques
+      5) Punteros a (BD) Bloques de Datos
+      6) Punteros a (BP) Bloques de Punteros
+*** Bloques de datos
+*** Bitmap de inodos
+    - Necesaria porque se tiene una cantidad fija/limitada de inodos
+*** Bitmap de bloques de datos
+** Estructura de Ext2
+*** Conceptos
+    - Tiene un *sector de partida* y agrupa *bloques* que tienen la *estructura de Ext* (superbloque, bitmap, tabla de inodos, ...)
+
+   #+NAME: estructura-ext2-parte1
+   |-------------------+--------------------+----+----------------------|
+   | Sector de Partida | Grupo de Bloques 0 | .. | Grupo de Bloques N-1 |
+   |-------------------+--------------------+----+----------------------|
+
+   #+NAME: estructura-ext2-parte2
+   |-------------+-----------------------+----------------------+---------------+-----------------+------------------|
+   | superbloque | Descriptores de Grupo | bitmap bloques datos | bitmap inodos | tabla de inodos | bloques de datos |
+   |-------------+-----------------------+----------------------+---------------+-----------------+------------------|
+
+   #+BEGIN_COMMENT
+   Agrupa un grupo de bloques que están casi contiguos, para que estén en el mismo cilindro del disco,
+   para reducir la cantidad de movimientos mecánicos del disco
+   #+END_COMMENT
+*** Superbloque
+    - Cada *Ext* tendrá una réplica de *Superbloque* por tanto será información redundante (/información repetida/)
+*** Descriptores de Grupo
+    - En cada *Ext* los *Descriptores de Grupo* similar al *Superbloque* pero es individual para cada uno de los *grupos de bloques*
+    - Contiene como info
+      1) Bloque de bitmap de datos
+      2) Bloque de bitmap de inodos
+      3) Bloques libres en grupo
+      4) Inodos libres en grupo
+*** Dividir el FS en Grupos de Bloques
+    - Los bloques van a estar más próximos
+    - Permite menos movimientos mecánicos del disco (/menor latencia/)   
+** Directorios
+*** Conceptos
+    - Son *Listas enlazadas*, se encadenan *bloques de inodos*
+    - Cada registro es de longitud variable
+    - De cada inodo sabemos
+      1) su identificador
+      2) el tamaño
+      3) longitud
+      4) nombre del archivo
+*** Ejemplo - Las Entradas de los directorios
+    Cada entrada del directorio tiene una estructura con los siguientes datos
+    
+    #+NAME: entrada-de-directorio
+    |---------------------+-------------+----------+----------------|
+    | identificador_inodo | tamaño_byes | longitud | nombre_archivo |
+    |---------------------+-------------+----------+----------------|
+
+    Recordando que un directorio es un archivo también "file" representa al directorio
+
+    #+NAME: entradas-de-un-directorio
+    |----+----+---+------+----+----+----+----------+----+----+----+----------|
+    | i4 | 16 | 5 | file | i1 | 24 | 14 | archivo2 | i2 | 40 | 10 | archivo3 |
+    |----+----+---+------+----+----+----+----------+----+----+----+----------|
+
+    luego con el *identificador del inodo* accedemos a la *tabla de inodos* para recuperarlos
+    y cargarlos a memoria (sólo cuando el archivo esté abierto)
+
+    #+NAME: tabla-inodos
+    |----+-------|
+    | i1 | ..... |
+    | i4 | ..... |
+    | i5 |       |
+    |----+-------|
+** Tipos de archivos
+*** Conceptos
+    - Cuando ejecutamos el comando ~ls -l~ de linux, el primer bit indicaba el tipo de archivo
+    
+   | Tipo | Descripción            |
+   |------+------------------------|
+   | -    | Regular                |
+   |------+------------------------|
+   | d    | Directorio             |
+   |------+------------------------|
+   | l    | Soft/Symbolic Link     |
+   | -    | Hardlinks (es regular) |
+   |------+------------------------|
+
+   #+BEGIN_SRC shell
+     ls -l
+     # los dos primeros archivos tipo directorio por la 'd'
+     729266  4 drwxr-xr-x 2 jelou jelou  4096 nov 28 09:43 imagenes
+     729266  4 drwxr-xr-x 2 jelou jelou  4096 nov 28 09:43 musica
+     # los otros dos son archivos tipo regular por sólo tener '-'
+     688016 24 -rw-r--r-- 1 jelou jelou 21681 nov 28 11:07 imagen.jpeg
+     688016 24 -rw-r--r-- 1 jelou jelou 21681 nov 28 11:07 resumen.org
+   #+END_SRC
+*** Softlink
+**** Conceptos
+    - Similar al *acceso directorio* de windows
+    - Es un tipo de archivo nuevo, independiente al archivo original
+    - Tiene su propio *inodo* y contiene la ruta al archivo al que apunta
+    - Se puede realizar entre distintos Filesystems
+    - El acceso es más lento
+
+    #+BEGIN_QUOTE
+    El *inodo* del archivo contiene información
+    #+END_QUOTE
+**** Diagrama
+     [[./img/softlink.png]]
+*** Hardlink
+**** Conceptos
+     - Es una *nueva referencia a un archivo* (apunta al inodo del archivo, el contador incrementa por cada nueva referencia al inodo)
+     - Es una nueva entrada al directorio
+     - Implementa dentro del *inodo* del archivo, un *contador* para saber cuantos *hardlinks* tiene ese archivo
+     - NO se puede realizar entre distintos Filesystems
+**** Hardlinks ocultos
+     #+BEGIN_QUOTE
+     Cuando creamos u directorio siempre va a tener como mínimo 2 entradas ya creadas,
+     el directorio ~.~ y ~..~ son como *hardlinks* porque
+     - el ~.~ es el directorio actual
+     - el ~..~ es el directorio padre
+     #+END_QUOTE
+
+     #+BEGIN_SRC shell
+       # creamos un diretorio vacío
+       mkdir imagenes
+       
+       # - listamos las entradas al directorio en el que estamos
+       # - la carpeta imagenes tiene el inodo 210
+       # - apesar de estar vacío ya tiene 2 entradas (el . y ..)
+       ls -li
+       210 drwxr-xr-x 2 jelou jelou  80 nov 28 11:38 imagenes
+       
+       # si accedemos a la carpeta, y listamos las entradas ocultas
+       # - el hardlink '.' tiene el mismo inodo 210
+       # - el hardlink '..' tiene el inodo 209 (el padre de la carpeta imagenes)
+       cd imagenes
+       ls -lia
+       210 drwxr-xr-x 2 jelou jelou  80 nov 28 11:38 .
+       209 drwxr-xr-x 6 jelou jelou 120 nov 28 11:47 ..
+     #+END_SRC
+*** Ejemplos
+**** Ejemplo 1 - Softlink - Enlace simbólico
+    #+BEGIN_SRC shell
+      cd ~/Escritorio
+      
+      # creamos un enlace simbólico en el escritorio
+      # que apunte a las imagenes de utn
+      ln --symbolic ~/Documentos/utn/imagenes imagenes
+      
+      # al listar los archivos, distingimos que el primer bit dice 'l'
+      # es un tipo de archivo "softlink"
+      ls -l
+      lrwxrwxrwx 1 jelou jelou 14 nov 28 11:21 imagenes -> ../Documentos/utn/imagenes
+      
+      # usi usamos el comando "stat" para información más detallada
+      stat imagenes
+      # nos muestra el identificar del inodo, la cant. de bloques, el tipo de archivo
+      Fichero: imagenes-> ../Documentos/utn/imagenes
+      Tamaño: 8             Bloques: 0          Bloque E/S: 4096   enlace simbólico
+      Dispositivo: 32h/50d    Nodo-i: 238         Enlaces: 1
+      Acceso: (0777/lrwxrwxrwx)  Uid: ( 1000/   jelou)   Gid: ( 1000/   jelou)
+      Acceso: 2021-11-28 12:49:01.653532841 -0300
+      Modificación: 2021-11-28 12:49:00.866843315 -0300
+      Cambio: 2021-11-28 12:49:00.866843315 -0300
+      Creación: -
+    #+END_SRC
+**** Ejemplo 2- HardLink
+     #+BEGIN_SRC shell
+       # creamos el archivo
+       touch saludar.c
+       
+       # ejecutamos el comando ls
+       # - la 'l' es para listar los archivos
+       # - la 'i' para saber el identificador del 'inodo'
+       ls -li
+       
+       # inodo: 318, contador_hardlinks: 1 (sólo hay 1 referencia al inodo 318)
+       318 -rw-r--r-- 1 jelou jelou 52 nov 28 11:39 saludar.c
+       
+       # creamos 2 hardlinks, dos nuevas referencias al inodo del archivo
+       ln saludar.c saludar1.c
+       ln saludar.c saludar2.c
+       
+       # inodo: 318, contador_hardlinks: 3 (hay 3 referencias al inodo 318)
+       ls -li
+       318 -rw-r--r-- 3 jelou jelou 52 nov 28 11:39 saludar.c
+       318 -rw-r--r-- 3 jelou jelou 52 nov 28 11:39 saludar1.c
+       318 -rw-r--r-- 3 jelou jelou 52 nov 28 11:39 saludar2.c
+       
+       # borramos los hardlinks (el contador del inodo decrementará)
+       rm saludar1.c
+       rm saludar2.c
+       
+       # inodo: 318, contador_hardlinks: 1 (sólo hay 1 referencia al inodo 318)
+       318 -rw-r--r-- 1 jelou jelou 52 nov 28 11:39 saludar.c
+       
+       # si usamos el comando "stat" para más información
+       stat saludar.c
+       # nos despliega esta información
+       Fichero: archivo.c
+       Tamaño: 0             Bloques: 0          Bloque E/S: 4096   fichero regular vacío
+       Dispositivo: 32h/50d    Nodo-i: 318 Enlaces: 3
+       Acceso: (0644/-rw-r--r--)  Uid: ( 1000/   jelou)   Gid: ( 1000/   jelou)
+       Acceso: 2021-11-28 11:48:03.525717862 -0300
+       Modificación: 2021-11-28 11:48:03.525717862 -0300
+       Cambio: 2021-11-28 11:52:28.615579369 -0300
+       Creación: -
+     #+END_SRC
+* Implementación FAT
+** Conceptos
+   - Significa *FileSystem Allocation Table*
+   - Tiene tantas *entradas* como *bloques* (clusters) tiene el disco virtual
+   - Las *entradas* indican al bloque siguiente (se enlazan)
+   - Existe una única estructura de la *FAT* en el FileSystem (aunque puede haber copias)
+   - Usa la *asignación encadenada* y los *punteros*  se guardan dentro de la tabla FAT
+** Ventajas
+   - Permite *acceso directo*
+   - El encadenamiento de los bloques se hace dentro de la tabla que está en memoria
+** Desventajas
+   #+BEGIN_QUOTE
+   Al ser una única estructura en memoria, no podemos traernos sólo los punteros de los archivos abiertos
+
+   mientras que en *Ext* podíamos traernos el *inodo* de los archivos abiertos,
+   para obtener el *bloque de punteros* de ese *inodo*
+   #+END_QUOTE
+** Diagrama
+   [[./img/fat.png]]
+** Estructura del Volumen
+   |--------------------+-------------+-----------------------------------+-----------------------------------|
+   | Sector de Arranque | FAT + Copia | Directorio raíz                   | Datos (Archivos + subdirectorios) |
+   |                    |             | - N entradas fijas de tamaño fijo |                                   |
+   |--------------------+-------------+-----------------------------------+-----------------------------------|
+
+   #+BEGIN_QUOTE
+   Tiene como *restricción* que el *directorio raíz* hay N entras fijas de tamaño fijo,
+   cada directorio contiene atributos de los archivos
+   #+END_QUOTE
+** Tamaño de entrada
+   |-----------------------------------------------------------------------+---------------+---------------+---------------|
+   | Tipo de Tabla                                                         | FAT 12        | FAT 16        | FAT 32        |
+   |-----------------------------------------------------------------------+---------------+---------------+---------------|
+   | Identificador de Cluster (numero_entrada) se representa con           | 12 bits       | 16 bits       | 32 bits       |
+   | Cant. de clusters que direcciona (cant. de clusters/bloques/entradas) | 2^12 entradas | 2^16 entradas | 2^28 entradas |
+   | Máximo de tamaño de un cluster/bloque (restricción)                   | 32MiB         | 2GiB          | 4GiB          |
+   |-----------------------------------------------------------------------+---------------+---------------+---------------|
+
+   #+BEGIN_QUOTE
+   Apesar que la FAT32 el tamaño de las entradas es de ~32 bits~,
+   en realidad tenemos disponibles sólo ~28 bits~..
+   porque usa los primeros ~4 bits~ para otra cosa
+   #+END_QUOTE
+** Fórmulas
+   #+BEGIN_QUOTE
+   ~tamaño_fat = cantidad_entradas * tamaño_entrada~
+
+   ~tamaño_max_teorico_archivo_de_filesystem = 2^tamaño_entrada * tamaño_cluster~
+
+   (a los bloques los llamamos *cluster*)
+   #+END_QUOTE
+* Conceptos Básicos
+** Partición Vs Volumen
+   - Un disco se divide en *particiones*
+   - Si a una *partición* le aplicamos un formato (Ej. ext, ext2, fat32, ..) => La partición se denomina *Volumen*
+   - Un *volumen* contiene los archivos + información (en memoria) del FS para que el SO lo administre
+   - El *volumen* tiene meta-data (estructuras administrativas)
+     1) Estructuras para administrar el espacio libre
+     2) Estructuras para administrar un archivo
+** Bloques - Inodos Vs Cluster
+*** Bloques Lógicos
+    - Los *bloques lógicos* son la *unidad de asignación de un FileSystem*
+    - Si el sistema de archivos es Ext => el bloque lógico es el *inodo*
+    - Si el sistema de archivos es FAT => la tabla FAT contiene los *punteros* a *clusters de disco* (a Bloque de Datos)
+*** Inodos
+    - Un *inodo* es el archivo en si, apunta a los *bloques de datos* (BD) que tienen información del archivo
+    - Son los *bloques lógicos* de una partición de disco que se aplicó el formato *Ext* como FileSystem (Ej. Linux)
+    - Los *inodos* son *bloques indexados* 
+    - Los *inodos* guardan metadata y punteros
+      1) _Punteros Directos_: apuntan a *bloques de datos* (BD)
+      2) _Punteros Indirectos_: apuntan a *bloques de punteros* (BP) (/según el nivel de indirección apuntan a otro BP ó a un BD/)
+
+    #+BEGIN_QUOTE
+    El inodo contiene (metadata) información del archivo, pero no el nombre del archivo.
+    _El nombre de archivo lo tiene el directorio que contiene al archivo_.
+
+    Cada entrada de un directorio tiene una estructura con los siguientes datos
+    
+    |----------+-------------+----------+----------------|
+    | id_inodo | tamaño_byes | longitud | nombre_archivo |
+    |----------+-------------+----------+----------------|
+
+    con el identificador de inodo accedemos a la tabla de inodos para recuperarlo de disco,
+    y cargarlo a memoria (suponiendo que abrimos el archivo)
+    #+END_QUOTE
+      
+    #+BEGIN_QUOTE
+    Todo *archivo* tiene asignado un inodo,
+    _que contiene metadata del archivo + apunta a Bloques de Datos (BD) que contienen el contenido del archivo_
+    
+    Según el tipo de archivo tendrá un nuevo inodo ó compartirá inodo con otros
+    - Si el archivo es tipo *SOFTLINK* => se considera un nuevo archivo + guarda la ruta de un archivo + tiene su propio Inodo
+    - Si el archivo es tipo *HARDLINK* => es una réplica de un archivo porque comparte el inodo con otros *hardlink* (y con el original que es regular)
+    
+    Si el archivo es del tipo *hardlink* (se lo considera un archivo regular)
+    entonces el inodo que tiene asignado se le incrementa el contador de referencias a dicho inodo
+    es decir por cada archivo del tipo hardlink, se crea una nueva referencia al inodo asociado
+    osea podemos tener 10 archivos que apunten al mismo inodo
+
+    Por ejemplo si tenemos los archivos ~/etc/passwd~ y ~/home/pepito/Documentos/passwd~ (hardlink)
+    _son dos rutas que apuntan al mismo archivo al inodo 101_
+    #+END_QUOTE
+*** Clusters
+    - El *Cluster* de FAT es equivalente al *Bloque de Datos* (BD) de *Ext*
+    - El *cluster* es la *unidad mínima de asignación/almacenamiento* de una partición formateada con FAT como FileSystem (Ej. windows)
+** Bloques Vs Sectores
+*** Disco Físico
+    - Está formado por *sectores* del disco
+    - Se divide en *particiones* que cuando se le aplican un formato (Ext, Fat) se denominan Volumen
+    - Nos indica espacio real
+*** Disco Virtual
+    - Está formado por *bloques lógicos*
+
+    #+BEGIN_COMMENT
+    - Es un tanto similar al volumen, pero no al 100%
+    - El volumen es una abstracción para asignar/administrar bloques logicos
+    - Su tamaño no puede ser mayor al tamaño del volumen del disco (partición que se le aplicó un formato Ej. Ext2, Fat32, ..)
+    #+END_COMMENT
+
+    #+BEGIN_COMMENT
+    - Se mapea cada bloque de disco sobre una ó varias páginas de memoria
+    - Cuando las páginas se cargaron a memoria, las operaciones de lectura/escritura en los archivos
+    se gestionan como cualquier otro acceso a memoria
+    #+END_COMMENT
+*** Sectores (disco físico)
+   - El disco se divide en sectores
+   - Varios sectores componen un *cluster* (cluster de sectores, grupo de sectores, ...)
+   - Un sector equivale a ~512 Bytes~
+   - *Sectores* (en disco físico)
+*** Bloques (disco virtual)
+   - *Bloques lógicos* son la _unidad de asignación mínima del FileSystem_
+   - La unidad de asignación del FileSytem será *bloque lógico* (A un archivo se le asignan N bloques lógicos)
+*** Clusters (grupo de sectores)
+   - El *cluster* es la *unidad mínima de asignación/almacenamiento en Disco* (es lo mínimo que puede guardar un archivo)
+   - Esta formado por un *conjunto de sectores contiguos*
+   - Un archivo se puede almacenar en uno ó varios clusters, según el tamaño de unidad de asignación del cluster
+
+   #+BEGIN_QUOTE
+   Los *clusters* tienen _contenido de un archivo_
+
+   - El sistema de archivos FAT tiene clusters para guardar contenido de los archivos, y la metadata está en la tabla FAT
+   - El sistema de archivos Ext tiene "bloques de datos" (BD) para guardar contenido, y la metadata está en el Inodo
+   #+END_QUOTE
+** Maximo de Espacio Direccionable (Tamaño Max. De Archivo)
+*** Intro
+    #+BEGIN_QUOTE
+    El _máximo de espacio direccionable_ se refiere al _tamaño máximo que puede tener un archivo_ en un FileSystem
+    en otras palabras podríamos decir el tamaño máximo que puede tener un bloque
+    #+END_QUOTE   
+*** Maximo espacio direccionable en FAT
+    #+BEGIN_QUOTE
+    En un sistema con FAT, para saber el max. espacio direccionable tenemos que analizar
+    - cuanto podemos direccionar según la limitación de la FAT (Ej. FAT12, FAT16, FAT32) ese cuanto es en ~bits~
+    - Si es FAT12 con clusters de 8KiB, estamos limitados a direccionar un max. de ~2^12 Bytes * 8KiB~ => El Max. de Espacio Direccionable es 32MiB
+    - Si es FAT16 con clusters de 8KiB, estamos limitados a direccionar un max. de ~2^16 Bytes * 8KiB~ => El Max. de Espacio Direccionable es 512MiB
+    - Si es FAT32 con clusters de 8KiB, estamos limitados a direccionar un máximo de ~2^28 Bytes * 8KiB~ => El Max. de Espacio Direccionable es 2GiB
+
+    Cálculos auxiliares..
+    - 2^12 Bytes * 8 KiB = 2^12 * 2^3 * 2^10 = 2^25 = 2^5 * 2^20 = 32MiB
+    - 2^16 Bytes * 8 KiB = 2^16 * 2^3 * 2^10 = 2^29 = 2^9 * 2^20 = 512MiB
+    - 2^28 Bytes * 8 KiB = 2^28 * 2^13 = 2^41 = 2^1 * 2^40 = 2GiB
+    #+END_QUOTE
+*** [WAITING] Maximo espacio direccionable en Ext
+    #+BEGIN_QUOTE   
+    En un sistema con Extended, para saber el max. espacio direccionable tenemos que analizar
+    - cuanto puede direccionar en el filesystem (según el tamaño_del_disco, en realidad el tamaño del volumen de la partición formateada con ese sistema)
+    - cuanto puedo direccionar en tal archivo (depende de la configuración de inodo)
+     
+    Detalles interesantes sobre los inodos
+    - El *inodo* referencia con punteros al contenido de un archivo
+      1) si el ptr es directo => referencia a un BD
+      2) si el ptr es indirecto => referencia a un BP que contiene punteros que referencian a varios BDs
+         - si es ptr indirecto simple => referencia sólo a un BP, y este a varios BDs (un nivel de indirección)
+         - si es ptr indirecto doble => referencia a un BP, y este a otros BPs, y estos a varios BDs (dos niveles de indirección)
+         - si es ptr indirecto triple => BP -> varios BPs -> varios BPs -> varios BDs (tres niveles de indirección)
+    - La _configuración del inodo es_
+      1) tamaño_de_bloque (tanto para los bloques de punteros, como bloques de datos)
+      2) cantidad_punteros
+      3) tipo_de_punteros (directo, indirecto simple, indirecto doble, indirecto triple, ...)
+    #+END_QUOTE
+** Espacio Direccionable
+*** Conceptos
+    #+BEGIN_QUOTE
+    La *tabla de asignación de archivos* que da el nombre al *sistema de archivos FAT*,
+    tiene una *entrada* para cada *cluster* del *volumen*
+    #+END_QUOTE
+    
+    #+BEGIN_QUOTE
+    1KiB = 2^10 Bytes, 1MiB = 2^20 Bytes, 1GiB = 2^30 Bytes, 1TiB = 2^40 Bytes
+    1 Byte = 8 bits
+    => 10 Bytes es 80 bits (resulta de ~10 Bytes * 8 = 80~)
+    => 64 bits es 8 Bytes (resulta de ~64 bits / 1 Byte = 64 / 8 = 8~)
+   
+    Si el sistema es FAT12
+    - podemos direccionar un max. de 12 bits (tamaño de las entradas, en la tabla del sistema FAT)
+    - podemos tener hasta 2^12 clusters ó 4.096 clusters/archivos (cantidad de entradas en la tabla del sistema FAT)
+    - tamaño máximo de archivo es 32MiB, ocupando todo el espacio de la tabla del sistema FAT
+      (resulta de ~cantidad_entradas * tamaño_entrada~,  osea ~2^12Bytes * 8KiB = 2^12 * 2^3 * 2^10 = 2^25 = 2^5 * 2^20 = 32MiB~)
+    #+END_QUOTE
+*** Ejemplos con Windows
+**** Windows con FAT32 
+    #+BEGIN_QUOTE
+    En FAT32, e utiliza identificadores de cluster de ~32 bits~ para cada cluster,
+    pero se reservan los primeros ~4 bits~, por tanto sólo se tiene ~28 bits~ por cluster
+    
+    Windows usa *clusters* de tamaño entre ~512 Bytes~ a ~8 KiB~ (2^13 Bytes),
+    lo que limita al FAT32 a clusters de ~32MiB~ (Máximo de tamaño que puede tener un archivo)
+    #+END_QUOTE
+**** Windows con FAT16
+    #+BEGIN_QUOTE
+    En FAT16, un identificador de cluster de ~16 bits~ puede tener 2^16 clusters (65.536 archivos)
+    decimos 2^16 clusters y no bytes, porque el byte es la mínima unidad en memoria
+
+    En Windows los tamaños de cluster de FAT16 van entre ~512 bytes~ a ~64 KiB~,
+    lo que limita el volumen a a tamaños de 4GiB
+    (~cantidad_clusters * tamaño_cluster = 2^16 clusters * 64KiB = 2^16 * 2^6 * 2^10 = 2^32 = 2^2 * 2^30 = 4 GiB~)
+    #+END_QUOTE
+* Fórmulas
+** Todas
+   #+BEGIN_QUOTE
+   Ambos
+   1) ~tamaño_max_teorico_de_un_FS = 2^tamaño_direccion * tamaño_bloque~ (/el _tamaño de dirección_ siempre son _potencias de dos_ y su unidad es _bits_ porque son para referenciar/representar 2^combinaciones_diferentes/)
+      
+   FAT
+   1) ~tamaño_FAT = cantidad_entradas * tamaño_entrada~ (/tamaño de entrada está limitada por el tipo de FAT/)
+   2) +~tamaño_max_teorico_archivo_fs = 2^tamaño_puntero_fat * tamaño_cluster~ (/tamaño_puntero está limitado por el tipo de FAT/)+
+   3) tamaño_max_teorico_por_archivo = igual que el max_tam_FS, porque puede ser tan grande como el FS, todas las entradas pueden referenciar a los bloques del archivo
+   4) ~tamaño_bloque = tamaño_disco / 2^tamaño_direccion~ (similar a la anterior, pero usamos el espacio físico real)
+
+   EXT
+   1) ~cantidad_punteros_por_bloque = tamaño_bloque / tamaño_puntero~ (/sólo sirve si tenemos punteros indirectos, estos apuntan a los BPs, dividimos el espacio del bloque en punteros de igual tamaño/)
+   2) ~tamaño_max_direccionable_teorico_por_inodo = cant_punteros_inodo * cantidad_punteros_por_bloque^max_nivel_indireccion * tamaño_bloque~ (/si preguntan tanto por Inodo ó el Archivo, si son ptr directos, el nivel_indireccion no sería necesario/)
+   3) ~numero_bloque = numero_byte_de_archivo / tamaño_bloque~ (/si nos dan el número de byte del archivo, es mejor obtener el número de bloque del archivo, porque es la forma de acceder al FS/)
+   4) ~cantidad_BDs_de_un_archivo= tamaño_archivo / tamaño_bloque~ (/evaluamos cuantos Bloques de Datos (BDs) necesitamos para guardar el contenido de ese archivo/)
+
+   Sólo a modo explicativo
+   1) ~cantidad_punteros_por_bloque^ptr_nivel_indireccion~ es la cantidad de punteros por nivel, suponiendo que elegimos el mayor nivel de indirección
+   2) ~cantidad_punteros_por_bloque^ptr_nivel_indireccion * tamaño_bloque~ es la cantidad de espacio que pueden direccionar todos los punteros
+   3) tamaño_max_teorico_archivo_fs -> cantidad_punteros * tamaño_bloque
+      - En FAT la cantidad_punteros está dada por 2^tamaño_puntero, que sería la cant. de entradas a la tabla FAT, y el tamaño_puntero está limitada por el tipo de FAT
+      - En Ext la cantidad_punteros está dada por cant_ptrs_x_bloque^max_nivel_indireccion porque los punteros están esparcidos en _bloques de punteros_
+
+   Conceptos Equivalentes
+   1) El *tamaño_dirección* es sinónimo de *tamaño_entrada* y que *tamaño_puntero* la unidad es en ~bits~ y se usa como potencia de 2 (Ej. 2^16, 2^32, 2^64, ...)
+   2) tamaño_max_teorico_archivo_fs
+      - maximo_espacio_direccionable sería lo mismo, porque el FS direcciona el espacio al disco
+      - es cuanto espacio puede el FS direccionar según la ~cantidad_ptrs * tamaño_bloque~
+      - es teórico, porque puede que el disco físico no tenga tanto espacio como soporta el FS (Ej. El FS podría direccionar 16GiB, pero estaría a 10GiB si el disco es de 10GiB)
+
+   Otros
+   - espacio_maximo_real_direccionable lo limita el tamaño de la partición de disco
+   - espacio_maximo_teorico_direccionable lo limita el filesytem (teórico, porque se ve limitado al tamaño del disco)
+   #+END_QUOTE
+** Intro
+   #+BEGIN_QUOTE
+   - En un FileSytem con formato FAT el *cluster* es la mínima unidad de asignación (los ptrs que apuntan a ellos están en la tabla FAT)
+   - En un FileSytem con formato Ext el *bloque de datos* es la mínima unidad de asignación
+     - los _ptrs directos están el Inodo_
+     - los _ptrs indirectos están en Bloques de Punteros_ (el nivel de indirección del ptr indicará a cuantos BPs se tendrá que acceder para llegar a los BDs)
+   - El *tamaño_entrada* es lo mismo que el *tamaño_direccion* ó que el *tamaño_puntero*
+   - El *tamaño_de_la_FAT* es el máximo de espacio direccionable (suponiendo que la partición está formateada en FAT)
+   #+END_QUOTE
+** Tamaño Puntero
+   #+BEGIN_QUOTE
+   Si nos dicen que tenemos un sistema Ext, con bloques de 4KiB, punteros 8 bytes y un disco de 10TiB
+   
+   el tamaño_entrada es lo mismo que tamaño_puntero 
+   
+   tamaño_entrada = 8 Bytes * 8 = 64 bits (porque cada Byte equivale a 8 bits)
+   tamaño_entrada = 64 bits (2^64 combinaciones diferentes)
+   
+   pasamos el tamaño_entrada a bits porque lo necesitamos para direccionar,
+   que es cuantas combinaciones de direcciones podemos representar
+
+   recordando que ~tamaño_max_teorico_archivo_de_un_filesystem = 2^tamaño_puntero * tamaño_bloque~
+   entonces ~2^64  *2^12 = 2^76~ → el filesystem puede direccionar hasta 2^76 Bytes
+
+   tamaño_maximo_direccionable por el FS = 2^76
+   tamaño_maximo_real = 10TiB (limitación de la partición del disco)
+   #+END_QUOTE
+** Número de Bloque
+   #+BEGIN_QUOTE
+   ~numero_bloque = numero_byte_de_archivo / tamaño_bloque_del_FS~
+   
+   Por si nos dan el numero de byte del archivo, y queremos saber el número de bloque con el que accederemos al FS.
+   Es útil para saber hasta cuantos niveles de indirección necesitamos, para llegar a ese número de bloque
+   #+END_QUOTE
+** Punteros por Bloque
+   #+BEGIN_QUOTE
+   ~cantidad_ptrs_por_bloque  = tamaño_bloque / tamaño_puntero~
+
+   Dividimos el tamaño del bloque por el tamaño del puntero,
+   para saber _cuantos punteros de ese tamaño podemos poner en cada bloque_
+   
+   Todos los bloques de punteros del FS tendrán la misma cantidad de punteros
+   Si es un bloque de punteros de indireccion simple => apuntará a N^1 bloques de datos (BD)
+   Si es un bloque de punteros de indirección doble  => apuntará a N^2 bloques de punteros (BP)
+   Si es un bloque de punteros de indirección triple => apuntará a N^3 bloques de punteros (BP)
+
+   Un puntero de indirección simple, apunta a un bloque de indirección simple (de nivel 1)
+   Un puntero de indirección doble, apunta a un bloque de indirección doble (de nivel 2)
+   Un puntero de indirección triple, apunta a un bloque de indirección triple (de nivel 3)
+   #+END_QUOTE
+** Otros
+   #+BEGIN_COMMENT
+   ~tamaño_bloque = numero * tamaño_sector~ --> numero de sector?
+   #+END_COMMENT
+** Máximo de Entradas de la FAT
+*** Intro
+*** A nivel Direccionamiento (volumen)
+    #+BEGIN_QUOTE
+    Usaríamos ~2^tamaño_puntero~ (el tamaño del puntero es en bits)
+    
+    Si tenemos un disco de 8GiB con FAT32 + clusters de 4KiB, a nivel direccionamiento...
+    hay ~2^28 entradas~ por tanto _podríamos direccionar 2^28 bloques_
+
+    El tamaño del disco podría limitar la cant. de entradas,
+    por tanto limitaría la cantidad de bloques que podemos direccionar,
+    porque tendríamos menos bloques
+
+    Ej. Si la partición de disco sólo se puede dividir en 2^21 bloques
+    (limitación física por el tamaño del disco, y el tamaño de los clusters)
+    entonces las 2^28 entradas de la tabla de FAT tendríamos entradas de más,
+    porque habrían entradas que no se podrían direccionar a bloques que no tenemos...
+    #+END_QUOTE
+*** A nivel Físico (partición)
+    #+BEGIN_QUOTE
+    Usaríamos ~tamaño_disco = cantidad_bloques * tamaño_bloque~
+    
+    Si tenemos un disco de 8GiB con FAT32 + clusters de 4KiB, a nivel físico...
+    1) ~tamaño_disco = cantidad_bloques * tamaño_bloque~
+    2) ~8GiB = cantidad_bloques * 4KiB~
+    3) ~cantidad_bloques = 2^3*2^30 / 2^2*2^10~
+    4) ~cantidad_bloques = 2^33 / 2^12~
+    5) ~cantidad_bloques = 2^21~
+
+    La tabla FAT tiene 2^21 entradas de ~32 bits~,
+    son de 32 y no 28, porque apesar que sólo disponemos de 28 bits para direccionar
+    el tamaño de la entrada  de la tabla de FAT es de ~32 bits~
+    #+END_QUOTE
+** [DOING] Tamaño de la FAT
+*** Intro
+    #+BEGIN_QUOTE
+    ~tamaño_FAT = cantidad_entradas * tamaño_entrada~
+    donde el tamaño de entrada está limitada por el tipo de FAT
+
+    Por ej. si tenemos un disco de 8GiB con FAT32, con clusters de 4KiB
+    y la tabla de fat tiene 2^21 entradas de 32 bits
+    (el filesytem soporta 2^28 entradas para direccionar, pero el disco nos limita porque tiene solo 2^21 bloques)
+
+    1) ~tamaño_FAT = cantidad_entradas * tamaño_entrada~
+    2) tamaño_fat = 2^21 entradas * 32 bits
+    3) tamaño_fat = 2^21 entradas * 4 Bytes <- (4 Bytes = 32 bits / 8 bits)
+    4) tamaño_fat = 2^21 * 2^2
+    5) tamaño_fat = 2^3 * 2^20
+    6) ~tamaño_fat = 8MiB~
+
+    Como suele haber una copia de la FAT, el espacio que ocuparía sería ~16MiB~
+    #+END_QUOTE
+** [DOING] Tamaño de la tabla FAT (Tamaño máximo teórico de un archivo)
+*** Intro
+    #+BEGIN_COMMENT
+    El ~tamaño_entrada~ de la tabla de FAT es lo mismo que decir el ~tamaño_puntero~
+    #+END_COMMENT
+    
+    #+BEGIN_QUOTE
+    En un sistema FAT, "teoericamente" un archivo puede ser tan grande como la FAT,
+    en ese caso todas las ~2^N entradas~ de la tabla FAT se usarían para direccionar
+    el contenido de ese único archivo a los ~2^N clusters~ distintos de disco
+    
+    Lo podemos deducir de ~tamaño_tabla_FAT = 2^tamaño_puntero * tamaño_cluster~
+
+    Decimos "teoricamente" porque el filesystem puede direccionar tanto espacio,
+    pero puede existir una limitación física, que es el espacio real en disco.
+    
+    Ej. Si el filesytem puede direccionar 4GiB de espacio, pero nuestro disco es de 2GiB,
+    sólo podemos direccionar hasta 2GiB...
+    #+END_QUOTE
+    
+    #+BEGIN_QUOTE
+    Podemos usar como fórmula
+    ~tamaño_tabla_FAT = 2^tamaño_puntero * tamaño_cluster~ (donde 2^tamaño_puntero es la cantidad de entradas de tabla FAT)
+
+    1) La ~cantidad_entradas~ a la tabla FAT indica la ~cantidad_clusters~ distintos en disco podemos direccionar
+    2) La ~cantidad_entradas~ se calcula con ~2^tamaño_puntero~
+    3) El ~tamaño_puntero~ es en ~bits~ y varía del tipo de FAT
+       - FAT12 usa 12 bits (la tabla FAT tiene 2^12 entradas para direccionar 2^12 clusters distintos)
+       - FAT16 usa 16 bits (la tabla FAT tiene 2^16 entradas para direccionar 2^16 clusters distintos)
+       - FAT32 usa 28 bits (la tabla FAT tiene 2^28 entradas para direccionar 2^28 clusters distintos)
+
+    El tamaño del puntero de FAT32 es 32 bits, pero tiene reservado 4 bits, y sólo quedan 28 bits disponibles
+    #+END_QUOTE
+*** Redimensionar tamaño del puntero de la tabla FAT
+    #+BEGIN_QUOTE
+    Ej. Si es FAT12 con clusters de 8KiB, pero queremos direccionar un espacio de 128MiB
+
+    1) ~tamaño_max_teorico_archivo_fs = 2^tamaño_puntero * tamaño_cluster~
+    2) ~128MiB = 2^tamaño_puntero * 8KiB~
+    3) ~2^tamaño_puntero = 128MiB / 8KiB~
+    4) ~2^tamaño_puntero = 2^27 / 2^13~
+    5) ~2^tamaño_puntero = 2^14~
+    6) ~tamaño_puntero = 14 bits~ => como NO existe un FAT con 14 bits, elegimos el más cercano que es FAT16 (de 16 bits)
+
+    En vez de usar un FAT12 usaríamos FAT16 porque
+    - FAT12 nos limitaba el tamaño máximo de un archivo a 32MiB (porque 2^12*8KiB = 2^12 * 2^13 = 32MiB)
+    - FAT16 nos permite tener un archivo de hasta 512MiB (2^16 * 8KiB = 2^16 * 2^13 = 512MiB)
+    #+END_QUOTE
+*** Redimensionar Tamaño de Cluster
+    #+BEGIN_QUOTE
+    Ej. Si es FAT12 con clusters de 8KiB, podemos tener archivos de hasta 32MiB como máximo..
+    porque ~2^12 entradas * 8KiB de cluster = 32 MiB~
+
+    Si queremos guardar archivos de hasta 128MiB, podemos aumentar el tamaño del Cluster
+    1) ~tamaño_max_teorico_archivo_fs = cantidad_entradas * tamaño_cluster~
+    2) ~128MiB = 2^12 entradas * nuevo_tamaño_cluster~ (la FAT sería de 128MiB y con 2^12 entradas que direccionan a 2^12 clusters distintos)
+    3) ~nuevo_tamaño_cluster = 2^27 Bytes / 2^12 Bytes~
+    4) ~nuevo_tamaño_cluster = 32 KiB~ (tenemos que redimensionar el tamaño del cluster a 4 veces más grande)
+
+    2^12 * 32KiB = 2^12 * 2^5 * 2^10 = 2^27 = 2^7 * 2*20 = 128MiB
+
+    Más aumentamos el tamaño de un cluster => mayor será la *fragmentación interna*
+    porque si tenemos un archivo pequeño, éste igual ocupará un cluster.
+   
+    En este ejemplo, si hubieramos creado un archivo con 1MiB de información,
+    el sistema le asignaría el cluster de 128MiB sobrando 127MiB que no se usan...
+    (en un sistema de archivos FAT, el cluster es la unidad más pequeña que se puede guardar en el filesytem)
+    #+END_QUOTE
+** [WAITING] Cantidad de Bloques por Archivo
+   #+BEGIN_QUOTE
+   ~cantidad_bloques_por_archivo = tamaño_archivo / tamaño_bloque~
+
+   Como los archivos están representados por bloques de datos,
+   vemos en cuantos bloques podemos dividir al archivo para representarlo
+
+   Ej. Si tenemos un archivo de 4GiB y cada bloque es de ..
+   podemos 
+   #+END_QUOTE
+* Referencias
+** Externas a la utn (?
+   1. [[https://surcosistemas.com.ar/minas/Pc/Administracion_archivos_windows.pdf][Administración de archivos en Windows (surcosistemas.com.ar)]]

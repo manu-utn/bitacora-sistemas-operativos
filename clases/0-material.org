@@ -1,0 +1,33 @@
+* Clases de Natasha
+** [K3013-2021 2C] Clases Recap
+*** Links
+    - https://drive.google.com/drive/folders/1_t_UZe7SKp82OlieOxWkwKCIR15Wee97
+** [K3013-2021 1C] Clases Recap
+*** Links
+    - https://docs.google.com/document/d/1xYn62MH-P_mb8M9sNMHjzMkbNyNHlT0ntUNKwsi6lUc/edit#
+    - https://drive.google.com/drive/u/2/folders/1RfqgTee13PwepMY8Vq7dAuTyYbWTpEdg
+*** Temas Vistos
+** [K3013-2020 1C]
+*** Links
+    - https://drive.google.com/drive/u/2/folders/1s7UxejuVufBEQrdQlAB11ZlYozEKULMa
+*** Temas Vistos
+** [K3523 2020 2C] Clases Recap
+*** Links
+    - https://docs.google.com/document/d/1GdIlQFm4A48OEbeh12cf_eMRMtBfKI1uqGX8n6N8NLw/edit
+    - https://drive.google.com/drive/folders/1B132rPG37MVzjotyVDg-zpRrslEOzH2R
+*** Temas Vistos
+    Tenía lo mismo que el del 2021
+** [K3523-2021] Clases Recap
+*** [10/10] Temas Vistos
+    - [X] Parciales Deadlock
+    - [X] Parciales Planificación
+    - [X] Parciales Sincronización
+    - [X] Práctica 1er Parcial
+    - [X] Ejercicios extra
+    - [X] Ejercicios de Memoria
+    - [X] Ejercicios de FileSytem
+    - [X] Parciales Memoria
+    - [X] Parciales FileSytem
+    - [X] Cuestionarios
+*** Links
+    - https://docs.google.com/document/d/1fb_EkZ2BevBpGDMXYMNz6rpR2wSlkAM1H7EPtctXhJA/edit#

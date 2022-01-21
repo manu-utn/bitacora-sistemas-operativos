@@ -335,7 +335,6 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
     aging era cambiar prioridad, 
     
     *Rta:*
-    
     #+END_COMMENT
 *** Prioridad
     El que tenga *ráfaga de cpu más corta*
@@ -835,6 +834,20 @@ https://drive.google.com/file/d/11R3_kSnbHcTy2-KYJZWzKczbd9inkhBo/view
 
     - Los algoritmos que entran en esta categoría son
       1) RR 
+* [DOING] Algoritmos + Métricas
+** Métricas
+    - El throughput es el nivel de procesamiento, cuantos procesos se ejecutaron en una unidad de tiempo
+** FIFO
+    - NO optimiza metricas (throughput, tiempo de espera, tiempo de respuesta,...)
+** SJF sin desalojo
+   + Mejora el Throughput (/métrica de .../)
+   + Mejora (/reduce/) el *Tiempo de espera promedio*
+   + Mejora (/reduce/) el *Tiempo de respuesta*
+* [DOING] Algoritmos + CPU-Bound/IO-Bound
+** VRR
+   - Mejora el rendimiento para procesos *IO-Bound* ante los *CPU-Bound* (/las E/S son mucho más lentas/)
+** HRRN
+   - NO genera *starvation* (inanición), porque PRIORIZA los procesos *IO-Bound*
 * [TODO] Tips Algoritmos
 ** (RR) Round Robin
    Se desalojan los procesos por *quantum*
