@@ -1,0 +1,158 @@
+#+TITLE: Cuestionario - Filesytem
+* Template
+** Pregunta (1)
+   #+BEGIN_QUOTE
+   Que cosas se podrían guardar en el FCB?
+   
+   1. Nombre de archivo
+   2. Información de ubicación en disco
+   3. Timestamp de modificación, creación, etc.
+   4. Propietario
+   5. ACL
+   6. IDs de los procesos que tiene abierto a dicho archivo
+   7. Link al Journal
+   8. Tamaño del archivo
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 2) Información de ubicación en disco
+   - 3) Timestamp de modificación, creación, etc. <- (/los atributos de archivo/)
+   - 4) Propietario
+   - 5) ACL <- (/una de las estrategias para el acceso controlado/)
+   - 8) Tamaño del archivo
+*** Justificación Respuestas Incorrectas
+   - 1) Nombre de archivo, NO..! porque _es información del directorio_
+   - 6) IDs de los procesos que tiene abierto a dicho archivo, NO..! Para eso existía la *Tabla de archivos abiertos*
+   - 7) Link al Journal, NO..! Porque es para el filesystem en general
+*** Observaciones
+** [WAITING] Pregunta (2)
+   #+BEGIN_QUOTE
+   V o F
+   Para poder realizar una escritura sobre un archivo uno lo tiene que hacer a través de una syscall.
+   A dicha syscall, write, uno le pasa el path del archivo a escribir.
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+begin_quote
+    Es falso porque en realidad se le pasa el *file descriptor* del archivo,
+    que era la respuesta del ~fopen~ ...
+    #+end_quote
+** Pregunta (3)
+   #+BEGIN_QUOTE
+   En dónde podría estar almacenado un FCB?
+
+   1) En RAM
+   2) En disco
+   3) Ambas son Correctas
+   4) NINGUNA es correcta
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 3) Ambas son Correctas
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    - En RAM va a estar cuando el archivo esté abierto
+    - En Disco debe estar, para poder persistir la información
+** Pregunta (4)
+   #+BEGIN_QUOTE
+   V o F
+   Ante una situación de *condición de carrera* sobre el acceso de un archivo
+   se podría usar *mutex* pero podría ser más eficiente usar *locks*
+   #+END_QUOTE
+*** Respuesta Correcta
+    Verdadero
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+BEGIN_QUOTE
+    Los *locks* se podían diferenciar entre el los modos exclusivo/compartido,
+    
+    si usaramos *locks* y sea *modo compartido* + varios acceden en modo lectura => nos deja acceder
+    (si quisieramos hacer lo mismo con los mutex, nos bloquearía)
+
+    además los *locks* permiten bloquear partes del recurso,
+    mientras que los mutex bloquen todo el recurso
+    #+END_QUOTE
+** Pregunta (5)
+   #+BEGIN_QUOTE
+   Compare con las distintas *estrategias de Protección*
+   a) Granularidad alta
+   b) Granularidad media
+   c) Granularidad baja
+   d) Costo de mantenimiento Alto
+
+   1) Propietario, Grupo, Resto
+   2) Matriz de Accesos
+   3) Lista de control de accesos (ACL)
+   #+END_QUOTE
+*** Respuesta Correcta
+   - a) Granularidad alta + 2) Matriz de Accesos -> Daba permisos para cada archivo, usuario
+   - b) Granularidad media + 3) Lista de control de accesos (ACL) -> Permitía agregar por grupos, usuarios.. *Hay 1 ACL por archivo*
+   - c) Granularidad baja + 1) Propietario, Grupo, Resto -> 
+   - d) Costo de mantenimiento Alto + 2) Matriz de Accesos -> Para cada archivo nuevo, se debe agregar una columna para c/usuario con los permisos a ese archivo.. *Hay 1 Matriz en todo el sistema*
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (6)
+   #+BEGIN_QUOTE
+   V o F
+   En un FS el hecho de tener más o menos *Fragmentación Interna* dependerá más que nada de la
+   *Estrategia de Asignación de Bloques* que se utilice
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    Todas las estrategias tendran *fragmentación interna* por _asignar un tamaño fijo_ a los bloques
+** Pregunta (7)
+   #+BEGIN_QUOTE
+   Qué ventajas tiene la asignación indexada Vs. las otras estrategias?
+
+   1) Permite hacer un *acceso directo* bastante eficiente (aunque a veces podría generar accesos extras)
+   2) No desperdicia espacio en punteros
+   3) No tiene *fragmentacion externa*
+   4) Optimiza el tiempo de acceso en disco por minimizar los movimientos mecánicos del disco
+   5) Es fácil encontrar un hueco libre
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 1) Permite hacer un *acceso directo* bastante eficiente (aunque a veces podría generar accesos extras)
+   - 3) No tiene *fragmentacion externa* -> (/SI, comparado con la Contigua/)
+   - 5) Es fácil encontrar un hueco libre -> (/SI, comparado con la Contigua, porque No tenemos que comparar los tamaños de los huecos/)
+*** Justificación Respuestas Incorrectas
+   - 2) No desperdicia espacio en punteros, NO..! Desperdicia más que la *Estrategia ENLAZADA* por el *bloque de índices*
+   - 4) Optimiza el tiempo de acceso en disco por minimizar los movimientos mecánicos del disco, NO..! Eso ocurre en la *Estrategia Asig. CONTIGUA*
+*** Observaciones
+** Pregunta (8)
+   #+BEGIN_QUOTE
+   Qué factores tenemos en cuenta para ver el tamaño máximo del FS en FAT?
+
+   1) El tipo de FAT
+   2) El tamaño del puntero
+   3) El tamaño del bloque
+   4) El tamaño del disco
+   5) El tamaño de la partición
+   #+END_QUOTE
+*** Respuesta Correcta
+   1) El tipo de FAT ->
+   2) El tamaño del puntero -> es lo mismo que la anterior, porque si es FAT32 then los punteros son de 32 bits
+   3) El tamaño del bloque -> porque ~cant_bloques*tamaño_bloque=cuantos bytes podemos direccionar~
+   4) El tamaño del disco -> (suponiendo que sólo hay una única partición, porque lo importante en realidad es el tamaño del volumen ó partición que formateaste)
+   5) El tamaño de la partición -> porque quizas sólo formateamos una partición chica
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (9)
+   #+BEGIN_QUOTE
+   Qué tipo de asignación de bloques utilizan las siguientes implementaciones?
+   
+   1) FAT -> Contigua, Enlazada ó Indexada?
+   2) Ext -> Contigua, Enlazada ó Indexada?
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 1) FAT -> Enlazada
+   - 2) Ext -> Indexada
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (10)
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+*** Respuesta Correcta
+*** Justificación Respuestas Incorrectas
+*** Observaciones

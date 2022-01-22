@@ -6,39 +6,157 @@
     - ~pthread_exit(1)~ 
   + La biblioteca de cabecera que debemos incluir es ~pthread.h~
   + Para poder compilar por terminal ejecutamos  ~gcc nombrePrograma.c -pthread~
- 
-  #+BEGIN_SRC C
-    // Crea un hilo, guarda la referencia en el identificador que tiene como 1er parámetro,
-    // y ejecuta la rutina/función que se le asignó como 3er parámetro
-    int pthread_create(
-                       // un puntero al hilo (del tipo pthread_t ..!)
-                       // - recordemos que un puntero apunta a una dirección de memoria
-                       // - usamos operador & para pasarle la dir. de memoria del hilo que habiamos declarado con pthread_t
-                       pthread_t *thread, 
-                       // los atributos del hilo
-                       // - podemos dejarlo en NULL y tomará los que se asignan por defecto
-                       const pthread_attr_t *attr, 
-                       // un puntero a una función, que ejecutará el hilo
-                       void *(*start_routine) (void *), 
-                       // argumentos que recibirá la función a ejecutar (el argumento anterior)
-                       // - como requiere un puntero a nulo, debemos castear el dato a (void *)
-                       void *arg 
-                       );
-
-    // lo usamos para que el compilador espere a que se termine de ejecutar nuestro hilo, antes de finalizar el main
-    // - Es una "función Bloqueante"
-    // - Si no lo usamos, podemos no darle tiempo suficiente (rafagas de CPU) al hilo que queriamos se ejecute
-    // - El programa principal (main) se bloquea mientras espea que se termine de ejecutar el hilo elegido 
-    int pthread_join(
-                     // el hilo que queremos que se ejecute (Ojo que no dice del tipo puntero, le pasamos solo el identificador)
-                     pthread_t thread,
-                     // es la variable donde guardará el resultado final de la rutina ejecutada por el hilo
-                     // podemos dejarlo en NULL
-                     void **retval     
-    );
-
-    pthread_exit();
+* pthread_create
+ #+BEGIN_SRC C
+   // Crea un hilo, guarda la referencia en el identificador que tiene como 1er parámetro,
+   // y ejecuta la rutina/función que se le asignó como 3er parámetro
+   int pthread_create(
+                      // un puntero al hilo (del tipo pthread_t ..!)
+                      // - recordemos que un puntero apunta a una dirección de memoria
+                      // - usamos operador & para pasarle la dir. de memoria del hilo que habiamos declarado con pthread_t
+                      pthread_t *thread, 
+                      // los atributos del hilo
+                      // - podemos dejarlo en NULL y tomará los que se asignan por defecto
+                      const pthread_attr_t *attr, 
+                      // un puntero a una función, que ejecutará el hilo
+                      void *(*start_routine) (void *), 
+                      // argumentos que recibirá la función a ejecutar (el argumento anterior)
+                      // - como requiere un puntero a nulo, debemos castear el dato a (void *)
+                      void *arg 
+                      );
   #+END_SRC
+* pthread_join
+ #+BEGIN_SRC C
+   // lo usamos para que el compilador espere a que se termine de ejecutar nuestro hilo, antes de finalizar el main
+   // - Es una "función Bloqueante"
+   // - Si no lo usamos, podemos no darle tiempo suficiente (rafagas de CPU) al hilo que queriamos se ejecute
+   // - El programa principal (main) se bloquea mientras espea que se termine de ejecutar el hilo elegido 
+   int pthread_join(
+                    // el hilo que queremos que se ejecute (Ojo que no dice del tipo puntero, le pasamos solo el identificador)
+                    pthread_t thread,
+                    // es la variable donde guardará el resultado final de la rutina ejecutada por el hilo
+                    // podemos dejarlo en NULL
+                    void **retval     
+   );
+ #+END_SRC
+* pthread_mutex_init
+* pthread_cond
+** pthread_cond_init
+*** Inicialización estática
+  #+BEGIN_SRC c
+    // -> inicializamos de forma estática
+    // -> se realiza en tiempo de compilación
+    pthread_cond_t CONDICION = PTHREAD_COND_INITIALIZER;
+   
+    int main(int agc, char* argv[]){
+      // ...
+    }
+  #+END_SRC
+*** Inicialización dinámica
+  #+BEGIN_SRC c
+    pthread_cond_t condicion;
+   
+    int main(int agc, char* argv[]){
+      // -> inicializamos ambos de forma dinámica
+      // -> se realiza en tiempo de ejecución
+      pthread_cond_init(&condicion, NULL);
+    }
+  #+END_SRC
+** pthread_cond_wait
+   - Duerme a un *hilo* a la espera que se cumpla una condición
+   - Se recomienda utilizar la condición de corte dentro de un ~while(cond)~ en vez de ~if(cond)~ para doble chequeo
+   - Requiere usar un *semáforo mutex*
+   - Valor de retorno
+     1. si retorna ~0~ => tuvo éxito
+     2. si retorna ~N~ tal que ~N~ != 0 => falló y ~N~ es el número de error (/por tanto no tuvo éxito/)
+
+   #+BEGIN_SRC c
+     int pthread_cond_wait(
+                           // 1. la condición
+                           pthread_cond_t *restrict cond,
+                           // 2. el mutex
+                           pthread_mutex_t *restrict mutex);
+   #+END_SRC
+** pthread_cond_signal
+   - Despierta sólo a un *hilo* que estaba esperando la condición
+   - Valor de retorno
+     1. si retorna ~0~ => tuvo éxito
+     2. si retorna ~N~ tal que ~N~ != 0 => falló y ~N~ es el número de error (/por tanto no tuvo éxito/)
+
+   *Observación:*
+   Si queremos despertar varios hilos debemos usar ~pthread_cond_broadcast~
+
+   #+BEGIN_SRC c
+     int pthread_cond_signal(pthread_cond_t *condicion);
+   #+END_SRC
+** pthread_cond_broadcast
+   - Similar al ~pthread_cond_signal~ pero despierta a varios hilos que esperaban misma condición
+   - Despierta a varios hilos que estén esperando una condición
+
+   #+BEGIN_SRC c
+     int pthread_cond_broadcast(pthread_cond_t *condicion);
+   #+END_SRC
+** Ejemplo 1
+ #+BEGIN_SRC c
+      pthread_mutex_t MUTEX;
+      pthread_cond_t COND;
+   
+      void *rutina(void* arg){
+        pthread_mutex_lock(&MUTEX);
+        // -> loop infinito que se ejecuta mientras no se cumpla la condición de corte
+        // -> si se cumple la condición de corte, el hilo ya no necesita esperar
+        //
+        // -> si usamos IF(condition)    => no se garantiza que sea tan certero el chequeo de la condición
+        // -> si usamos WHILE(condition) => garantizamos que la condición true, porque se vuelve a iterar y chequear
+        while(DONE == 0){
+          printf("Esperando que finalize el hilo..\n");
+   
+          // -> hace que el hilo se quede esperando/durmiendo mientras tanto
+          // -> si otra función no le manda un signal/1 asociado con esta condición, el hilo se queda durmiendo/esperando
+          pthread_cond_wait(&COND, &MUTEX);
+        }
+   
+        pthread_mutex_unlock(&MUTEX);
+   
+        pthread_exit(NULL);
+      }
+   
+      int main(int agc, char* argv[]){
+        pthread_t th;
+        // inicializamos el mutex
+        pthread_mutex_init(&MUTEX, NULL);
+        // inicializamos la condición
+        pthread_cond_init(&COND, NULL);
+   
+        if(pthread_create(&th, NULL, &rutina, NULL) != 0){
+          perror("Error al crear el hilo 2..!");
+        }
+        if(pthread_join(th, NULL) != 0){
+          perror("Error al esperar los hilos ?");
+        }
+   
+        // no es tan.. importante porque funciona sin esto, pero bueno (?)
+        pthread_mutex_destroy(&mutex_nota);
+        pthread_cond_destroy(&cond_nota);
+   
+        return 0;
+      }
+ #+END_SRC
+** Ejemplo 2
+* [TODO] pthread_detach
+  separa un hilo de hilo principal 'main'
+* pthread_self
+  Retorna el ID del hilo que fué invocado
+
+  #+BEGIN_SRC c
+    pthread_t pthread_self(void);
+  #+END_SRC
+* [TODO] pthread_cancel
+  Para cancelar la ejecución de un hilo en particular,
+  se le debe pasar el id (por tanto también deberás usar ~pthread_self()~)
+
+  https://www.geeksforgeeks.org/pthread_cancel-c-example/
+* [TODO] pthread_join Vs pthread_detach
 * Páginas de Man
   Es posible que algunas funciones que busquemos con el comando ~man~ en la terminal de linux
   nos encontremos con una explicación diferente a la que queriamos.
@@ -53,3 +171,17 @@
   3. https://www.cs.cmu.edu/afs/cs/academic/class/15492-f07/www/pthreads.html
   4. https://cs.famaf.unc.edu.ar/~nicolasw/Docencia/so2002/lab3.html
   5. https://linuxhint.com/posix-thread-c-programming/
+     
+#+BEGIN_COMMENT
+  [DOING] links pendientes
+  1. https://www.youtube.com/watch?v=HDohXvS6UIk&list=PLfqABt5AS4FmuQf70psXrsMLEDQXNkLq2&index=7&ab_channel=CodeVault
+  2. https://www.youtube.com/watch?v=eQOaaDA92SI&ab_channel=Udacity
+  3. https://www.youtube.com/watch?v=It0OFCbbTJE&ab_channel=JacobSorber
+  4. https://www.it.uc3m.es/pbasanta/asng/course_notes/c_threads_var_cond_sol_es.html
+  5. http://byronlai.com/jekyll/update/2015/12/26/barrier.html
+  6. https://randu.org/tutorials/threads/
+  7. https://osm.hpi.de/pvprog/2015/Slides/C3_progmodels.pdf
+
+  8. https://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex
+  9. https://www.geeksforgeeks.org/condition-wait-signal-multi-threading/
+#+END_COMMENT

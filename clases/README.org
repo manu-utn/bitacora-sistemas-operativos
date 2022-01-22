@@ -1,4 +1,0 @@
-#+TITLE: INFO
-
-- Solo una instancia de recuperación
-- 

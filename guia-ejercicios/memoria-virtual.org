@@ -1,0 +1,745 @@
+#+TITLE: Guia Ejercicios - Memoria Virtual + Segmentación
+#+STARTUP: inlineimages
+* Ejercicio 5
+** Problema
+  #+BEGIN_QUOTE
+  En un esquema de memoria virtual, con una máquina que tiene 128 KiB de RAM y paginas de 8 KiB. ¿Cuál sería el
+  tamaño mínimo (en bits) de dirección si queremos que un proceso pueda direccionar hasta 1 MiB?
+  #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   Datos..
+   - RAM 128KiB
+   - Páginas de 8KiB
+   - bits de dirección para redireccionar 1MiB ???
+     
+   Si ~1MiB = 2^20 Bytes~ => necesitamos ~20 bits~ para representar 1MiB de direcciones
+
+   *Respuesta:* necesitamos 20 bits
+
+   *Observación:* Los datos de tamaño de RAM y el tamaño de páginas no es relevante para lo que pregunta.
+   #+END_QUOTE
+* Ejercicio 6
+** Problema
+  #+BEGIN_QUOTE
+   Suponga un *esquema de memoria virtual con paginación*. Se están ejecutando los programas A, B y C con longitudes
+   totales de 2 KiB, 1.5 KiB y 3 KiB respectivamente. La *longitud de la página* es de 0.5 KiB.
+   
+   1) ¿Cuál es la cantidad máxima de páginas que podría tener un programa si las instrucciones tienen direcciones de
+      16 bits y la *memoria física* es de 32 KiB?
+   2) Proponga un formato para las entradas de la *tabla de páginas* de un proceso y la *tabla de administración de
+      memoria libre/ocupada del sistema*, suponiendo ahora que el tamaño de la memoria es 64Kb. ¿Que tamaño
+      ocuparía en memoria la segunda tabla?
+   3) Determinar el contenido de las *tablas de páginas* para los programas A, B y C, sabiendo que el estado de los
+      primeros 9 frames de memoria es el siguiente:
+
+      |----+----+----+----+----+----+----+----+----|
+      |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |
+      |----+----+----+----+----+----+----+----+----|
+      | A0 | B0 | C5 | A1 | A2 | C3 | C1 | B2 | C4 |
+      |----+----+----+----+----+----+----+----+----|
+  #+END_QUOTE
+** Solución
+*** Punto 1
+    #+BEGIN_QUOTE
+    Datos
+    - Memoria Física = 32 KiB = 2^5 Bytes
+    - Direcciones = 16 bits => cada proceso tiene 16 bits de direccionamiento
+    - Longitud cada página = 0.5 KiB = 512 Bytes = 2^9 Bytes => se requiere 9 bits representar el offset (lo deducimos por 1KiB = 1024 Bytes = 2^10 Bytes)
+    - Cantidad de paginas = ???
+
+    - Si cada proceso tiene 16 bits de direccionamiento => DL = 2^16 Bytes = cantidad_paginas * tamaño_paginas
+      - Offset/Longitud = 2^9  (es dato del enunciado, solo que lo da en unidad KiB)
+      - cantidad_paginas = 2^7 (son los bits restantes para llegar a 2^16)
+        
+    Por tanto si 2^16 = 2^7 (cantidad_paginas) * 2^9 (tamaño_pagina)
+    *Respuesta:* Cada proceso puede tener hasta un max. de *128 páginas* de 0.5 KiB cada página
+    
+    (128 resulta de 2^7 Bytes = 128 => se requiere 7 bits para representar 128 páginas diferentes (128 combinaciones diferentes)
+
+    *Observación:* En este punto el tamaño de la memoria física no era de utilidad
+    #+END_QUOTE
+*** Punto 2
+    #+BEGIN_QUOTE
+    La *Tabla de Páginas* (TP) podría tener como datos
+    - Frame
+    - BIT de presencia (por la memoria virtual)
+    - BIT de uso
+    - BIT de modificado
+    - Tiempo de última referencia (para el algoritmo de LRU)
+    - Tiempo de carga (para el algoritmo de FIFO)
+    - Permisos (bits de permisos para los distintos segmentos, Ej. lectura/escritura/ejecución)
+    - Lockeo (para saber si una página está bloqueada)
+
+    
+    Cuando se habla de *la tabla de administracion de memoria libre/ocupada del sistema*
+    se refiere al *bitmap* (estructura en forma de vector para administrar los marcos libres)
+
+    Datos
+    - Memoria Física = 64 KiB
+    - Como el tamaño_pagina = tamaño_frame => ~tamaño_frame = 0.5 KiB~
+
+    Deducimos la cantidad de marcos de la división entre ~memoria_fisica / tamaño_frame~ porque todos los frames
+    son del mismo tamaño..
+    
+    64 KiB / 0.5 KiB = 128 marcos (equivalen a 128 bits)
+
+    *Respuesta:* la nueva tabla ocuparía ~128 bits~ ó ~16 Bytes~ (porque 1 Byte = 8 bits y 128/8 = 16 Bytes)
+
+    *Observación:* En este punto, si fue necesario usar el tamaño de la memoria física
+    #+END_QUOTE
+*** Punto 3
+    Estado de los frames (dado por el enunciado)
+    |----+----+----+----+----+----+----+----+----|
+    |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |
+    |----+----+----+----+----+----+----+----+----|
+    | A0 | B0 | C5 | A1 | A2 | C3 | C1 | B2 | C4 |
+    |----+----+----+----+----+----+----+----+----|
+
+    Tabla de Páginas del Proceso (A)
+    |---------------+--------------+-------------------|
+    | numero_pagina | numero_marco | p (bit_presencia) |
+    |---------------+--------------+-------------------|
+    |             0 |            0 |                 1 |
+    |             1 |            3 |                 1 |
+    |             2 |            4 |                 1 |
+    |---------------+--------------+-------------------|
+
+    Tabla de Páginas del Proceso (B)
+    |---------------+--------------+-------------------|
+    | numero_pagina | numero_marco | p (bit_presencia) |
+    |---------------+--------------+-------------------|
+    |             0 |            1 |                 1 |
+    |             2 |            7 |                 1 |
+    |---------------+--------------+-------------------|
+
+    Tabla de Páginas del Proceso (C)
+    |---------------+--------------+-------------------|
+    | numero_pagina | numero_marco | p (bit_presencia) |
+    |---------------+--------------+-------------------|
+    |             5 |            2 |                 1 |
+    |             1 |            6 |                 1 |
+    |             4 |            8 |                 1 |
+    |---------------+--------------+-------------------|
+* [WAITING] Ejercicio 7
+** Problema
+  #+BEGIN_QUOTE
+  Un *esquema de memoria virtual* tiene un *tamaño de página* de ~1024 bytes~ y la *memoria física* tiene 4 marcos de
+  página. 
+  
+  ¿Cuáles son las *direcciones físicas* de las siguientes *direcciones virtuales* (expresadas en decimal):
+  0, 3728, 1024, 1025, 4099, 7800?
+  #+END_QUOTE
+  
+  La *Tabla de Páginas* de un proceso es:
+  |----------------+-------|
+  | Página Virtual | Marco |
+  |----------------+-------|
+  |              0 | 3     |
+  |              1 | 1     |
+  |              2 | --    |
+  |              3 | --    |
+  |              4 | 2     |
+  |              5 | --    |
+  |              6 | 0     |
+  |              7 | --    |
+  |----------------+-------|
+** Solución
+*** Primer Análisis
+    #+BEGIN_COMMENT
+    Datos
+    - tamaño_pagina = 1024 Bytes => 1024 Bytes = 1 KiB (2^10 Bytes) => *se requiere 10 bits* para una página de 1KiB
+    - cantidad_paginas = 8 (por la TP) => como 8 = 2^3 => *se requiere 3 bits* para representar 8 páginas
+    - cantidad_frames = 4
+
+    RAM = cantidad_frames * tamaño_frame => RAM = 4KiB ?
+   
+    DF = numero_marco (bits) | longitud (bits)
+    DL = numero_pagina (bits) | longitud (bits)
+
+    DL = numero_pagina * tamaño_pagina ?
+    #+END_COMMENT
+*** Desarrollo
+* [WAITING] Ejercicio 8
+** Problema
+  #+BEGIN_QUOTE
+  Un proceso de 8 páginas está ejecutando en un sistema de memoria virtual, con *asignación fija* de 4 marcos por
+  proceso y *alcance local*. Si se considera que la memoria está inicialmente vacía, determinar el *número de fallos de página*
+  que ocurren al referenciarse las siguientes páginas: 0, 1, 7, 2, 3, 2, 7, 1, 0, 3, 0, 2, 3, 1; bajo los siguientes algoritmos
+
+  1) Óptimo, FIFO, LRU, Clock
+  2) Proponga para el algoritmo Clock un formato para la entrada de la *tabla de páginas*, sabiendo que los procesos
+     pueden leer/escribir/ejecutar siempre y cuando los permisos de la página lo permitan, con una memoria física
+     de 64 KiB y frames de 2 KiB.
+  #+END_QUOTE
+** Solución
+*** Punto 1 - Algoritmo FIFO
+    El algoritmo *FIFO* elige como víctima a la página que está hace más tiempo está en memoria
+    
+    |------------------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Sec. Paginas           |   0 |   1 |   7 |   2 |   3 |   2 |   7 |   1 |   0 |   3 |   0 |   2 |   3 |   1 | TOTAL |
+    |------------------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Frame 1                | ->0 | ->0 | ->0 | ->0 | ~3~ |   3 |   3 |   3 |   3 |   3 |   3 |   3 |   3 |   3 |       |
+    | Frame 2                |     |   1 |   1 |   1 | ->1 | ->1 | ->1 | ->1 | ~0~ |   0 |   0 |   0 |   0 |   0 |       |
+    | Frame 3                |     |     |   7 |   7 |   7 |   7 |   7 |   7 | ->7 | ->7 | ->7 | ->7 | ->7 | ~1~ |       |
+    | Frame 4                |     |     |     |   2 |   2 |   2 |   2 |   2 |   2 |   2 |   2 |   2 |   2 |   2 |       |
+    |------------------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Page Fault             |   1 |   1 |   1 |   1 |   1 |   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |   1 |     7 |
+    |------------------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Acceso a Disco         |   1 |   1 |   1 |   1 |   1 |   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |   1 |     7 |
+    |------------------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------|
+    | Operación de Lectura   | p=0 | p=1 | p=7 | p=2 | p=3 |     |     |     | p=0 |     |     |     |     | p=1 |       |
+    | Operación de Escritura |     |     |     |     |     |     |     |     |     |     |     |     |     |     |       |
+    |------------------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------|
+    #+TBLFM: @6$16=vsum($2..$15)::@7$16=vsum($2..$15)
+*** Punto 1 - Algoritmo Optimo
+    El algoritmo *Optimo* elige como víctima a la página que accederemos más lejos en el futuro
+    
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+---+-------|
+    | Sec. Paginas           |   0 |   1 |   7 |   2 |   3 | 2 | 7 | 1 |   0 | 3 | 0 | 2 | 3 | 1 | TOTAL |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+---+-------|
+    | Frame 1                |   0 |   0 |   0 |   0 | ~3~ | 3 | 3 | 3 |   3 | 3 | 3 | 3 | 3 | 3 |       |
+    | Frame 2                |     |   1 |   1 |   1 |   1 | 1 | 1 | 1 |   1 | 1 | 1 | 1 | 1 | 1 |       |
+    | Frame 3                |     |     |   7 |   7 |   7 | 7 | 7 | 7 | ~0~ | 0 | 0 | 0 | 0 | 0 |       |
+    | Frame 4                |     |     |     |   2 |   2 | 2 | 2 | 2 |   2 | 2 | 2 | 2 | 2 | 2 |       |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+---+-------|
+    | Page Fault             |   1 |   1 |   1 |   1 |   1 | 0 | 0 | 0 |   1 | 0 | 0 | 0 | 0 | 0 |     6 |
+    |                        |     |     |     |     |     |   |   |   |     |   |   |   |   |   |       |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+---+-------|
+    | Acceso a Disco         |   1 |   1 |   1 |   1 |   1 | 0 | 0 | 0 |   1 | 0 | 0 | 0 | 0 | 0 |     6 |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+---+-------|
+    | Operación de Lectura   | p=0 | p=1 | p=7 | p=2 | p=3 |   |   |   | p=0 |   |   |   |   |   |       |
+    | Operación de Escritura |     |     |     |     |     |   |   |   |     |   |   |   |   |   |       |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+---+-------|
+    #+TBLFM: @6$16=vsum($2..$15)::@8$16=vsum($2..$15)
+*** Punto 1 - Algoritmo LRU
+    El algoritmo *LRU* elige como víctima a la página a la página que hace más tiempo no se referencia/accede (igual que FIFO)
+    
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+-----+-------|
+    | Sec. Paginas           |   0 |   1 |   7 |   2 |   3 | 2 | 7 | 1 |   0 | 3 | 0 | 2 | 3 |   1 | TOTAL |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+-----+-------|
+    | Frame 1                |   0 |   0 |   0 |   0 | ~3~ | 3 | 3 | 3 |   3 | 3 | 3 | 3 | 3 |   3 |       |
+    | Frame 2                |     |   1 |   1 |   1 |   1 | 1 | 1 | 1 | ~0~ | 0 | 0 | 0 | 0 |   0 |       |
+    | Frame 3                |     |     |   7 |   7 |   7 | 7 | 7 | 7 |   7 | 7 | 7 | 7 | 7 | ~1~ |       |
+    | Frame 4                |     |     |     |   2 |   2 | 2 | 2 | 2 |   2 | 2 | 2 | 2 | 2 |   2 |       |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+-----+-------|
+    | Page Fault             |   1 |   1 |   1 |   1 |   1 | 0 | 0 | 0 |   1 | 0 | 0 | 0 | 0 |   1 |     7 |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+-----+-------|
+    | Acceso a Disco         |   1 |   1 |   1 |   1 |   1 | 0 | 0 | 0 |   1 | 0 | 0 | 0 | 0 |   1 |     7 |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+-----+-------|
+    | Operación de Lectura   | p=0 | p=1 | p=7 | p=2 | p=3 |   |   |   | p=0 |   |   |   |   | p=1 |       |
+    | Operación de Escritura |     |     |     |     |     |   |   |   |     |   |   |   |   |     |       |
+    |------------------------+-----+-----+-----+-----+-----+---+---+---+-----+---+---+---+---+-----+-------|
+    #+TBLFM: @6$16=vsum($2..$15)::@7$16=vsum($2..$15)
+*** Punto 1 - Algoritmo Clock
+    - El algoritmo de *clock* elige como víctima por prioridad según si el *BIT de uso* es ~u=0~
+    - Si se accede a una página que ya estaba en memoria se habilita el *BIT de uso* a ~u=1~ (suponiendo que estaba deshabilitado)
+    
+    |------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Sec. Paginas           |     0 |     1 |     7 |     2 |     3 |     2 |     7 |     1 |     0 |     3 |     0 |     2 |     3 |     1 | TOTAL |
+    |------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Frame 1                | ->0^1 | ->0^1 | ->0^1 | ->0^1 | ~3^1~ |   3^1 |   3^1 |   3^1 |   3^1 |   3^1 |   3^1 |   3^1 |   3^1 |   3^1 |       |
+    | Frame 2                |       |   1^1 |   1^1 |   1^1 | ->1^0 | ->1^0 | ->1^0 | ->1^1 | ~0^1~ |   0^1 |   0^1 |   0^1 |   0^1 |   0^1 |       |
+    | Frame 3                |       |       |   7^1 |   7^1 |   7^0 |   7^0 |   7^1 |   7^1 | ->7^1 | ->7^1 | ->7^1 | ->7^1 | ->7^1 | ~1^1~ |       |
+    | Frame 4                |       |       |       |   2^1 |   2^0 |   2^1 |   2^0 |   2^1 |   2^1 |   2^1 |   2^1 |   2^1 |   2^1 | ->2^1 |       |
+    |------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Page Fault             |     1 |     1 |     1 |     1 |     1 |     0 |     0 |     0 |     1 |     0 |     0 |     0 |     0 |     1 |     7 |
+    |------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Acceso a Disco         |     1 |     1 |     1 |     1 |     1 |     0 |     0 |     0 |     1 |     0 |     0 |     0 |     0 |     1 |     7 |
+    |------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+    | Operación de Lectura   |   p=0 |   p=1 |   p=7 |   p=2 |   p=3 |       |       |       |   p=0 |       |       |       |       |   p=1 |       |
+    | Operación de Escritura |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+    |------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------|
+    #+TBLFM: @6$16=vsum($2..$15)::@7$16=vsum($2..$15)
+*** [WAITING] Punto 2
+    Datos
+    - Memoria Física de 64 KiB
+    - Frames de 2 KiB => 2 KiB = 2^11 Bytes => se requieren 11 bits para representar 2^11 frames
+* Ejercicio 9
+** Problema
+  #+BEGIN_QUOTE
+   Se tiene una PC con procesador Intel de 32 bits de direccionamiento que acepta el uso de páginas de 8KB de tamaño.
+   Dicha PC cuenta, además, con un sistema operativo que utiliza paginación bajo demanda donde la política de asignación
+   de frames es fija, siendo de 4 frames por proceso. La política de sustitución de páginas es local.
+   Se está ejecutando un proceso de 159KB de tamaño con la siguiente asignación actual de frames:
+  #+END_QUOTE
+  
+  |---------------------+-------+---------------------------+----+------------+------------------------|
+  | Puntero (si aplica) | Marco | Página (Numerada desde 0) | Us | Modificado | Instante de referencia |
+  |---------------------+-------+---------------------------+----+------------+------------------------|
+  |                     |     1 |                        14 |  1 |          1 |                     28 |
+  |                     |     3 |                        17 |  1 |          0 |                      3 |
+  |                     |     5 |                        19 |  1 |          1 |                     15 |
+  | -->                 |     8 |                        -- |  - |         -- |                     -- |
+  |---------------------+-------+---------------------------+----+------------+------------------------|
+
+  #+BEGIN_QUOTE
+  A continuación se detallan las próximas referencias a memoria (con sus respectivos modos de acceso) que el proceso realizará:
+  100(Lectura) – 122950(Escritura) – 98306(Lectura) – 139264(Escritura) – 122880(Lectura) – 155650(Escritura) ­
+  172100(Lectura) ­ 100(Lectura)
+  
+  Se pide para los algoritmos LRU y Clock modificado:
+  a) Indicar el estado de las páginas en memoria luego de cada referencia, así como también los page faults
+     producidos y las páginas que fueron escritas a disco. No es necesario calcular los instantes de referencia.
+  b) Dejando a un lado el costo de ejecución e implementación de un algoritmo de sustitución. Indicar cuál de los dos
+     algoritmos presenta un mejor rendimiento con la secuencia de referencias dada. ¿Qué criterio tiene en cuenta
+     para tomar esa decisión?.
+  #+END_QUOTE
+** Observaciones
+*** Observación 1
+     #+BEGIN_QUOTE
+     El enunciado dice paginación bajo demanda *la politica de asignación es de rames es fija, 
+     y la politica de sustitución es local*
+
+     1) esto ya nos indíca que como la *política de asignación* es fija,
+     entonces no queda otra que la *politica de sustitución sea local*
+     porque.. NO se podia dar +asignación fija + sustitución global+
+
+     2) como la sustitución es local => se sustituye las paginas de sólo un proceso
+     #+END_QUOTE
+*** Observación 2
+     #+BEGIN_QUOTE
+     Cuando dice que *se está ejecutando un proceso de 159KB*
+
+     1) esos 159KB sabemos que es TODA la *imagen* del proceso
+     2) Si dividimos ~159 KB / 8 KB~ sabremos el *número de páginas válidas* (ambos son datos del enunciado)
+        - 159 KB el tamaño del proceso
+        - 8 KB el tamaño de las páginas del proceso)
+
+     Por tanto ~159/8 = 19,...~ => *número de paginas válidas* es entre 0 y 19
+     #+END_QUOTE
+*** Observación 3
+    #+BEGIN_QUOTE
+    La tabla dada representa un histórico de los accesos a las páginas de ese proceso en particular
+
+    El puntero apunta al marco=8, que está libre porque no tiene asignada ninguna página "por el momento"
+
+    La primera página en ocupar el frame=8 será la página=0 con (u=1, m=0),
+
+    En el *algoritmo LRU* la pagina=0 será la primera en llenar el marco=8, pero..
+    *la primera victima elegida será la pagina=17, porque este algoritmo desempata por FIFO*,
+    siendo la página 17 es la que hace mas tiempo no accedemos
+    #+END_QUOTE
+     
+     |---------+-------+--------+-----+------------+-------------------------------------------------|
+     | Puntero | Marco | Página | Uso | Modificado | Ultimo Instante de referencia                   |
+     |---------+-------+--------+-----+------------+-------------------------------------------------|
+     |         |     1 |     14 |   1 |          1 | 28 (la pag. más reciente accedida)              |
+     |         |     3 |     17 |   1 |          0 | 3  (la menos reciente, hace + que no accedemos) |
+     |         |     5 |     19 |   1 |          1 | 15                                              |
+     | -->     |     8 |     -- |   - |         -- | --                                              |
+     |---------+-------+--------+-----+------------+-------------------------------------------------|
+** Solución
+*** Calculos para los puntos (1) (2)
+    Usamos las *direcciones lógicas* dadas por el enunciado
+    100(Lectura) – 122950(Escritura) – 98306(Lectura) – 139264(Escritura) – 122880(Lectura) – 155650(Escritura) ­
+    172100(Lectura) ­ 100(Lectura)
+
+    Datos
+    - tamaño_pagina = 8KiB
+      
+    Formulas útiles
+    1. ~DL = numero_pagina * tamaño_pagina~ => ~numero_pagina = DL/tamaño_pagina~
+    2. 
+
+    Calculamos los número de pagina de cada DL
+    |--------+---------------------+---------------|
+    |     DL | Operación           | numero_pagina |
+    |--------+---------------------+---------------|
+    | 122950 | 122950/8*1024=15,.. |            15 |
+    |  98306 | 98306/8*1024 =12,.. |            12 |
+    | 139264 | 139264/8*1024=17    |            17 |
+    | 122880 | 122880/8*1024=15    |            15 |
+    | 155650 | 155650/8*1024=19,.. |            19 |
+    | 172100 | 172100/8*1024=21    |          +21+ |
+    |    100 | 100/8*1024=0        |             0 |
+    |--------+---------------------+---------------|
+
+    Recordamos que los números de páginas válidas eran del 0 al 19,
+    por tanto al tratar de acceder a la página 21, ocurrirá *Page Fault* y finalizará
+*** Punto 1 - Algoritmo LRU
+    |---------------------+-------+---------------------------+----+------------+------------------------|
+    | Puntero (si aplica) | Marco | Página (Numerada desde 0) | Us | Modificado | Instante de referencia |
+    |---------------------+-------+---------------------------+----+------------+------------------------|
+    |                     |     1 |                        14 |  1 |          1 |                     28 |
+    |                     |     3 |                        17 |  1 |          0 |                      3 |
+    |                     |     5 |                        19 |  1 |          1 |                     15 |
+    | -->                 |     8 |                        -- |  - |         -- |                     -- |
+    |---------------------+-------+---------------------------+----+------------+------------------------|
+
+    Las páginas {17,19,14} son las dadas en la tabla extra, las agregamos para que sea más cómodo
+    *asumimos que si se accede a una dirección inválida termina la ejecución del proceso*
+    
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    | Sec. Paginas           | 17(L) | 19(E) | 14(E) | 0(L) | 15(E) | 12(L) | 17(E) | 15(L) | 19(E) | 21(L) | TOTAL |
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    | Frame 1                |       |       |       |   14 |    14 |    14 |  ~17~ |    17 |    17 |       |       |
+    | Frame 3                |       |       |       |   17 |  ~15~ |    15 |    15 |    15 |    15 |       |       |
+    | Frame 5                |       |       |       |   19 |    19 |  ~12~ |    12 |    12 |    12 |       |       |
+    | Frame 8                |       |       |       |  ~0~ |     0 |     0 |     0 |     0 |  ~19~ |       |       |
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    | Page Fault             |       |       |       |    1 |     1 |     1 |     1 |     0 |     1 | PF    |     4 |
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    | Acceso a Disco         |       |       |       |    1 |     1 |     2 |     2 |     0 |     1 |       |     6 |
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    | Operación de Lectura   |       |       |       |  p=0 |  p=15 |  p=12 |  p=17 |       |  p=19 |       |       |
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    | Operación de Escritura |       |       |       |      |       |  p=19 |  p=14 |       |       |       |       |
+    |------------------------+-------+-------+-------+------+-------+-------+-------+-------+-------+-------+-------|
+    #+TBLFM: @6$12=vsum($5..$9)::@7$12=vsum($5..$9)
+
+    #+BEGIN_QUOTE
+    en la pagina 21 va a fallar, porque no es numero_pagina válida, sólo son válidas de la 0 a la 19
+
+    en la posicion=2 de la sec. de paginas, reemplaza la pagina 17 por 15, 
+    porque la pag.17 es la que hace mas tiempo está, es la menos reciente utilizada en el pasado (instante de ultima referencia que es 3)
+    las otras son mas recientes porque su valor es 15,28
+    
+    lo mismo en la posicion=3, cuando reemplaza la 19 por la 12, la menos reciente utilizada era la 19 (instante=15)
+    podrias verlo en la tabla como que estaba en el pasado (la 15 y 0 no podian porque eran muy recientes)
+    #+END_QUOTE
+*** Punto 1 - Algoritmo Clock Modificado
+    |---------------------+-------+---------------------------+---------+----------------+------------------------|
+    | Puntero (si aplica) | Marco | Página (Numerada desde 0) | BIT Uso | BIT Modificado | Instante de referencia |
+    |---------------------+-------+---------------------------+---------+----------------+------------------------|
+    |                     |     1 |                        14 |       1 |              1 |                     28 |
+    |                     |     3 |                        17 |       1 |              0 |                      3 |
+    |                     |     5 |                        19 |       1 |              1 |                     15 |
+    | -->                 |     8 |                        -- |       - |             -- |                     -- |
+    |---------------------+-------+---------------------------+---------+----------------+------------------------|
+
+    Las páginas {17,19,14} son las dadas en la tabla extra, las agregamos para que sea más cómodo
+    *asumimos que si se accede a una dirección inválida termina la ejecución del proceso*
+    
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    | Sec. Paginas           | 17(L) | 19(E) | 14(E) | 0(L)       | 15(E)      | 12(L)      | 17(E)      | 15(L)      | 19(E)      | 21(L) | TOTAL |
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    | Frame 1                |       |       |       | ->14^(1,1) | 14^(0,1)   | ->14^(0,1) | ~17^(1,1)~ | 17^(1,1)   | 17^(1,1)   |       |       |
+    | Frame 3                |       |       |       | 17^(1,0)   | ~15^(1,1)~ | 15^(0,1)   | ->15^(0,1) | ->15^(1,1) | ->15^(1,1) |       |       |
+    | Frame 5                |       |       |       | 19^(1,1)   | ->19^(0,1) | 19^(0,1)   | 19^(0,1)   | 19^(0,1)   | 19^(1,1)   |       |       |
+    | Frame 8                |       |       |       | ~0^(1,0)~  | 0^(0,0)    | ~12^(1,0)~ | 12^(1,0)   | 12^(1,0)   | 12^(1,0)   |       |       |
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    | Page Fault             |       |       |       | 1          | 1          | 1          | 1          | 0          | 0          |     1 |     4 |
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    | Acceso a Disco         |       |       |       | 1          | 1          | 1          | 2          | 0          | 0          |       |     5 |
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    | Operación de Lectura   |       |       |       | p=0        | p=15       | p=12       | p=17       |            |            |       |       |
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    | Operación de Escritura |       |       |       |            |            |            | p=14       |            |            |       |       |
+    |------------------------+-------+-------+-------+------------+------------+------------+------------+------------+------------+-------+-------|
+    #+TBLFM: @6$12=vsum($5..$9)::@7$12=vsum($5..$9)
+    
+    Entre la posicion=4,5 de la secuencia de páginas el algoritmo de clock modificado hará
+    - 1ra vuelta: modificará los bit de uso en u=0, quedando en este orden 14^(0,1),   17^(0,0),   19^(0, 1)
+    - 2da vuelta: va a buscar por prioridad en este orden (u=0,m=0), (u=0, m=1), (u=1, m=1)
+    - 3ra vueta: algoritmo sustituye la pagina 17 por la 15 porque tiene (u=0, m=0), y mueve el puntero al siguiente frame
+
+    |------------+------------+------------+------------|
+    |            | 1ra vuelta | 2da vuelta | 3ra vuelta |
+    |------------+------------+------------+------------|
+    | ->14^(1,1) | 14^(0,1)   | 14^(0,1)   | 14^(0,1)   |
+    | 17^(1,0)   | 17^(0,0)   | ->17^(0,0) | ~15^(1,1)~ |
+    | 19^(1,1)   | 19^(0,0)   | 19^(0,1)   | ->19^(0,1) |
+    | 0^(1,0)    | ->0^(0,0)  | 0^(0,0)    | 0^(0,0)    |
+    |------------+------------+------------+------------|
+*** Punto 2
+    Para elegir entre cual de los dos algoritmos de sustitución aplicados es más eficiente, nos fijamos en
+    - Cantidad de Page Faults
+    - Cantidad de Accesos a disco (tanto escritura como lectura)
+      
+    En base a las tablas de los algoritmos de sustitución sobre la secuencia de páginas dada
+    |--------------------------+-------------+-----------------|
+    | Algoritmo de Sustitución | Page Faults | Accesos a Disco |
+    |--------------------------+-------------+-----------------|
+    | Clock Modificado         |           4 |               5 |
+    | LRU                      |           4 |               6 |
+    |--------------------------+-------------+-----------------|
+
+    Por tanto fue más eficiente el *Clock modificado* por tener un acceso a disco menos que LRU
+* Ejercicio 10
+** Problema
+   #+BEGIN_QUOTE
+   Se tienen dos procesos, P1 y P2 que generan respectivamente las siguientes secuencias de referencias a memoria:
+   - P1: 10 11 0 3 4 11 0 3 4 11 0 3 4
+   - P2: 10 11 12 13 14 15 16 17 18
+   
+   Si se le asignan 4 frames a cada proceso, y sabiendo que *el mecanismo de sustitución de páginas es LRU*, y que se le
+   agrega una TLB con capacidad de 4 páginas, *con algoritmo de sustitución FIFO*, Indique:
+   a) En cada caso, ¿Cuántos accesos a la TLB, a memoria y a disco se producen?
+   b) ¿En alguno de los casos sirve tener una caché? Justifique. (Tenga en cuenta el concepto de localidad)
+   #+END_QUOTE
+** Observaciones
+*** Observación 1
+    #+BEGIN_QUOTE
+    Encontramos que en las secuencias de páginas dadas de los procesos P1, P2 aparece dos conceptos importantes
+    - En P1 aparece el *principio de localidad temporal*, se repiten las páginas (10 11 0 3 4 11 0 3 4 11 0 3 4)
+    - En P2 aparece el *principio de localidad espacial* se acceden a páginas nuevas (10 11 12 13 14 15 16 17 18)
+    #+END_QUOTE
+** Solución
+*** Punto A - Proceso 1
+    - La Tabla de Paginas (TP) de cada proceso usa el *algoritmo de sustitución LRU*
+    - La TLB usa el *algoritmo de sustitución FIFO*
+    
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Sec. Paginas de P1     |   10 |   11 |   0 |   3 |   4 | 11 |  0 |  3 |  4 | 11 |  0 |  3 |  4 | TOTAL |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Frame 1                |   10 |   10 |  10 |  10 | ~4~ |  4 |  4 |  4 |  4 |  4 |  4 |  4 |  4 |       |
+    | Frame 2                |      |   11 |  11 |  11 |  11 | 11 | 11 | 11 | 11 | 11 | 11 | 11 | 11 |       |
+    | Frame 3                |      |      |   0 |   0 |   0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |       |
+    | Frame 4                |      |      |     |   3 |   3 |  3 |  3 |  3 |  3 |  3 |  3 |  3 |  3 |       |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | TLB (pagina=1)         |   10 |   10 |  10 |  10 |   4 |  4 |  4 |  4 |  4 |  4 |  4 |  4 |  4 |       |
+    | TLB (pagina=2)         |      |   11 |  11 |  11 |  11 | 11 | 11 | 11 | 11 | 11 | 11 | 11 | 11 |       |
+    | TLB (pagina=3)         |      |      |   0 |   0 |   0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |       |
+    | TLB (pagina=4)         |      |      |     |   3 |   3 |  3 |  3 |  3 |  3 |  3 |  3 |  3 |  3 |       |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Page Fault             |    1 |    1 |   1 |   1 |   1 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |     5 |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Acceso a Disco         |    1 |    1 |   1 |   1 |   1 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |     5 |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Operación de Lectura   | p=10 | p=11 | p=0 | p=3 | p=4 |    |    |    |    |    |    |    |    |       |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Operación de Escritura |      |      |     |     |     |    |    |    |    |    |    |    |    |       |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | *Accesos TLB*          |    2 |    2 |   2 |   2 |   2 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |    18 |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    | Accesos a Memoria      |    2 |    2 |   2 |   2 |   2 |    |    |    |    |    |    |    |    |    10 |
+    |                        |      |      |     |     |     |    |    |    |    |    |    |    |    |       |
+    |------------------------+------+------+-----+-----+-----+----+----+----+----+----+----+----+----+-------|
+    #+TBLFM: @10$15=vsum($2..$14)::@11$15=vsum($2..$14)::@14$15=vsum($2..$14)::@15$15=vsum($2..$14)
+*** Punto A - Proceso 2
+    - La Tabla de Paginas (TP) de cada proceso usa el *algoritmo de sustitución LRU*
+    - La TLB usa el *algoritmo de sustitución FIFO*
+
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Sec. Paginas de P2     |   10 |   11 |   12 |   13 |   14 |   15 |   16 |   17 |   18 | TOTAL |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Frame 1                |   10 |   10 |   10 |   10 | ~14~ |   14 |   14 |   14 | ~18~ |       |
+    | Frame 2                |      |   11 |   11 |   11 |   11 | ~15~ |   15 |   15 |   15 |       |
+    | Frame 3                |      |      |   12 |   12 |   12 |   12 | ~16~ |   16 |   16 |       |
+    | Frame 4                |      |      |      |   13 |   13 |   13 |   13 | ~17~ |   17 |       |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | TLB (pagina=1)         |   10 |   10 |   10 |   10 |   14 |   14 |   14 |   14 |   18 |       |
+    | TLB (pagina=2)         |      |   11 |   11 |   11 |   11 |   15 |   15 |   15 |   15 |       |
+    | TLB (pagina=3)         |      |      |   12 |   12 |   12 |   12 |   12 |   16 |   16 |       |
+    | TLB (pagina=4)         |      |      |      |   13 |   13 |   13 |   13 |   17 |   17 |       |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Page Fault             |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |     9 |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Acceso a Disco         |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |     9 |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Operacion de Lectura   | p=10 | p=11 | p=12 | p=13 | p=14 | p=15 | p=16 | p=17 | p=18 |       |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Operacion de Escritura |      |      |      |      |      |      |      |      |      |       |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Acceso a TLB           |    2 |    2 |    2 |    2 |    2 |    2 |    2 |    2 |    2 |    18 |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    | Acceso a Memoria       |    2 |    2 |    2 |    2 |    2 |    2 |    2 |    2 |    2 |    18 |
+    |------------------------+------+------+------+------+------+------+------+------+------+-------|
+    #+TBLFM: @10$11=vsum($2..$10)::@11$11=vsum($2..$10)::@14$11=vsum($2..$10)::@15$11=vsum($2..$10)
+*** Punto A - Deducciones
+    Comparamos la cant. de accesos a memoria/tlb/disco de ambos procesos
+    
+    |---------+-------------------+---------------+-----------------|
+    | Proceso | Accesos a Memoria | Accesos a TLB | Accesos a Disco |
+    |---------+-------------------+---------------+-----------------|
+    | P1      |                10 |            18 |               5 |
+    | P2      |                18 |            18 |               9 |
+    |---------+-------------------+---------------+-----------------|
+    
+     |--------+-------|
+     | PAGINA | FRAME |
+     |--------+-------|
+     |      4 |     1 |
+     |     11 |     2 |
+     |      0 |     3 |
+     |      3 |     4 |
+     |--------+-------|
+*** Punto B
+      #+BEGIN_QUOTE
+      A partir de posicion=1...5 de la secuencia de paginas de ambos procesos P1, P2 (primeros 5 accesos)
+      hubo un acceso a la (TLB) y otro a la (TP) del proceso
+      - cuando accedió a la TLB no la encontró (MISS), y cuando si estaba en la TLB (HIT) cuenta como otro acceso
+      - cuando accedió a la TP no la encontró y ocurrió el *Page Fault* (PF)
+     
+      Llendo más en detalle de los primeros 5 accesos, en cada uno ocurrió estos accesos a memoria/disco
+      1. *acceso a memoria*: Lectura TLB (miss)
+      2. *acceso a memoria*:Lectura TP (si generó Page Fault, por no estar la página en la TLB caché de acceso rápido)
+      3. *acceso a disco*: operación de lectura, descargar la página de disco que no estaba en MP (sólo si tenía el bit de presencia P=0)
+      4. *acceso a memoria*: Si en el último acceso a disco, si el bit de modificado es ~M=1~ (de la pagina victima) => se debe actualizar la TP del *proceso victima*, marcar la página como ausente (quedando el bit de presencia como p=0)
+      5. *acceso a memoria*: Actualizar la TP (cargar la página a la que se quiere acceder), y actualizar la TLB (cargar la pagina acá también)
+      6. *acceso a memoria*: Lectura TLB => traducción (...) => acceso a la RAM
+
+      *Observación:* En la posicion=6 de la sec. de paginas, reducimos esos accesos
+      #+END_QUOTE
+
+      #+BEGIN_QUOTE
+      En el Proceso 1 a partir de la posicion=6 de la secuencia de paginas, (desde el acceso 6 en adelante)
+      
+      1) Se cumple el principio de *Localidad Temporal* porque se repiten las páginas,
+      por tanto ya no hay *Page Fault* (PF) ni tampoco *accesos a disco* ya que las páginas a las que se accede ya están cargadas en MP
+      2) los accesos son más rápidos porque acceden a la TLB (hit) (a la caché de HW de acceso rápido) y hace la traducción,
+         ya no se accede a la (TP) del proceso
+
+      En cambio en el Proceso 2 se cumple el principio de *Localidad Espacial* porque luego del acceso 6,
+      las páginas siguen siendo nuevas, por tanto siguen ocurriendo *Page Fault* porque no están cargadas en la TP del proceso,
+      y tampoco están en la TLB (caché de HW de acceso rápido).
+
+      Por tanto sólo es de utilidad tener una caché para el caso que se de el principio de *Localidad Temporal* porque reduce los accesos a memoria,
+      pudiendo acceder a la caché (de acceso más rápido). Por lo contrario si se da el principio de *Localidad Espacial* no es de utilidad tener la caché,
+      porque al ser siempre páginas nuevas, las mismas se deben cargar a cada rato.
+      #+END_QUOTE
+* [WAITING] Ejercicio 11
+** Problema
+  #+BEGIN_QUOTE
+  Considere una computadora con 64KB de memoria. En dicha computadora se está utilizando un sistema operativo
+  que gestiona la memoria mediante *segmentación pura*.
+  Actualmente se está ejecutando un proceso con 3 segmentos (código, pila y datos). Los segmentos 0 y 1 están cargados
+  en forma adyacente en la memoria, mientras que el segmento 2 está al final de la misma. Del proceso se sabe también que:
+
+  - La dirección lógica 200Ah referencia al segmento 1.
+  - La dirección lógica 000Eh genera la dirección física 0FAFh.
+  - La dirección lógica 4077h genera la dirección física FFF7h.
+  - La dirección lógica 201Eh genera la dirección física 0FFFh.
+  - La dirección lógica 201Fh produciría un segmentation fault.
+  - Una escritura sobre la dirección lógica 200Ch produciría una *interrupción por modo de acceso inválido*
+
+  Se pide:
+  a) Reconstruir la *tabla de segmentos* del proceso, indicando los valores base y límite para cada segmento.
+  b) Indicar cuál de todos los segmentos sea posiblemente el de código. Justifique.
+  c) Explicar el *tipo de fragmentación* que genera este esquema de gestión de memoria
+  #+END_QUOTE
+** Observaciones
+*** Observación 1
+    #+BEGIN_QUOTE
+    Cuando dice *Los segmentos 0 y 1 están cargados en forma adyacente en la memoria*
+    
+    Es lo mismo que decir que son *contiguos*, uno al lado del otro…
+    Además, pueden estar ubicados en cualquier parte de la memoria, no necesariamente al principio de la misma.
+    #+END_QUOTE
+*** Observación 2
+    #+BEGIN_QUOTE
+    Cuando dice *Una escritura sobre la dirección lógica 200Ch produciría una interrupción por modo de acceso inválido.*
+
+    1) El primer valor hexadecimal ~2h~ hace referencia al ~segmento=1~
+    2) Al decir que produce “interrupción por modo de acceso inválido” quiere decir que se trata del *segmento_de_codigo*
+       ya que tanto el *segmento_de_Datos* y *segmento_de_Pila* se puede escribir
+    #+END_QUOTE
+*** Tips + Fórmulas útiles
+    - ~DF = base_segmento + offset~
+    - ~DL = numero_segmento (en bits) | offset (en bits)~
+    - Si se cumplía que ~(offset_segmento < limite_segmento)~ => se hacía la traducción (se calculaba la DF)
+** [WAITING] Solución
+*** Punto A - Primer Análisis
+    #+BEGIN_QUOTE
+    Datos:
+    - La *dirección lógica* (DL) ~200Ah~ referencia al ~segmento 1~ (por enunciado)
+    - La DL tiene ~16 bits~ (porque cada valor hexa equivale a 4 bits, y tiene 4 hexa)
+    - El *numero_segmento* son los primeros 3 bits (lo descubrimos por el análisis de abajo)
+    - El *offset* son los 13 bits restantes
+
+    Separamos los primeros 4 bits de la (DL) que sería ~2h~
+    y lo pasamos a binario => 2h (hexadecimal) = 0010 (binario)
+
+    1. Si tomaramos sólo 1 bit no alcanzaría para representar 3 segmentos
+       (con 1 bit podemos representar sólo dos combinaciones diferentes)
+    2. Si tomaramos sólo 2 bits ~01~ representaría al *segmento 2* en vez del *segmento 1*
+       (porque 01 en binario es 2, apesar de que con 2 bits podemos representar hasta 4 segmentos)
+    3. Entonces tomamos los primeros 3 bits ~001~ porque en binario equivale al ~1~
+
+    Por tanto, en base a los datos y la fórmula ~DL = numero_segmento | offset~ tenemos
+    que ~DL = numero_segmento (3bits) | offset (13bits)~
+    #+END_QUOTE
+    
+    *Observación:*
+    Este primer análisis fue fundamental para saber que debemos sacar los primeros 3 bits de cada DL,
+    para saber el numero de segmento
+*** Punto A - Tabla de segmentos - Número de los Segmentos
+    |-------+-------------+------------------------------------------|
+    | DL    | DF generada | Notas                                    |
+    |-------+-------------+------------------------------------------|
+    | 200Ah |             | referencia al segmento 1                 |
+    |-------+-------------+------------------------------------------|
+    | 000Eh | 0FAFh       |                                          |
+    | 4077h | FFF7h       |                                          |
+    | 201Eh | 0FFFh       |                                          |
+    | 201Fh | segfault    |                                          |
+    |-------+-------------+------------------------------------------|
+    | 200Ch |             | interrupción por modo de acceso inválido |
+    |-------+-------------+------------------------------------------|
+
+    #+BEGIN_QUOTE
+    *La _dirección lógica 201Eh_ genera la dirección física 0FFFh*
+    1. Sacamos los primeros 4 bits (el primer valor hexa)
+    2. Obtenemos el numero de segmento
+       - 2h (hexadecimal) = 0010 (binario) => 001|0 => *segmento 1*
+    3. Obtenemos la base_segmento sabiendo la fórmula ~df = base_segmento + offset_segmento~
+       - 0FFFh = base_segmento1 + 001Eh => base_segmento1 = 0FFFh - 001Eh => *base_segmento1 = 0FE1h*
+
+    Ahora sabemos que segmento=1 tiene como base=0FE1h,
+    repetimos lo mismo para las demás direcciones lógicas
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    *La _dirección lógica 4077h_ genera la dirección física FFF7h*
+    1) 4h (hexa) = 0100 (binario) => 010|0 => *segmento 2*
+    2) FFF7h = base_segmento + 0077h => base_segmento = FFF7h - 0077h => *base_segmento2 = FF80h*
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    *La _dirección lógica 000Eh_ genera la dirección física 0FAFh*
+    1) 0h (hea) = 0000 (binario) => 000|0 => *segmento 0*
+    2) 0FAFh = base_segmento0 + 000Eh => base_segmento0 = 0FAFh - 000Eh => *base_segmento0 = 0FA1h*
+    #+END_QUOTE
+*** [WAITING] Punto A - Tabla de segmentos - Tamaño de Segmentos
+    #+BEGIN_QUOTE
+    El tamaño/limite/longitud del *segmento 1* es ~001Fh~ porque
+    - el offset ~1Eh~ era válido para segmento_1
+    - el offset ~1Fh~ NO ERA VALIDO (porque producía segfault)
+
+    El tamaño del *segmento 0* es ~0020h~ que resulta de la diferencia entre la base_seg0 y base_seg1
+    - ~0FE1h - 0FA1h~ = 0020h
+
+    0FE1h
+    0FA1h
+    0040h
+
+    E=14, A=10 => 4
+    #+END_QUOTE
+    
+    Finalmente nos queda la siguiente *tabla de segmentos*
+    |-----------------+-------+---------------|
+    | NUMERO_SEGMENTO | BASE  | LIMITE/TAMAÑO |
+    |-----------------+-------+---------------|
+    | SEG 0           | 0FA1h | 0040h         |
+    | SEG 1           | 0FE1h | 001Fh         |
+    | SEG 2           | FF80h | (???)         |
+    |-----------------+-------+---------------|    
+
+    |-------+-------------|
+    | DL    | DF generada |
+    |-------+-------------|
+    | 201Eh | 0FFFh       |
+    | 201Fh | segfault    |
+    |-------+-------------|
+*** Punto B
+    Descartamos cual segmento por cuando nos dice *una escritura sobre la dirección lógica 200Ch produciría una interrupción por modo de acceso inválido.*
+    
+    Al decir que produce “interrupción por modo de acceso inválido” quiere decir que se trata del *segmento_de_codigo*
+    ya que tanto el *segmento_de_Datos* y *segmento_de_Pila* se puede escribir
+
+    Por tanto es el *segmento 1*
+
+    |-----------------+-------+---------------+--------------------|
+    | NUMERO_SEGMENTO | BASE  | LIMITE/TAMAÑO | PERMISOS           |
+    |-----------------+-------+---------------+--------------------|
+    | SEG 0           | 0FA1h | 0040h         |                    |
+    | SEG 1           | 0FE1h | 001Fh         | segmento de código |
+    | SEG 2           | FF80h |               |                    |
+    |-----------------+-------+---------------+--------------------|
+*** Punto C
+    #+BEGIN_QUOTE
+    Como es *asignación dinámica* sólo va a tener *fragmentación externa*,
+    no va a tener *fragmentación interna* porque cada segmento va a tener el tamaño que necesita
+    #+END_QUOTE
+    

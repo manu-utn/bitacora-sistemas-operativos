@@ -1,0 +1,71 @@
+#+TITLE: Cuestionario - Procesos
+* Cuestionario
+** [#A] Pregunta 1
+   #+BEGIN_QUOTE
+   *El estado suspendido sirve para*
+   #+END_QUOTE
+*** Respuesta Correcta
+   Un proceso que esta siendo depurado.
+** [WAITING] Pregunta 2
+   #+BEGIN_QUOTE
+   *La imagen de un proceso puede estar ubicada en memoria cuando su estado es*
+   #+END_QUOTE
+*** Respuesta  Correcta
+   Bloqueado
+
+   #+BEGIN_COMMENT
+   Tengo mis dudas.. cuando está en running no está en memoria también?
+   #+END_COMMENT
+** [WAITING] Pregunta 3
+   #+BEGIN_QUOTE
+   *Un process switch implica*
+   #+END_QUOTE
+*** Respuesta Correcta
+   Dos cambios de modo
+
+   #+BEGIN_COMMENT
+   <<DUDA>>:
+   MMMh... Esto sería porque se guarda el ctx de un proceso,
+   y restaurar el ctx del otro proceso?
+   #+END_COMMENT
+** [WAITING] Pregunta (4)
+   #+BEGIN_QUOTE
+   En el PCB se guarda el estado de los registros del procesador mientras
+   
+   a. El proceso está en estado ejecutando. 
+   b. Ninguna de las anteriores.
+   c. El proceso no está en estado ejecutando.
+   #+END_QUOTE
+*** Respuesta Correcta
+   c. El proceso no está en estado ejecutando
+
+   #+BEGIN_COMMENT
+   Supongo que.. porque se guardó el contexto del proceso en ese instante,
+   para luego restaurarlo (?)
+   #+END_COMMENT
+** [WAITING] Pregunta (5)
+   #+BEGIN_QUOTE
+   Un *cambio de proceso* puedo ocurrir cuando
+   
+   a. Ninguna de las anteriores.
+   b. Luego de realizar una *llamada al sistema* haya un *cambio de modo*
+   c. Luego de *atender una interrupción* haya un *cambio de modo*
+   d. Luego de realizar una *llamada al sistema* ejecute el mismo proceso.
+   #+END_QUOTE
+
+   #+BEGIN_COMMENT
+   Un Cambio de Proceso, implica que
+   - hayan dos cambios de ctx,
+   - 1) se guarda el ctx del proceso que se ejecutaba en ese instante
+   - 2) luego se restaura el ctx de otro proceso cuando estaba en ejecución
+   #+END_COMMENT
+*** Respuesta elegida
+   b. Luego de realizar una llamada al sistema haya un cambio de modo. 
+
+   *Observaciones:*
+   Una sycall seguido de un switch mode, no implica que siempre 
+   haya un cambio de proceso.
+   Porque un proceso puede hacer =write()= o =read()= e 
+   
+*** Respuesta correcta
+   a. Ninguna de las anteriores.

@@ -324,43 +324,60 @@
    _NO existe una secuencia segura_, porque luego de finalizar ~P1~ no quedan instancias 
    suficientes del recurso R2 para los demás procesos.
    Se le niega la asignación de recursos a P3
+   Y.. podría haber deadlock
 * Ejercicio 4
 ** Enunciado
    Dadas las siguientes matrices, determine si existe deadlock, y en caso afirmativo indique 
    qué procesos están involucrados.
 
    #+name: matriz-peticiones-actuales
+   |----+----+----+----+----|
    |    | R1 | R2 | R3 | R4 |
+   |----+----+----+----+----|
    | P1 |  1 |  1 |  1 |  1 |
    | P2 |  2 |  0 |  0 |  2 |
    | P3 |  1 |  1 |  0 |  0 |
    | P4 |  0 |  0 |  0 |  2 |
+   |----+----+----+----+----|
 
    #+name: matriz-recursos-asignados
+   |----+----+----+----+----|
    |    | R1 | R2 | R3 | R4 |
+   |----+----+----+----+----|
    | P1 |  1 |  1 |  0 |  0 |
    | P2 |  0 |  0 |  0 |  0 |
    | P3 |  1 |  1 |  0 |  0 |
    | P4 |  0 |  0 |  1 |  0 |
    |    |  2 |  2 |  1 |  0 |
+   |----+----+----+----+----|
 
    #+name: vector-recursos-totales
+   |----+----+----+----|
    | R1 | R2 | R3 | R4 |
+   |----+----+----+----|
    |  2 |  2 |  1 |  2 |
+   |----+----+----+----|
 
    #+name: vector-recursos-disponibles
+   |----+----+----+----|
    | R1 | R2 | R3 | R4 |
+   |----+----+----+----|
    |  0 |  0 |  0 |  2 |
+   |----+----+----+----|
 ** Solución
+   #+BEGIN_COMMENT
    <<DUDA 1>>: La matriz de "peticiones actuales" suplantaria a la de "necesidades" ...?
-   <<DUDA 2>>: Porque cuando se elije P4 usa las unicas dos instancias de R4
-   y cuando lo libero, queda una instancia de R3? difiere del excel de nano
+   Rta: si
+   #+END_COMMENT
    
    #+name: posible-secuencia
+  |-------------+----+----+----+----|
   |             | R1 | R2 | R3 | R4 |
+  |-------------+----+----+----+----|
   |             |  0 |  0 |  0 |  2 |
   | Elegimos P4 |  0 |  0 |  0 | 0? |
   | Finaliza P4 |  0 |  0 |  1 |  0 |
+  |-------------+----+----+----+----|
 
   *Conclusión final:*
    1. Cuando se le asigna los recursos al unico posible que es ~P4~ y este finaliza, NO quedan recursos disponibles para ningún proceso
@@ -410,6 +427,20 @@
    dinero a los mismos a causa de un deadlock, pero al mismo tiempo se desea que los programadores de juegos
    para dicho servidor tengan alta flexibilidad en la solicitud de los recursos del sistema.
 ** Solución
+   a)
+   no tratarlo
+   
+   b)
+   prevencion y evasión, para que no ocurra
+   prevencion genera overhead
+   evasión es muy especifico
+
+   c)
+   prevencion no seria valida,
+   deteccion podria generar deadlock, pero podria ser valida
+
+   d)
+   evasión seria más flexible
 * [TODO] Ejercicio 6
 ** Enunciado
    #+BEGIN_QUOTE

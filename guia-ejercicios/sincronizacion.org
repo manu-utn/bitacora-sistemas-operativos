@@ -4,17 +4,22 @@ https://docs.google.com/spreadsheets/d/1dAQQfvx7HiWlJFQi03JTT6g-GeaSMNsjkTkyENoK
 
 * Preguntas en Zoom
 ** Pregunta 1
-Pregunta: entonces mientras N > 0, se pueden consumir tantos recursos como haya con signal, y cuando N==0, espera a que incremente el semaforo contador con wait? 
-Respuesta : Claro, en realidad cuando haces wait() al semaforo, este tiene un valor. Si es mayor a cero, lo decrementa y sigue. Si es menor o igual a cero, lo decrementa y bloquea al proceso que hizo el wait() 
+   Pregunta: entonces mientras N > 0, se pueden consumir tantos recursos como haya con signal, y cuando N==0, espera a que incremente el semaforo contador con wait? 
+   
+   Respuesta :
+   Claro, en realidad cuando haces wait() al semaforo, este tiene un valor.
+   Si es mayor a cero, lo decrementa y sigue.
+   Si es menor o igual a cero, lo decrementa y bloquea al proceso que hizo el wait() 
 ** Pregunta 2
-Pregunta: si hay dos procesos que hacen un signal, y otro proceso hace un wait de ambos, se puede hacer un wait(algo, N) siendo N la cantidad de signal? 
-o hay que hacer un wait por cada uno de esos 2 signal 
+   Pregunta: si hay dos procesos que hacen un signal, y otro proceso hace un wait de ambos, se puede hacer un wait(algo, N) siendo N la cantidad de signal? 
+   o hay que hacer un wait por cada uno de esos 2 signal 
 
-Respuesta: ambas son correctas. Si son muchas, podes poner signal(S, 10) o wait(S, 10), o signal(S) x 10 
+   Respuesta:
+   Ambas son correctas. Si son muchas, podes poner signal(S, 10) o wait(S, 10), o signal(S) x 10 
 ** Pregunta 3
-Preguntas: si u proceso esperaba 2 wait(), en vez de hacer wait(s, 2) se podria hacer un semaforo contador inicializado en 2? 
+   Preguntas: si u proceso esperaba 2 wait(), en vez de hacer wait(s, 2) se podria hacer un semaforo contador inicializado en 2? 
 
-RESPUESTA: NO, porque no se respetaria el flujo
+   RESPUESTA: NO, porque no se respetaria el flujo
 * Observaciones
 ** Wait
    En cualquier semáforo el ~wait()~ hace que el proceso quede en *estado bloqueado*
@@ -44,11 +49,11 @@ RESPUESTA: NO, porque no se respetaria el flujo
 ** Vector de Recursos e Instancias
    #+BEGIN_SRC C
      // definimos un vector de semáforos
-     // - Los indices representarían un semáforo para c/recurso
+     // - Los indices representarían un semáforo asociado a cada recurso
      // - Las constantes A, B, C serían la cant. de accesos (ó instancias) a cada recurso
      //
-     // Ej. Si A=10 => puede haber máx. 10 procesos utilizando este recurso
-     recursos[] = [A,B,C];
+     // Ej. Si A=10 => puede haber máx. 10 procesos/hilos utilizando este recurso
+     recursos[3] = [A,B,C];
 
      // alternativa 1
      while(true){
@@ -286,16 +291,6 @@ RESPUESTA: NO, porque no se respetaria el flujo
        signal(semA);             // 3. lo liberamos, asi continúa otro proceso (el A)
      }
    #+END_SRC
-** Solución 2
-   #+BEGIN_SRC C
-     // Proceso (A)
-     while(TRUE){
-     }
-
-     // Proceso (B)
-     while(TRUE){
-     }
-   #+END_SRC
 * Ejercicio 5
 ** Problema
    Sean los procesos A, B y C, sincronizarlos para que ejecuten de manera alternada: A,B,C,A,B,C...
@@ -341,23 +336,6 @@ RESPUESTA: NO, porque no se respetaria el flujo
 
      // 3. Lo liberamos para que lo utilice el proceso (C)
        signal(semA);
-     }
-   #+END_SRC
-** Solucion (2)
-   #+BEGIN_SRC C
-     // Proceso (A)
-     while(true){
-
-     }
-
-     // Proceso (B)
-     while(true){
-
-     }
-
-     // Proceso (C)
-     while(true){
-
      }
    #+END_SRC
 * Ejecicio 6
@@ -656,14 +634,14 @@ RESPUESTA: NO, porque no se respetaria el flujo
      pedidoParaPatear = pedidoParaPatearOK = 0;
      pelotaPateada = 0;
      posicionadoArq = posicionadoJug = 0;
-
+     
      validarPenal = 0;
      penalValidadoArq = penalValidadoJug = 0;
-
+     
      // es importante que el primero esté en 1
      // eso indica que el primer jugador está inicializado
      jugadores[] = [1,0,0,0,0];
-
+     
      // Proceso ARBITRO
      while(TRUE){
        wait(pedidoParaPatear); // esperamos que el jugador solicite
@@ -672,7 +650,7 @@ RESPUESTA: NO, porque no se respetaria el flujo
        wait(posicionadoJug); // y también el jugador
        dar_orden();
        signal(pedidoParaPatearOK); // le confirmamos al jugador que patee
-
+     
        //wait(mutexGol);
        wait(validarPenal); // esperamos que nos pidan que validemos
        validar_tiro();
@@ -680,7 +658,7 @@ RESPUESTA: NO, porque no se respetaria el flujo
        signal(pedidoValidarPenalJugOK); // y al jugador
       //signal(mutexGol);
      }
-
+     
      // Proceso JUGADOR
      while(TRUE){
        wait(jugadores[actual()]); // obtenemos del arreglo, el proceso
@@ -690,11 +668,11 @@ RESPUESTA: NO, porque no se respetaria el flujo
        wait(pedidoParaPatearOK); // y esperamos su respuesta
        patear();
        signal(pelotaPateada); // habilitamos al arquero
-
+     
        wait(penalValidadoJug); // esperamos respuesta del arbitro
-
+     
        // NOTA: Los mutexGol ya NO son necesarios, porque es el árbitro quien controla la variable
-
+     
        //wait(mutexGol);
        if (GOL==TRUE){
          // prevenimos, y liberamos antes de festejar() por si esta invocase un syscall exit()
@@ -705,23 +683,23 @@ RESPUESTA: NO, porque no se respetaria el flujo
          // signal(mutexGol);
          lamentarse();
        }
-
+     
        // avanzamos al siguiente proceso jugador
        signal(jugadores[siguiente()]);
      }
-
+     
      // Proceso ARQUERO
      while(TRUE){
        posicionarse();
        signal(posicionadoArq); // avisamos que está posicionado (al arbitro)
        wait(pelotaPateada); // esperamos que el jugador patee
        atajar();
-
+     
        signal(validarPenal); // pedimos al arbitro
        wait(penalValidadoArq); // y esperamos su respuesta
-
+     
        // NOTA: Los mutexGol ya NO son necesarios, porque es el árbitro quien controla la variable
-
+     
        //wait(mutexGol);
        if (GOL==FALSE){
          festejar();
@@ -785,7 +763,7 @@ RESPUESTA: NO, porque no se respetaria el flujo
         pid = fork();
 
         if (pid < 0) {
-          signal(procesosDisponibles); // si ocurre error, liberamos para que otros procesos accedan
+          signal(procesosDisponibles); // ### si ocurre error, liberamos para que otros procesos accedan
 
           wait(mutexLog);   // mutex - inicio
           log("Error");     // sección critica, la proteje el mutex

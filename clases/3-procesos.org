@@ -1,0 +1,833 @@
+#+TITLE: Clase 02 - Procesos
+#+STARTUP: inlineimages
+* Sistemas multiprogramados
+* Conceptos previos
+** Programa
+   - Es una secuencia de instrucciones compiladas a codigo máquina
+   - Al ejecutar un programa, este se carga en memoria y se considera un *proceso*
+     (el proceso tener varios estados en ejecución/bloqueado/listo/finalizado)
+** Ejecución Concurrente
+   - Dos o más programas ejecutandose en el mismo intervalo de tiempo
+     (NO es lo mismo que al mismo tiempo, porque eso requiere tener
+      más de un procesador, porque este puede trabajar con un proceso
+      a la vez)
+** Multiprogramación (concurrentemente)
+   - Permite que dos o más programas se ejecuten de forma *concurrente*
+     (/Se ejecutan con mismos intervalos de tiempo, pero NO ejecutan en el mismo tiempo/)
+   - Desde la perspectiva del usuario, aparenta que hay varios procesos ejecutando al mismo tiempo, pero NO es esa la realidad.
+     (/esto se debe a la velocidad en la que hace el *procesador*/)
+** Multiprocesamiento (en paralelo)
+   - Permite que varios programas se ejecuten al mismo tiempo
+     (NO confundir con *multiprogramación*)
+   - Se requiere de varios *procesadores*
+** (PC) Program Counter
+   - Es un registro del *procesador* que apunta a la sig. instrucción
+     en memoria
+** PSWD
+ 
+* [WAITING] Procesos
+** Concepto
+   - Secuencia de instrucciones ([[Programa][programa]]) que están siendo ejecutadas
+     (un programa son instrucciones compiladas a codigo máquina)
+   - Un proceso NO puede acceder a la memoria de otro proceso
+     (Ej. un programa que quiera acceder a nuestro homebanking)
+   - Es un programa en ejecución
+   - Es la *minima unidad de planificación*
+** [WAITING] Espacio de Direcciones - Espacio de direccionamiento de memoria
+   - Contiene las instrucciones, variables, estructuas de datos, ..
+   - Lo que compilamos y queremos que se ejecute
+** Atributos
+*** Identificador
+    - PID: Process Identifier (numero que lo identifica univocamente)
+    - PPID: Parent Process Identifier (el proceso padre)
+    - UID: User Identifier (el usuario que lo ejecuta) 
+*** Información de gestión de memoria
+    Cada proceso tiene propia estructura (codigo/datos/stack/heap)
+*** Información de Planificación
+    - Cuando tenemos muchos procesos para ejecutar
+    - Existe un algoritmo para saber que proceso ejecutar
+*** Información de E/S
+    - Dispositivos asociados a ese proceso
+    - El usuario/programador no los necesita conocer, pero si el sistema operativo
+*** Información contable
+    - Información sobre los recursos que utilizó el proceso
+
+    #+BEGIN_EXAMPLE
+    Es util para sistemas en la nube, con esa información
+    determinan cuanto te cobraran  :(
+    #+END_EXAMPLE
+** [DONE] Imagen del proceso
+   CLOSED: [2021-08-30 lun 21:05]
+   - Está cargado en (RAM) Memoria Principal
+   - La imagen del proceso se representa con                      
+
+   |------------|
+   | CODIGO     |
+   |------------|
+   | DATOS      |
+   |------------|
+   | HEAP       |
+   |------------|
+   | STACK/PILA |
+   |------------|
+   | ~PCB~      |
+   |------------|
+
+   #+BEGIN_QUOTE
+   El {CODIGO,DATOS,HEAP,PILA} se asigna a la memoria de cada *proceso*
+   
+   El (PCB) se asigna a la memoria del (SO) *Sistema Operativo* porque eśte también es un programa en ejecución
+   y necesita de la información de los (PCB) para saber como administrar los recursos
+   #+END_QUOTE
+** [DONE] Imagen - Estructuras Principales
+   CLOSED: [2021-08-30 lun 21:05]
+   En las estructuras están guardadas en el *espacio de direccionamiento de    a*
+*** Codigo
+    - Es el Espacio asignado para *almacenar la secuencia de instrucciones del programa*
+    - Es solo de lectura y ejecución (NO es de escritura)
+*** Datos
+    - Espacio asignado para las *variables globales*
+*** Stack
+    - Espacio asignado para 
+      1. Llamadas a funciones
+      2. Parámetros de las funciones
+      3. Variables locales
+    
+    #+BEGIN_EXAMPLE
+    Las variables locales que estan dentro de una función dejan de existir
+    cuando esta termina su ejecución.    
+
+    Es el stack del proceso, no del SO
+    #+END_EXAMPLE
+
+    #+BEGIN_SRC c
+      /*
+       * los valores asignados a la variables z, x, y
+       * se agregan al STACK
+       * existen hasta que termina la ejecución de la función sumar
+       * y se borran del STACK
+       */
+      int sumar(int x, int y){
+        int z = 5;
+        z = x + y;
+        return z;
+      }
+
+      int main(){
+        int a = 10, b = 20, c=0;
+        c = sumar(a,b); // 0x123
+
+        /*
+         * 0x123 sería la dirección de memoria a la que el programa
+         * debe volver luego de ejecutar la funcion sumar(x,y)
+         */
+        return 0;
+      }
+    #+END_SRC
+**** Conceptos previos
+     - El (PC, program counter) ...
+*** Heap
+    - Espacio asignado para el uso de *memoria dinámica*
+    - El espacio va creciendo/decreciendo de forma dinámica
+    - Por lo general cuando usamos ~malloc~ y reservamos memoria
+
+    *Observaciones:*
+    - El *sistema operativo* es quien asigna
+    - El *procesador* es quien ejecuta la instrucción de reservar memoria
+      que solicita el Sistema Operativo
+**** Memoria dinamica crece/decrece
+     #+BEGIN_SRC c
+       int main(){
+         // MEMORIA ESTÁTICA
+         // a "p" se le asigna como valor una dirección de memoria
+         // del (HEAP) que está vacía.
+         // Osea "p" apunta a una dirección vacía del (HEAP),
+         // y esa dirección se guarda en el(STACK)
+         char *p;
+
+         // MEMORIA DINAMICA (crece)
+         // ahora reservamos memoria 5 posiciones en el (HEAP)
+         // para datos de tipo char
+         p = malloc(5);
+
+         // MEMORIA DINAMICA (decrece)
+         // ahora liberamos memoria
+         // y vaciamos las 5 posiciones del (HEAP)
+         free(p);
+       }
+     #+END_SRC
+**** Perder referencia a un puntero
+     Casos como este ejemplo pueden provocar *memory leaks*
+
+     #+BEGIN_SRC c
+       void unaFuncionLoca(int x){
+         int *p;
+         p = malloc(x);
+         // supongamos que hacemos algo con eso
+         // y no olvidamos de hacer free(p)
+       }
+       int main{
+         // esta función reservará en memoria 5 posiciones
+         // pero NO tiene un llamado a free() que libere
+         // ese espacio que reservamos dinámicamente..
+         unaFuncionLoca(5);
+
+         // cuando termine su ejecución
+         // perderemos la referencia al puntero "p"
+         // y ya podremos liberar esas posiciones,
+         // se quedarán en el (HEAP) ocupando memoria
+         //
+         // espacio que podrian utilizar procesos utiles
+         return 0;
+       }
+     #+END_SRC
+*** PCB
+** [WAITING] (PCB) Bloque de Control de proceso
+   + Se encuentra SIEMPRE cargado en la *RAM*
+   + Hay uno por cada Proceso en el Sistema
+   + Contiene TODA la infomación relacionada con el proceso, para administrarlo
+     * registros del CPU
+     * atributos (pid, ppid, puid, ...)
+     * la dirección de las estructuras (codigo, datos, stack, heap)
+     * prioridad, estado, valor de retorno, ..
+
+     #+BEGIN_COMMENT
+     El (CTX) Contexto de ejecución estaría conteniendo todo lo que tiene el PCB, no?
+     #+END_COMMENT
+
+   #+NAME: pcb
+   |------------------------------------|
+   |         Estado del proceso         |
+   |------------------------------------|
+   |          Program Counter           |
+   |------------------------------------|
+   |           Registros CPU            |
+   |------------------------------------|
+   | Información de Planficación de CPU |
+   |------------------------------------|
+   |  Información de manejo de memoria  |
+   |------------------------------------|
+   |    Información de Estado de E/S    |
+   |------------------------------------|
+   |        Información Contable        |
+   |        (para estadísticas)         |
+   |------------------------------------|
+** [DONE] Ciclo de vida - Estados del Proceso
+   CLOSED: [2021-08-31 mar 20:15]
+   - Tiempo que transcurre entre su creación y finalización  
+   - El proceso pasa por varios *estados*
+*** Diagrama de 2 estados
+    |--------------+-------------------------------------------|
+    | ESTADO       | DESCRIPCION                               |
+    |--------------+-------------------------------------------|
+    | NO EJECUTADO | Si NO está siendo usado por el procesador |
+    |              |                                           |
+    | EJECUTANDO   | Si está usando el procesador              |
+    |--------------+-------------------------------------------|
+
+    *Importante:*
+    - Una lista de (PCB, Bloque de Control de Proceso) en estado *no ejecutado*
+      aguarda a ser activados para pasar al estado *ejecutando*
+    - La cantidad de procesos en *ejecución* depende del [[grado de multiprogramación]]
+      osea de cuantos procesadores tengamos
+
+    #+BEGIN_QUOTE
+    Si tenemos sólo 1 CPU, solo podremos ejecutar 1 proceso a la vez
+    pero.. podemos ejecutar varios programas de forma *concurrente*
+    osea en intervalos de tiempo, que desde la perspectiva de usuario
+    parezca que es en paralelo/simultáneo
+
+    Si tenemos 2 o N CPU's podremos ejecutar 2 o N procesos en paralelo/simultaneo
+    osea al mismo tiempo
+    #+END_QUOTE
+**** Diagrama de Estados
+     #+BEGIN_SRC plantuml :file img/diagrama-dos-estados.png
+       @startuml
+       no_ejecutado :  PCB1,PCB2,..
+       ejecutando : PCB3
+
+       [*]  -right-> no_ejecutado : nuevo_proceso
+
+       no_ejecutado -right-> ejecutando : activacion
+       ejecutando -left-> no_ejecutado : detencion
+
+       ejecutando -right-> [*] : finalizacion
+
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/diagrama-dos-estados.png]]
+
+**** Observaciones
+      - Los (PCB, bloque de control de proceso) se guardan en un espacio de memoria
+        asignado para el *Sistema Operativo*
+      - Los (PCB) guardan información de los procesos (el contexto, estructura, ...)
+        y siguen existiendo apesar que el proceso deje de existir
+      - Existen tantos (PCB) en el sistema, como procesos hay.
+*** Diagrama de 3 estados
+    Los procesos que tienen estado *NO EJECUTADO* se separan en dos
+    1. Bloqueados
+    2. Listos
+
+    |---------------------+---------------------------------|
+    | *ESTADO*            | *DESCRIPCION*                   |
+    |---------------------+---------------------------------|
+    | EJECUTANDO          | Si está usando el procesador    |
+    | (Running/Cpu)       |                                 |
+    |                     |                                 |
+    |---------------------+---------------------------------|
+    | BLOQUEADO/EN ESPERA | Esperan que un evento suceda    |
+    | (Blocked)           |                                 |
+    |                     |                                 |
+    | LISTO               | Son elegibles para su ejecución |
+    | (Ready)             |                                 |
+    |---------------------+---------------------------------|
+**** Bloqueados/En Espera
+    - Procesos que están esperando un evento
+    - Cuando ocurre el evento esperado pasan al estado *ready*
+    - Pueden haber varias colas de espera, donde se agrupan procesos que esperan el mismo recurso
+      (/Ej. varios procesos que esperan usar el disco/)
+
+    #+BEGIN_EXAMPLE
+    Puede ser que el proceso esté esperando una lectura (ó escritura) de disco,
+    mientras eso suceda el proceso queda en estado BLOQUEADO.
+    
+    Cuando finaliza la lectura de disco, el Módulo de E/S que administra los discos
+    genera una interrupción
+    
+    El sistema operativo atiende la interrupción, toma el mando del *procesador*
+    y cambia el estado del proceso de BLOQUEADO a LISTO
+    (en realidad cambia el estado del PCB del proceso)
+    #+END_EXAMPLE
+
+    #+BEGIN_EXAMPLE
+    Puede suceder que esté esperando que termine la impresora de imprimir,
+    y hasta que termine se queda en BLOQUEADO
+   
+    También puede ser poque el proceso invocó una *syscall* y para seguir ejecutando
+    necesita que el sistema operativo le responda, por tanto se queda esperando 
+    (osea se queda en estado BLOQUEADO)
+    #+END_EXAMPLE
+**** Ejecutando a Listo 
+     - Son procesos elegibles para ser ejecutados por el *procesador*
+     - Por haber pasado un determinado tiempo
+     - Si algun proceso A tiene más prioridad que otro B que se está ejecutando,
+       el *sistema operativo* priorizará al primero y pasará al segundo
+       al estado *ready*
+
+     #+BEGIN_EXAMPLE
+     Porque el sistema operativo, quizás cree que el proceso está
+     haciendo demasiado uso del procesador
+     por ejemplo que esté ejecutando un while(1)
+
+     y decide cambiar su estado de EJECUTANDO a LISTO (lo detiene)
+     #+END_EXAMPLE
+**** Diagrama de Estados
+     #+BEGIN_SRC plantuml :file img/diagrama-tres-estados.png
+       @startuml
+       state No_Ejecutado{
+               Listo   : PCB1, PCB2
+               Bloqueado : PCB4, PCB5
+       }
+       Ejecutando : PCB3
+
+       ' relaciones
+       [*]  -right-> Listo : nuevo_proceso
+
+       Listo -right-> Ejecutando
+       Ejecutando -left-> Listo
+       Ejecutando -down-> Bloqueado
+       Bloqueado -up-> Listo
+
+       Ejecutando -right-> [*] : finalizacion
+
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/diagrama-tres-estados.png]]
+
+*** Diagrama de 5 estados
+    #+BEGIN_QUOTE
+    Cuando un proceso está en "estado nuevo" ó "estado finalizado",
+    está sólo una parte del proceso en Memoria (memoria asignada al SO)
+
+    Cuando el proceso está en "estado listo/ejecución/bloqueado" 
+    está TODO el proceso cargado en memoria
+
+    En cualquiera de los estados el (PCB) del Proceso está en memoria (del SO).
+    #+END_QUOTE
+
+    #+BEGIN_COMMENT
+    DUDA 1 resuelta:
+    EN finalización entonces se elimina de la imagen del proceso, solo la estructura (?)
+    *Rta:* SI, pero no toda la estructura, se guarda una parte, el PCB
+    #+END_COMMENT
+    
+
+    |---------------------+-------------------------------------------------------------------------|
+    | *ESTADO*            | *DESCRIPCION*                                                           |
+    |---------------------+-------------------------------------------------------------------------|
+    | NUEVO               | - Se preparan las estructuras que utilizará el proceso                  |
+    | (new)               | - Se inicializa el PCB, y espera su aceptación                          |
+    |                     |                                                                         |
+    | FINALIZADO          | - Se eliminan las estructuras del proceso que están en memoria          |
+    | (exit)              | - Se genera un valor de retorno                                         |
+    |                     | (los PCB aún persisten en la memoria asignada al Sistema operativo)     |
+    |---------------------+-------------------------------------------------------------------------|
+    | EJECUTANDO          | Si está usando el procesador                                            |
+    | (Running/Cpu)       |                                                                         |
+    |---------------------+-------------------------------------------------------------------------|
+    | BLOQUEADO/EN ESPERA | Esperan que un evento suceda                                            |
+    | (Blocked)           |                                                                         |
+    |                     |                                                                         |
+    | LISTO               | - (New->Ready) Son elegibles para su ejecución                          |
+    | (Ready)             | - (Running->Ready) Son interrumpidos ó Desalojan la CPU voluntariamente |
+    |---------------------+-------------------------------------------------------------------------|
+**** Estado Nuevo
+     - Se preparan las estructuras que utilizará el procesos
+     - Se queda esperando para ser aceptado
+     
+     #+BEGIN_EXAMPLE
+     Se puede etar generando las estructuras para el proceso
+
+     Se puede estar inicializando el (PCB, BLoque de control de proceso) de ese proceso
+     donde se guardaba la información de esas estructuras
+
+     Se puede estar buscando espacio en memoria para el Stack, para el Heap,
+     #+END_EXAMPLE
+**** Estado Finalizado
+     - Puede finaizar porque
+       - El proceso invocó la función *syscall* llamada ~exit~
+       - ó porque otro proceso lo finalizo
+       - ó por un error
+     - Se genera un valor de retorno
+     - Se eliminan las estructuras del proceso que están en memoria
+       (Osea del Stack, del Heap, del Codigo, y de Datos)
+     
+     *Observación:*
+     Los (PCB, BLoque de control de proceso) no se eliminan, persisten en la memoria
+     asignada al Sistema operativo. (Pueden usarse por empresas cloud, para tener información
+     ya sea para generar estadísticas o sólo cobrarte xD)
+**** Diagrama de Estados
+     #+BEGIN_SRC plantuml :file img/diagrama-cinco-estados.png
+       @startuml
+       state No_Ejecutado{
+               Listo   : PCB1, PCB2
+               Bloqueado : PCB4, PCB5
+       }
+       Ejecutando : PCB3
+
+       ' relaciones
+       [*]  -right-> Nuevo
+
+       Nuevo -right-> Listo
+       Listo -right-> Ejecutando
+       Ejecutando -left-> Listo
+       Ejecutando -down-> Bloqueado
+       Bloqueado -up-> Listo
+
+       Ejecutando -right-> Finalizado
+
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/diagrama-cinco-estados.png]]
+*** Diagrama de 6 estados
+    - Aparece el concepto de *Depuración* (debugging)
+*** Diagrama de 7 estados
+    - Aparece el concepto de *intercambio* (swapping)
+    - Los procesos (la imagen) se pasan a disco para que dejen de usar recursos mientras no están en ejecución
+    - Aparecen dos estados nuevos
+      1. Ready/Suspend
+      2. Blocked/Suspend
+
+    |----------+-------------------|
+    |          | Colas ó Estado    |
+    |----------+-------------------|
+    | En RAM   | - New             |
+    |          | - Running         |
+    |          | - Ready           |
+    |          | - Finish          |
+    |          | - Blocked         |
+    |----------+-------------------|
+    | En DISCO | - Ready-Suspend   |
+    |          | - Blocked-Suspend |
+    |----------+-------------------|
+**** Conceptos previos
+     - El procesador ejecuta tareas más rápido que los módulos
+**** Swapping
+     + Los procesos con estado *Ready* ó *Blocked* pasan a *Suspendido*
+     + Se realiza cuando otros procesos tiene más prioridad
+     + Cuando hay muchos procesos en estado *Ready* ó *Blocked*
+     + NO es tan rápido poner a un proceso a ejecutar, hay que cargarlo a memoria
+
+     #+BEGIN_QUOTE
+     El (PCB, Bloque de control de proceso) de cada proceso NUNCA pasa al Disco.
+
+     Se quedan en la (MP) Memoria Principal, porque de este modo el (SO) puede gestionar
+     los distintos estados de cada proceso
+     #+END_QUOTE
+     
+     *Observación:*
+     - Se realiza en _procesos que NO estan siendo ejecutados_ (/en la cola de ready ó en espera/)
+**** Swap out
+     + Mover un *proceso* (la imagen) de *RAM* a una *Partición Swap* (disco)
+     + Pasar a *disco* la imagen de los procesos de *memoria*
+**** Swap In
+     + Cargar un proceso (la imagen) a memoria
+     + Mover un proceso de *Partición SWAP* (disco) a la *RAM* (memoria)
+*** [WAITING] E/S Bloqueante y NO Bloqueante
+**** Conceptos
+     - Es el programador quien decide si una función será *bloqueante* ó *NO bloqueante*
+**** E/S Bloqueante
+     - Por lo general las E/S son *bloqueantes*
+
+     |------------------+--------------------------------------------------------------------|
+     | *Comportamiento* | *Que hace*                                                         |
+     |------------------+--------------------------------------------------------------------|
+     | Respuesta        | Realiza la operación                                               |
+     | inmediata        | (Porque quizás ya tenia la información)                            |
+     |------------------+--------------------------------------------------------------------|
+     |                  | Bloquea el proceso                                                 |
+     | Respuesta tardía | (Quizas el proceso solicitó una información, y se queda esperando) |
+     | ó indefinida     |                                                                    |
+     |------------------+--------------------------------------------------------------------|
+     | Retorno          | OK ó Error                                                         |
+     |------------------+--------------------------------------------------------------------|
+
+     #+BEGIN_EXAMPLE
+     La función receive() es Bloqueante, porque se queda esperando hasta 
+     recibir la respuesta
+     #+END_EXAMPLE
+**** E/S NO bloqueante
+     |------------------+-----------------------------------------------------------|
+     | *Comportamiento* | *Que hace*                                                |
+     |------------------+-----------------------------------------------------------|
+     | Respuesta        | Lo mismo que con las bloqueantes                          |
+     | inmediata        | "realiza la operación"                                    |
+     |------------------+-----------------------------------------------------------|
+     | Respuesta tardía | a) NO realiza la operacion, es lo mismo que bloquearlo(?) |
+     | ó indefenida     | b) sigue ejecutando                                       |
+     |------------------+-----------------------------------------------------------|
+     | Retorno          | ok ó error ó reintentar                                   |
+     |------------------+-----------------------------------------------------------|
+
+     #+BEGIN_EXAMPLE
+     La función send() es NO bloqueante, porque envía la información
+    
+     Es el programador quien elije como implementar ese "reintentar" 
+     Supongamos que un proceso usa el fread() y lee cada linea de un archivo
+     este debe tener un valor de retorno "reintentar" si aun no terminó,
+     avisandole al programador que decida si 
+     a) seguir ejecutando
+     b) no realizar operacion
+     #+END_EXAMPLE
+** [DONE] Creación de un proceso
+   CLOSED: [2021-08-31 mar 18:14]
+*** Conceptos
+    - A través de una ~syscall~ un proceso padre, puede crear a un proceso hijo
+    - NO comparten recursos, a menos.. que se use una *estrategia de comunicación* (y estos se llaman cooperativos)
+*** Objetivos
+    - Para ejecutar otra tarea, ó la misma tarea
+*** Pasos
+    1. Asignación del (PID, Process Identifier)
+    2. Reservar espacio para estructuras (Stack, Heap, Codigo, Datos)
+    3. Inicializar PCB (con los datos del contexto de ejecución, atributos, estructuras)
+    4. Ubica el PCB en las *listas de planificación*
+*** Como se crea
+    - Puede ser creado por el sistema operativo
+    - Puede ser creado por otro proceso (proceso padre)
+**** Ejemplos
+    #+BEGIN_EXAMPLE
+    Un proceso (padre) tiende a crear a otro proceso (hijo)
+    cuando necesita que esté otro haga un trabajo por él
+    es decir delega tareas en sus procesos hijos
+
+    Un proceso padre puede quedarse esperando hasta que 
+    finalicen sus procesos hijos
+    
+    Otro ejemplo sería el proceso "init" que se crea cuando se bootea
+    el sistema operativo. Este es el proceso padre, que crea todos 
+    los procesos.
+    #+END_EXAMPLE
+
+    #+BEGIN_EXAMPLE
+    Los procesos hijos pueden estar ejecutandose en PARALELO
+    solo si tenemos varios procesadores.
+
+    Los procesos hijos se estaran ejecutando de forma CONCURRENTE
+    si tenemos solo un procesador
+    (aunque a la vista del usuario parezca que se ejecutan varios al mismo tiempo)
+    #+END_EXAMPLE
+**** Fork()
+     - Es una *syscall* (llamada al sistema)
+     - Su traducción es "bifurcación"
+     - Este hace una copia casi exacta/idéntica de la [[Imagen del proceso][imagen del proceso]] padre, para crear su proceso hijo
+       - se copia los datos del (PCB, Bloque de control de proceso)
+       - se copia la estructura: stack,heap,codigo,datos
+       - El proceso padre-hijo NO comparten nada, son procesos separados, tienen la misma info nada más.
+
+     #+BEGIN_QUOTE
+     El ~fork~ diferencia entre el proceso-padre y proceso-hijo según el valor de retorno,
+     porque ambos tienen su propio *Stack* y los datos difieren
+     #+END_QUOTE
+***** Valor de retorno
+       - En lo único que difieren el proceso padre y proceso hijo luego la *syscall* ~fork()~
+       son los atributos (PID, PPID, y valor de retorno)
+       - El valor de retorno será cero,
+         si es el *poceso hijo* el que se está ejecutando
+       - El valor de retorno será mayor,
+         si es el *proceso padre* el que está ejecutandose
+         (el valor será el PID del proceso hijo)
+
+       #+BEGIN_SRC c
+         int valor;
+         // el valor de fork será el PID del proceso que está
+         valor = fork();
+
+
+         if (valor == 0){
+           // se ejecuta el
+           // código del proceso hijo
+         }
+
+         // cuando finalice la tarea el proceso hijo
+         //
+         if (valor > 0){
+           // se ejecuta el
+           // código del proceso padre
+         }
+       #+END_SRC
+
+       #+BEGIN_SRC c
+         p = fork();
+         if (p == 0){
+           printf("I am a child process!\n");
+           //Do child things
+          }
+          else {
+            printf("I am the parent process! Child is number %d\n", p);
+            //Do parenty things
+         }
+       #+END_SRC
+** [WAITING] (IPC) Comunicación entre procesos
+*** Conceptos
+   - *IPC* significa *Inter-Process Communication*, donde "inter" significa "entre"
+     (/relacionado con GDD con intra-file y inter-file, donde "intra" es "dentro"/)
+   - Los procesos no pueden acceder a la *imagen* de otro proceso (/ni tampoco entre proceso padre-hijo/)
+   - Deben utilizar una *técnica de comunicación* (si la usan, se llaman *cooperativos*)
+     1. Paso de mensajes
+     2. Memoria Compartida
+
+   #+BEGIN_QUOTE
+   Cada proceso tienen su propio *espacio de direcciones* separado
+   #+END_QUOTE
+*** Paso de Mensajes
+    - Es más lento porque requiere *cambios de contextos* (utilizan ~syscalls~)
+    - Util para manejar pequeña cant. de datos
+    - A través de *sockets*
+    - Produce ~overhead~ porque interviene el (SO) todo el tiempo
+
+    #+BEGIN_QUOTE
+    Se suele *serializar* los datos que se mandan a traves de *sockets*
+    #+END_QUOTE
+*** [WAITING] Memoria Compartida
+    - Se define al principio de la comunicación la *región de memoria compartida*
+    - Permite una comunicación más rápida
+    - NO requiere intervención del SO (se evita el ~overhead~)
+    
+    #+BEGIN_COMMENT
+    Sólo puede ocurrir si los procesos, están en la misma página, habla sobre el tema que
+    se da después sólo de memoria?
+    *Respuesta:*
+
+
+    La memoria compartida para la comunicación se definía al principio mediante una ~syscall~ ?
+    *Respuesta:* SI
+    #+END_COMMENT
+
+    *Observación:*
+    Al estar accediendo varios procesos a un mismo recurso compartido, puede producir problemas
+    (/Ej. una condición de carrera que provoque un Deadlock/)
+** [DONE] Terminación de un proceso
+   CLOSED: [2021-08-31 mar 18:33]
+*** Conceptos
+    - Los recursos asignados a ese proceso son liberados por el (SO)
+    - Le envia al proceso-padre informacion de salida, el resultado del estado mediante ~wait~
+*** Motivos
+    + Terminación normal
+      (Ese proceso hizo una invocación a una *syscall* ~exit~ para finalizarse)
+    + Terminado por otro proceso (Ej. proceso padre con ~abort~)
+    + Terminado por falla/error
+
+    + Porque ya no es necesario
+    + Porque pasó un período de tiempo
+*** Ejemplos
+     #+BEGIN_SRC c
+       /*
+        ,* Terminación Normal
+        ,* con las llamadas al sistema exit() ó wait()
+        ,*/
+       exit(int exit_status);
+
+       wait(int *status);
+
+       /*
+        ,* Terminación por otro proceso
+        ,*/
+       kill(pid, signal);
+     #+END_SRC
+* Cambio de Contexto - Cambio de Proceso - Cambio de Modo
+** Escenarios Comunes
+   El recíproco de los dos ejemplos NO siempre se cumple
+   
+   |------------------+---------------------------------------------------------------------|
+   | *esto*           | *implíca esto otro*                                                 |
+   |------------------+---------------------------------------------------------------------|
+   | 1 Process Switch | 2 context switch                                                    |
+   |                  | (se guarda el _contexto de un proceso (A)_  y se guarda el de otro) |
+   |                  |                                                                     |
+   |                  | Ej. de un _proceso usuario (A)_ al _planificador_ (SO)              |
+   |                  | y del _planificador_ (SO) al _proceso de usuario elegido (A)_       |
+   |------------------+---------------------------------------------------------------------|
+   | 1 Mode Switch    | 1 Context Switch                                                    |
+   |                  | (paso de ejecutar un _proceso de usuario (A)_                       |
+   |                  | a ejecutar el (SO) _sistema operativo_ ó viceversa                  |
+   |                  |                                                                     |
+   |                  | Ej.                                                                 |
+   |------------------+---------------------------------------------------------------------|
+** Recíproco de los Escenarios comunes
+   NO siempre se cumple el recíproco de los escenarios anteriores, es decir
+   + Que hayan dos _cambios de contexto_ NO implica que siempre haya un _cambio de proceso_
+   + Que haya un _cambio de contexto_ NO implica que siempre haya dos _cambios de modo_
+   
+    |------------------+----------------------------------------------------------------------------------------------|
+    | *esto*           | *NO siempre implíca esto otro*                                                               |
+    |------------------+----------------------------------------------------------------------------------------------|
+    | 2 Context Switch | 1 Process Switch (sin cambiar de proceso)                                                    |
+    |                  | - se puede elegir al mismo proceso                                                           |
+    |                  | - ejecutar una ~syscall~                                                                     |
+    |                  | - atender una ~interrupción~                                                                 |
+    |                  |                                                                                              |
+    |                  | Ej que NO se cumple (2 CTX Switch => 1 Process Swich)                                        |
+    |                  | Estar ejecutando un _proceso de usuario (A)_, atender una _interrupción_                     |
+    |                  | y luego seguir ejecutando el mismo proceso. Hubo 2 CTX del (SO) pero no un Cambio de Proceso |
+    |------------------+----------------------------------------------------------------------------------------------|
+    | 1 Context Switch | 1 Mode switch (sin cambiar de modo)                                                          |
+    |                  | (puede ocurrir una ~interrupción~ cuando ya estoy atendiendo otra interrupción               |
+    |                  | osea si tenemos ~interrrupciones anidadas~)                                                  |
+    |                  |                                                                                              |
+    |                  | Ej. que NO se cumple (1 CTX Switch => 1 Mode Switch)                                         |
+    |                  | Estar en _modo kernel_ y atender una ~interrupción~                                          |
+    |                  | y luego sin haber cambiado de modo, atender otra ~interrupción~                              |
+    |                  | en este caso hubo un _cambio de contexto_ pero no un cambio de modo                          |
+    |                  |                                                                                              |
+    |                  | Ej. que NO se cumple (1 CTX Switch => 1 Mode Switch)                                         |
+    |                  | Estar ejecutando una ~syscall~ (en modo kernel) y que ocurra una *interrupción*              |
+    |                  | que debamos atender, deteniendo la syscall.                                                  |
+    |                  | (Algunas syscall pueden llegar a deshabilitar las interrupciones, para no ser interrumpidas  |
+    |                  | aunque es el SO el que lo hace)                                                              |
+    |------------------+----------------------------------------------------------------------------------------------|
+** Cambio de Contexto (Context Switch)
+*** Conceptos
+    + Es cambiar el (CTX) Cambio de contexto ejecución de un *proceso de usuario* a ejecutar el (SO) ó viceversa
+    + Cuando se cambia el proceso que está en la *CPU* se debe guardar el (CTX) *Contexto de ejecución*
+       para luego reanudarlo en el lugar interrumpido
+    + En el tiempo que sucede el (SO) no hace nada útil (para el usuario) se considera *overhead* y se debe minimizar
+      (/esto se conoce como "idle" ó "ocioso", y es tiempo sin hacer nada/)
+    + Produce *Overhead*
+    + Se guardan los datos de los registros del (CPU) en el *Stack* del (SO) Sistema Operativo, y luego 
+       al (PCB) del Proceso (cuando vuelva al proceso)
+    + Cuando ocurre una *interrupción* los datos del (CTX) Cambio de contexto se pueden almacenar en
+      1. Temporalmente en el *Stack* del (SO) para restaurar el (CTX)
+      2. De forma más permanente si cambia de estado (Ej. a la cola de Ready) en el (PCB) del proceso (/que está siempre en memoria/)
+
+    #+BEGIN_QUOTE
+    En el *Stack* del (SO) se guardan los (CTX) Contextos de forma temporal,
+    y éste *Stack* es a nivel de (HW) donde almacena información.
+    cada vez que ocurre un cambio de contexto (Ctx)
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    Que hayan dos (CTX) *Cambios de contexto* no implíca que se haya un *Cambio de proceso*
+    
+    Si un proceso (A) invoca un ~wrapper~ para una ~sycall~ => habrá un (CTX) *Cambio de contexto*
+    de *modo usuario* a *modo kernel*, y de *modo kernel* a *modo usuario*, pero sigue siendo el mismo proceso (A)
+
+    Si se estaba ejecutando un *proceso de usuario* (A) y salta una *interrupción* => hay un (CTX) *cambio de contexto*
+    se atiende la *interrupción* (Ej. de IO), y luego se sigue ejecutando el *proceso de usuario* (A),
+    en ese caso NO hubo *cambio de proceso*
+
+    Pueden haber varios (CTX) *Cambios de contexto* sin que haya un *Cambio de modo*
+    #+END_QUOTE
+*** Objetivos
+    + Ejecutar otro proceso
+    + Atender una [[interrupción]] (ejecutará el [[interrupt handler]])
+    + Ejecutar una [[syscall]]
+*** Ejemplo
+    Cuando queremos ejecutar dos procesos (A) y (B)
+    1. el *sistema operativo* guarda el contexto de ejecución del proceso (A) para luego retomarlo
+    2. el *sistema operativo* carga el contexto de ejecución del proceso (B) hasta que termine 
+       y se guarde en el contexto de ejecución
+    3. se vuelve a cargar el contexto de ejecución del proceso (A)
+    
+    se repite (1)(2)(3) con cada proceso
+    se intercambia el contexto de ejecución
+    y se guarda dentro de un espacio propio de proceso (en el *PCB*)
+*** Observaciones 
+     + Es el (SO) *Sistema Operativo* quien carga/guarda los datos de los (CTX) contextos
+        de la (RAM) Memoria Principal a los registros del (CPU) Procesador y viceversa
+     + Es el registro (SP) *Stack Pointer* quien _guarda la dirección de memoria de la ULTIMA instrucción ejecutada_
+     + Es el registro (PC) *Program Counter* quien _guarda la dirección de memoria de la SIGUIENTE instrucción a ejecutar_
+** [TODO] Cambio de un proceso (Process Switch)
+*** Concepto
+    - Cambia de un *proceso de usuario* a otro *proceso de usuario*
+*** [TODO] Pasos
+*** Sobrecarga (Overhead)
+    - Cuando el *sistema operativo* interviene, provoca *overhead*
+    - Mientras menos intervenga el *sistema operativo* mejor
+    - El sistema operativo es un proceso pero NO proceso de usuario
+      (tiene un conjunto de procesos, pero no son de usuario)
+*** Cambio de modo
+*** Overhead
+*** Interrupciones
+** Cambio de modo de Ejecución
+   Sólo el *Sistema Operativo* es el que puede realizar el Cambio de [[file:clase01-parte2.org::*Modo de ejecución][Modo de ejecución]] 
+   de Modo kernel a Modo usuario, ó viceversa
+* Ejemplos en codigo
+  #+BEGIN_SRC C :results output
+    #include <stdio.h>
+
+    int main(char *varg, int carg){
+      int pid;
+      char *programa[] = {"ps", "f", NULL};
+      pid = fork();
+
+      if(pid <0){
+        printf("hubo un error con el fork\n");
+        return -1;
+      }
+      if(pid == 0){
+        // codigo proceso hijo
+        // al comando /bin/ps le paso el comando "ps" con el parámetro "f"
+        execv("/bin/ps", programa);
+      }
+      if(pid >0){
+        // codigo proceso padre
+        wait(NULL);
+        printf("proceso hijo finalizado\n");
+      }
+    }
+  #+END_SRC
+
+  #+RESULTS:
+  : PID TTY      STAT   TIME COMMAND
+  :    1549 pts/1    Ss+    0:00 /bin/bash
+  : proceso hijo finalizado
+
+* Obs con LINUX
+  En linux el estado *bloqueado* de un proceso es *suspendido*
+  

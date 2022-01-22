@@ -1,0 +1,116 @@
+* Link
+   1. https://docs.google.com/document/d/1XPsKeyl_1GN5Sx4lDLUcRfi1qxIOE5_xKryOLNFkHkU/edit
+* Template
+** Pregunta (1)
+   #+BEGIN_QUOTE
+   ¿Cuántas de estas operaciones implican syscalls?
+   
+   1) *Leer un archivo a través de la función wrapper “fread()”
+   2) Como hilo de usuario escribir una variable global del proceso
+   3) *Enviar un mensaje por un socket a otro proceso del mismo sistema y usuario
+   4) Como hilo de kernel ejecutar una función del proceso
+   5) Crear un hilo de usuario
+   6) Ejecutar la instrucción “test_and_set” (o su análoga “compare_and_exchange”) para sincronizar una región crítica
+   #+END_QUOTE
+*** Respuesta Correcta
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (2)
+   #+BEGIN_QUOTE
+   ¿Cuáles de los elementos de la imagen del proceso pueden ser escritos y modificados en su tamaño por el propio proceso?
+   
+   1) Los Datos solamente
+   2) Los Datos y el Heap
+   3) El Heap solamente
+   4) *El Heap y el Stack
+   5) El PCB
+   6) El Código
+   7) Ninguna de las alternativas mencionadas es correcta
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 4) El Heap y el Stack
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (3)
+   #+BEGIN_QUOTE
+   ¿Cuál de las siguientes ventajas corresponden a procesos por sobre KLTs?
+
+   1) Permiten el multiprocesamiento ya que son administrados por el SO
+   2) Su creación e intercambio son más livianos
+   3) De forma inherente se pueden comunicar por tener memoria compartida
+   4) Son más estables y seguros
+   5) Todas las ventajas citadas son correctas
+   6) Ninguna de las ventajas citadas es correcta
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 4) Son más estables y seguros
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (4)
+   #+BEGIN_QUOTE
+   ¿En qué caso podría ocurrir una condición de carrera?
+   
+   1) Cuando hay varios procesos bloqueados esperando que ocurra un evento como resultado de otro del conjunto
+   2) *Cuando tenemos distintos resultados sobre la ejecución de un sistema dependiendo de su orden de ejecución
+   3) Cuando dos o más procesos comparten recursos en modo lectura
+   4) Cuando varios procesos están en ejecución pero realmente no avanzan con ningún trabajo útil
+   5) *Cuando dos o más procesos comparten recursos al menos uno en modo escritura en forma concurrente
+   6) 3, 4 y 5
+   7) 2 y 5
+   8) Todos son correctos
+   9) Ninguno es correcto
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 7) 2 y 5
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (5)
+   #+BEGIN_QUOTE
+   Indicar 3 valores válidos para inicializar 3 semáforos (en orden): un mutex, un contador, un semáforo binario.
+   
+   1) 1, -10, 0 -
+   2) 0, 5, 1 - 
+   3) 1, 10, 0
+   4) 1, 5, -1 - 
+   5) 0, 5, 0 - 
+   6) Todas las opciones son válidas
+   7) Ninguna es válida
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 3) 1, 10, 0
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (6)
+   #+BEGIN_QUOTE
+   ¿Cuál de las siguientes afirmaciones es CORRECTA sobre ULTs?
+   
+   1) Los ULTs de distintos procesos siempre utilizan el mismo algoritmo de planificación
+   2) En caso de usar jacketing equivale a usar KLTs
+   3) Es más liviana su creación y switches y permite utilizar un algoritmo de planificación distinto al del SO
+   4) Al volver a ser elegido un KLT que había sido desalojado por el SO, su biblioteca de hilos siempre puede replanificar y elegir qué ULT ejecutar
+   5) Todas las afirmaciones sobre ULTs citadas son correctas
+   6) Ninguna afirmación sobre ULTs citada es correcta	
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 3) Es más liviana su creación y switches y permite utilizar un algoritmo de planificación distinto al del SO
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+** Pregunta (7)
+   #+BEGIN_QUOTE
+   G Peter está pensando en implementar un algoritmo de planificación de corto plazo para su sistema,
+   el cual cuenta con procesos muy variados que no fueron programados por él,
+   por lo que desea que ninguno sufra starvation ni pueda monopolizar la CPU;
+   además quiere priorizar aquellos que son interactivos (IO bound).
+   ¿Cuál de estos algoritmos debería implementar?
+   
+   1) FIFO
+   2) SJF (sin desalojo) 
+   3) SJF (con desalojo) 
+   4) HRRN 
+   5) RR 
+   6) VRR
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 6) VRR
+*** Justificación Respuestas Incorrectas
+*** Observaciones

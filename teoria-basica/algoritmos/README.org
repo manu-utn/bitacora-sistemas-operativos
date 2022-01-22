@@ -1,0 +1,154 @@
+* Algoritmos de SO-Commons
+** Conceptos
+   La idea es replicar algunas funciones de las commons para practicar y entender mejor ciertos conceptos
+** Strings
+*** Firmas
+    #+BEGIN_SRC C
+      char *string_repeat(char character, int count);
+      char* string_duplicate(char* original);
+      void string_append(char** original, char* string_to_add);
+     
+      void string_to_upper(char *text);
+      void string_to_lower(char *text);
+      void string_capitalized(char *text);
+     
+      void string_trim(char** text);
+      void string_trim_left(char** text);
+      void string_trim_right(char** text);
+     
+      bool string_starts_with(char *text, char *begin);
+      bool string_ends_with(char* text, char* end);
+     
+      bool string_equals_ignore_case(char *actual, char *expected);
+     
+      char **string_split(char *text, char *separator);
+      char* string_substring(char* text, int start, int length);
+      char *string_substring_from(char *text, int start);
+      char *string_substring_until(char *text, int length);
+     
+      void string_iterate_lines(char** strings, void (*closure)(char*));
+      char* string_reverse(char* palabra);
+      bool string_contains(char* text, char *substring);
+     
+      char** string_array_new();
+      void string_array_destroy(char** array);
+    #+END_SRC
+*** Interesantes
+**** _string_do
+    #+BEGIN_SRC C
+      void string_to_upper(char *text) {
+        _string_do(text, &_string_upper_element); // <----
+      }
+      
+      void string_to_lower(char *text) {
+        _string_do(text, &_string_lower_element); // <----
+      }
+      void string_capitalized(char *text) {
+        if (!string_is_empty(text)) {
+          _string_upper_element(text);
+          if (strlen(text) >= 2){
+            string_to_lower(&text[1]);
+          }
+        }
+      }
+      
+      static void _string_do(char *text, void (*closure)(char* c)){
+        int i = 0;
+        while (text[i] != '\0') {
+          closure(&text[i]);
+          i++;
+        }
+      }
+    #+END_SRC
+**** _string_array_push
+     #+BEGIN_SRC C
+       void string_array_push(char*** array, char* text) {
+         _string_array_push(array, text, string_array_size(*array));
+       }
+       
+       int string_array_size(char** array) {
+         int size = 0;
+         void _count_lines(char* _) {
+           size++;
+         }
+         string_iterate_lines(array, _count_lines);
+       
+         return size;
+       }
+       
+       static void _string_array_push(char*** array, char* text, int size) {
+         ,*array = realloc(*array, sizeof(char*) * (size + 2));
+         (*array)[size] = text;
+         (*array)[size + 1] = NULL;
+       }
+     #+END_SRC
+*** Implementaciones
+* Algoritmos de git
+* Algoritmos de ordenamiento
+* Tips
+** Referencias
+   1. https://en.wikipedia.org/wiki/Sizeof
+   2. https://dyclassroom.com/c/c-dynamic-memory-allocation-realloc-function
+** Integers
+   1. https://www.gnu.org/software/libc/manual/html_node/Integers.html
+   2. http://www.indicart.com.ar/seminario-embebidos/Elementos%20de%20C%20Embebido.pdf
+** Especificadores en printf
+   1. https://man7.org/linux/man-pages/man3/printf.3.html
+   2. https://stackoverflow.com/questions/30354097/how-to-printf-a-memory-address-in-c/30354164
+   3. https://stackoverflow.com/questions/15610053/correct-printf-format-specifier-for-size-t-zu-or-iu
+** Memoria
+   1. https://undo.io/resources/gdb-watchpoint/how-search-byte-sequence-memory-gdb-command-find/
+   2. https://www.geeksforgeeks.org/memory-layout-of-c-program/
+   3. https://codingfreak.blogspot.com/2012/03/memory-layout-of-c-program-part-1.html
+   4. https://codingfreak.blogspot.com/2012/03/memory-layout-of-c-program-part-2.html
+   5. https://docplayer.net/136597064-Chapter-8-main-memory-operating-system-concepts-8-th-edition.html
+* GDB + Valgrind
+** Tips
+   - Al compilar con ~gcc~ debemos pasar el parámetro ~-g~ para no tener problemas con ~gdb~
+   - Podemos ejecutar ~gdb~ con el código fuente pasando el parámetro ~-tui~
+** GDB
+*** Parámetros
+    |-----------+---------------------------------------------------------|
+    | Parámetro | Descripción                                             |
+    |-----------+---------------------------------------------------------|
+    | ~tui~     | Abre gdb con un buffer extra, el del código fuente ~.c~ |
+    |-----------+---------------------------------------------------------|
+*** Comandos
+    |---------------+-----------+---------------------------------------------------------------------------|
+    | Comando       | Abreviado | Descripción                                                               |
+    |---------------+-----------+---------------------------------------------------------------------------|
+    | ~info locals~ |           | Imprime el valor de las variables de la función en donde estémos          |
+    | ~info args~   |           | Imprime el valor de los parámetros de la función en donde estémos parados |
+    | ~backtrace~   | ~bt~      | Muestra el recorrido del programa                                         |
+    |               | ~info b~  | Lista los *breakpoints*                                                   |
+    |---------------+-----------+---------------------------------------------------------------------------|
+*** Crear servidor y conectarse desde otra distribución de Linux
+   - Si creamos un servidor con ~gdbserver~ y queremos acceder desde otra distribución de linux
+     debemos usar ~gdb-multiarch -q~
+*** Imprimir valores de un Array
+    #+BEGIN_SRC c
+      // 1. Con el operador * desreferenciamos el array para obtener los valores
+      // 2. Seguido del identificador@ la cantidad de elementos de arreglo
+      // Ej. print *nombreArray@longitudDelArray
+      print *numeros@4
+    #+END_SRC
+*** Invalid read - Imprimir valores fuera de una dirección de memoria reservada
+    Con ~print *(nombreArray-1)~ ó ~print *(nombrePtr+1)~ por si asignamos un valor fuera del bloque
+    y leer el bloque siguiente
+*** Deseferenciar punteros ó conocer el tamaño en bytes de estructuras
+   - Con ~print sizeof(nombreStruct)~ podemos saber el tamaño de algún struct, útil para serializar datos
+   - Con ~print *nombrePtr~ desreferencia el puntero, útil para los Segmentation Fault, y queremos saber el valor
+*** Backtrace
+     #+BEGIN_QUOTE
+     Cuando tiramos ~backtrace~ las instrucciones se leen como una pila/stack,
+     estando en la cima de la pila las más recientes
+     #+END_QUOTE
+** Referencias
+   1. https://www.youtube.com/watch?v=8JEEYwdrexc&ab_channel=MikeShah
+   2. https://www.youtube.com/watch?v=xmvsQ0OCLiQ&ab_channel=BrianFraser
+   3. https://www.youtube.com/watch?v=vcVmWbYEIsk&ab_channel=SelikSamai
+   4. https://pwnable.tw/
+* C Vulnerabilidades
+   1. https://www.youtube.com/watch?v=KWG7prhH-ks&ab_channel=crazyhugsy
+   2. https://www.youtube.com/watch?v=E9gx0MflQm4&ab_channel=TheSecurityTube
+   3. exploit-exercises.com/protostar/format1

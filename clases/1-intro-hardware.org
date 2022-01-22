@@ -1,0 +1,405 @@
+#+TITLE: Clase 01 - Repaso Hw
+
+* conceptos al aire
+** Sistema Operativo
+*** Conceptos
+   - Administrar los recursos
+   - Ejecutar los programas
+** Memoria Virtual 
+** Proceso
+*** Estados
+    - Inactivo
+    - En ejecución
+*** Conceptos
+    - Ocupan espacio
+    - Archivos ejecutables almacenados
+*** Ejecucion
+    - Multitareas
+**** ejecución en paralelo
+     hacemos dos cosas al mismo tiempo
+     (porque tenemos varios procesadores)
+**** ejecución concurrente/simultaneo 
+
+* Elementos Básicos
+  - Procesador
+  - Memoria
+  - Módulo de E/S
+* Sistema operativo
+  - pueden NO funcionar en algunos procesadores (Ej. 32/64 bits)
+  - representaría a la parte Software
+* Procesador
+** [DONE] Registros
+   CLOSED: [2021-08-30 lun 16:55]
+*** Conceptos
+    - Son un *medio de almacenamiento* limitado que le corresponde a la *CPU* (/procesador/)
+
+    #+BEGIN_QUOTE
+    Es importante saber del (PC) Program Counter, quien *guarda próxima instrucción a ejecutar*
+    ya que por default la ejecución de instrucciones es *secuencial* a menos que hayan condicionales
+    que provoquen un salto de instrucción.
+
+    El (PSWD) Program Status Word, guarda *bits* que representan el Modo, Track Flag, Habilitación de Interrupciones
+    permite el proceso de *depuración de código* (/con el track flag, que detiene de a poco la ejecución del programa/)
+    #+END_QUOTE
+*** Tipos
+    |-------------------+----------+---------------------------------------------------------------------|
+    |                   | Registro | Nombre                                                              |
+    |-------------------+----------+---------------------------------------------------------------------|
+    | De Uso Especifico | SP       | Stack Pointer                                                       |
+    |                   |          | - El SO tiene su propio Stack (/Ej. para restaurar cambios de CTX/) |
+    |                   |          | - Cada proceso tiene su propio Stack                                |
+    |                   |          |                                                                     |
+    |                   | PC/IP    | Program Counter ó Instruction Pointer                               |
+    |                   |          | - Indica próxima instrucción a ejecutar                             |
+    |                   |          | - Fundamental para los [[Cambio de Contexto]]                           |
+    |                   |          |                                                                     |
+    |                   | PSW      | Program Status Word                                                 |
+    |                   |          | - Indica en que [[file:clase01-parte2.org::*Modos de ejecución][modo de ejecución]] está la CPU                       |
+    |                   |          | (Osea *modo kernel* ó *modo usuario*)                               |
+    |-------------------+----------+---------------------------------------------------------------------|
+    | De Segmento       | CS       | Code Segment                                                        |
+    |                   | DS       | Data Segment                                                        |
+    |                   | SS       | Stack Segment                                                       |
+    |-------------------+----------+---------------------------------------------------------------------|
+    | De Control        | IR       | Instruction Register                                                |
+    |                   | MAR      | Memory Address Register                                             |
+    |                   | MBR      | Memory Buffer Register                                              |
+    |-------------------+----------+---------------------------------------------------------------------|
+    | De Uso General    | AX       | Accumulator                                                         |
+    |                   | CX       | Contador                                                            |
+    |-------------------+----------+---------------------------------------------------------------------|
+
+    *Observación:*
+    - EL PSW permite el proceso de *depurar código*
+*** Clasificación
+**** Registros visibles por el usuario
+      - podemos ejecutar de forma directa
+      - el usuario puede manipular/ejecutar
+      - donde se guardan las variables
+**** Registros de control y estado (PSW ?)
+     - el estado se modifica cuando
+       - hay algun error como una división por cero, ..
+       - por cada instrucción que se ejecuta
+     - el control.. (podria estar el program counter?)
+** [DONE] Instrucciones
+   CLOSED: [2021-08-30 lun 17:31]
+*** Conceptos
+   - Son las tareas que sabe hacer el *procesador* (Ej. operaciones ariméticas, ...)
+   - Es lo que ejecutamos en el *CPU* (/el procesador/)
+*** Ciclo de Instrucción
+    #+BEGIN_QUOTE
+    Para ejecutar un archivo debe estar cargado en la memoria
+    porque solo los que están en memoria se pueden ejecutar
+    y son las instrucciones de los programas los que están en
+    la memoria
+    #+END_QUOTE
+
+    Se realiza un *ciclo de instrucción* para ejecutar los programas
+    instruccion por instrucción
+**** Diagrama
+**** Paso a paso
+     1. FETCH (busca la siguiente instrucción)
+        - El (PC) Program counter" es el que tiene la sig. 
+        - El procesador va a buscar esa instrucción
+     2. DECODE
+        - se decodifica la instrucción
+        - se traen los *operandos* (/algunas instrucciones no los tienen como el NOP, CLI/)
+     3. EXECUTE
+        - cuando ya tenemos los operandos
+     4. WRITE 
+        - Se escriben los resultados de la operación+operados
+        - el (PC) Program Counter incrementa en 1, y apunta a la sig. instrucción
+     5. FETCH de nuevo ó Finalizar
+        - se repite el ciclo, y vuelve al *FETCH*
+        - a menos que sea una operación de salto (/Ej. JZ, JNZ/)
+**** Observaciones
+     - Los *operandos* de las instrucciones son variables que guardan algún dato
+     - La instrucción ~CLI~ permite habilitar/deshabilitar las *interrupciones*
+     - Siempre que se ejecuta el FETCH
+       1. luego se EJECUTA la instrucción
+       2. luego se chequea si hubo una nueva [[Interrupciones][interrupción]] <- IMPORTANTE
+          (/se debe esperar que se termine de ejecutar la instrucción en curso para atender otra/)
+**** Ejemplos
+    #+BEGIN_EXAMPLE
+    i = i +1
+
+    1. FETCH: el procesador ejecuta el fetch
+       - El PC busca la instrucción en el procesador
+    2. EXECUTE: ejecuta la instrucción (le suma 1)
+       - En el IR cargamos la instrucción
+    3. finaliza
+       - luego que le sume 1, y vea que incrementó
+         sino repite el ciclo
+    4. repite el ciclo de instrucción
+       - vuelve a hacer el FETCH
+    #+END_EXAMPLE
+*** Instrucciones privilegiadas 
+    - SOLO las puede ejecutar el (SO) Sistema Operativo
+    - NO pueden ser modificados
+*** Ejemplos
+    #+BEGIN_EXAMPLE
+    i = i +1;
+
+    no es una instrucción,
+    es una sentencia que tiene conjunto de instrucciones (que son 3)
+    #+END_EXAMPLE
+
+    a bajo nivel las instrucciones en x86 serían:
+    
+    #+BEGIN_EXAMPLE
+    mov AC[100Ah]
+    add AC,1
+    mov [100Ah],AC
+    #+END_EXAMPLE
+** [TODO] Interrupciones - Clasificación
+*** Conceptos
+   #+BEGIN_QUOTE
+   - Para cortar la ejecución de la secuencia actual de instrucciones
+   - son notificaciones de eventos dirigidas al (CPU) *Procesador*
+   #+END_QUOTE
+
+   - Son dirigidas al (CPU) [[Procesador][Procesador]] ó al (DMA) si lo tuviese
+   - Para poder ejecutar varios programas (en forma *concurrente*
+     en intervalos de tiempos, no confundir con ejecución en paralelo/simultáneo)
+   - el (SO) es el que interrumpe
+   - las notificaciones pueden ser externas/internas (???)
+*** De hardware (externas al procesador)
+    Cuando son *externas al procesador*
+   
+    Ej. Una placa de red, una impresora, un disco...
+
+    #+BEGIN_EXAMPLE
+    Por ejemplo, recibo información en la placa de red,
+    pero la placa de red no sabe que hacer con esa información,
+    entonces se da un aviso al Procesador que la placa de red
+    terminó de recibir la información.
+    Entonces se produce una interrupción, y el SO hace 
+    lo que tenga que hacer
+    #+END_EXAMPLE
+*** De software (internas al procesador)
+    - consecuencia de algo que se está ejecutando (instrucciones)
+    - cuando se generan, deben ser atendidas por el SO
+
+    #+BEGIN_EXAMPLE
+    Puede pasar con una división por cero,
+    donde el programa se deja de ejecutar por el error,
+    entonces se ejecuta el SO, quien maneja la interrupción)
+    #+END_EXAMPLE
+*** [DONE] Enmascarables
+    CLOSED: [2021-08-30 lun 19:25]
+    - el (SO) no necesita atenderlas de forma inmediata
+*** [DONE] No enmascarables
+    CLOSED: [2021-08-30 lun 19:25]
+    - tienen más prioridad (para el hardware es vital)
+    - el (SO) se deben atender de forma inmediata, deteniendo el *ciclo de ejecución* que estaba realizando
+    - para problemas graves
+    - el dispositivo que tiene el problema, es quien tiene que mandar la interrupción 
+    
+    *Observación:*
+    Por más que el *bit* de habilitación esté deshabilitado, se van a atender igual
+*** De E/S
+    - cuando alguno de los dispositivos termina de realizar una operación
+      (Ej. impresora de imprimir, placa de red de recibir info, ...)
+    - notificacion de un evento al procesador
+      (Para finalizar la ejecución de ese proceso, y que el SO haga
+       algo con el)
+*** Fallas de HW
+*** Clock
+    - es como un temporizador que se ejecuta cada x tiempo
+    - para disparar una interrupción en un tiempo determinado
+    - por lo general para ejecutar programas
+*** Habilitación
+    - Sólo las [[Enmascarables][enmascarables]] se pueden habilitar/deshabilitar
+    - Las [[No Enmascarables][NO enmascarables]] se atienden estén o no habilitadas,
+      porque se tienen que atender SI O SI
+*** [TODO] Síncronas VS Asíncronas
+**** Síncrona
+     - es resultado que el CPU la está ejecutando en ese momento
+       (/Ej. una división por cero/)
+**** Asíncrona
+*** [DONE] Excepciones Vs Traps
+    CLOSED: [2021-08-30 lun 19:26]
+**** traps
+     - Se generan interrupciones para analizar el código
+     - para manejar el código (depurar)
+** [TODO] Interrupciones - Procesamiento
+*** A nivel hardware
+    1. El controlador de un dispositivo ó (HW)  genera una *Interrupción*
+    2. el (CPU) completa la ejecución de la *instrucción*
+    3. el (CPU) identifica la fuente y lo notifica
+    4. el (CPU) coloca el (PC) y el (PSW) en *Stack* del (SO) Sistema Operativo <- "temporalmente"
+    5. el (CPU) carga el nuevo (PC) en función de la *Interrupción*
+
+    Observaciones
+    - En el (PC) *Program Counter* se guarda la sig. instrucción
+    - El (PIC) *Programmable Interrupt Controller*
+    - Interrupción por HW -> IRQ  -> PIC
+*** A nivel Software
+    Continúa el último paso (5) del de (HW), y todo esto lo hace el (SO) Sistema Operativo
+
+    1. La rutina guarda el resto de la info del estado de la (CPU) en los registros
+    2. se procesa la *interrupción*
+    3. se restaura la info del estado de la (CPU) <- del Stack del (SO)
+    4. se restaura el anterior (PC) y (PSW) <- del *ptr de la instrucción guardada en el (PC)
+
+    - Entre el paso (5) de HW y (1) de SW se le da el control al *Interrupt Handler*
+*** Interrupciones secuenciales
+    Cuando aparecen varias interrupciones
+    1. Se espera que la instrucción/operación en ejecución de la Interrupción anterior termine
+    2. Luego se atiende la nueva *interrupción*
+    3. Luego se restaura el (CTX) Contexto del Proceso <- que está en el *Stack* del (SO) Sistema Operativo
+*** Interrupciones anidadas
+    Se *priorizan* las interrupciones
+    1. Se guarda el (CTX) Contexto de la instrucción/interrupción en ejecución de la Interrupción anterior <- en el *Stack* del SO
+    2. Se atiende la interrupción prioritaria
+    3. Se restaura el (CTX) Contexto de la *interrupción* anterior (1)
+    4. Se restaura el (CTX) del Proceso
+*** Interrupciones secuenciales Vs anidadas
+    - Las anidadas se _priorizan las interrupciones_ según cual sea dispositivo que la notifique
+    - Las secuenciales _se espera que se terminen_ antes de atender otra
+** [TODO] Interrupt Handler
+*** Conceptos
+    - Es un *puntero* al *vector de interrupciones*
+      (/por tanto puede haber múltiples Interrupt Handlers, o sea punteros que apunten al vector/)
+    - lo controla de forma automática el (SO), y éste toma el control
+    - los programas de usuario no se dan cuenta que fueron interrumpidos
+
+    #+BEGIN_COMMENT
+    El (DMA) se encarga de *atender las Interrupciones* de los Controladores de IO,
+    y el (DMA) luego le avisa al (CPU) con una *Interrupción*
+    #+END_COMMENT
+*** Vector de Interrupciones
+    - Guarda la dirección del principio de cada *Interrupt Handler*
+*** Procesamiento de interruciones
+    Tareas que realiza el =HW=
+     1. Se genera una interrupcion (por algún dispositivo)
+     2. finaliza la instrucción actual
+     3. determina que hay una interrupción
+     4. se guarda ~(PC)~ y ~(PSW)~ del programa
+     5. se carga en ~(PC)~ la direccion del manejador de interrupcioes
+
+     Luego las sig. tareas las realiza el =Sistema operativo=
+     1. se guarda la información (del procesador) el program counter ~(PC)~ el ~(PSW)~
+     2. procesa la interrupción
+     3. restaura información del procesador guardada
+        "carga todo de nuevo, el ~(PC)~ para saber que programa ejecutar"
+     4. restaura ~PC~ y ~PSW~
+*** Múltiples interrupciones
+    cuando se tiene que ejecutar multiples 
+    - en orden secuencial
+    - en orden por prioridad
+* Memoria
+** Conceptos
+  - Se almacenan los programas a ejecutar
+  - Se almacenan datos (para que funcionen los programas)
+** Jerarquía de memoria
+  #+BEGIN_QUOTE
+   Cuandos suspendemos la máquina, se guarda energia en la *memoria*
+   por tanto sigue guardando en *volatil*
+
+   Cuando hinbernamos la máquina, lo que está en la *caché* y en la *memoria*
+   se guarda en no volatil
+  #+END_QUOTE
+
+   Si ordenamos por mayor velocidad y menor tamaño,
+   - a mayor tamaño menor costo (en bit) y menor velocidad
+   - mientras mas rapido, mas chiquito, y mas velocidad
+
+   |            <c>             |
+   |----------------------------|
+   |      Registros de CPU      |
+   |----------------------------|
+   |       Memoria Caché        |
+   |----------------------------|
+   |     Memoria Principal      |
+   |           (RAM)            |
+   |----------------------------|
+   |     Memoria Secundaria     |
+   | (Discos de almacenamiento) |
+   |----------------------------|
+
+** Volatil
+   - toda la información se borra al apagar la compu
+** No volatil
+   - persiste la informacion, apesar de apagar la computadora
+* [DONE] Mecanismo/Técnicas de E/S
+  CLOSED: [2021-08-30 lun 18:20]
+** E/S programada
+*** Conceptos
+   - NO muy utilizada
+   - el (CPU) *Procesador se queda esperando* que termine el *dispositivo E/S*
+     antes de continuar otra tarea
+   - la realiza el (CPU) Procesador y se comunica con el *Controlador de Disco*
+*** Proceso
+  1. El (CPU) dispara una *operación de lectura* al módulo IO
+  2. El (CPU) lee el estado del *módulo de IO* (una notificación de fin de IO)
+  3. El (CPU) chequea el Estado del controlador
+     - no preparado => vuelve a leer (paso 2)
+     - error
+  4. Preparado
+     1. El (CPU) lee una palabra del módulo de IO
+     2. El (CPU escribe la palabra en (RAM) Memoria Principal (/porque el controlador de IO NO puede escribir directo en MP/)
+     3. bloque final?
+        + NO => el (CPU) vuelve a disparar una operación de lectura (paso 1)
+        + SI => el (CPU) pasa a la sig. Instrucción
+*** Ventaja
+    - Rápido para transferencias de pocos bytes
+    - Evita *overhead*
+*** Desventajas (Problema)
+    - MAL uso del CPU (/porque chequea a cada rato/)
+    - En vez de sólo ejecutar instrucciones, se la pasa chequeando el estado del *módulo de IO*
+*** Solución? Las Interrupciones (Interrup Handler)
+    - Se puede utilizar *interrupciones* para no estar chequeando constantemente el estado
+    - Engloba a los pasos (2) (3) (4)
+** E/S por interrupciones
+*** Conceptos
+   - Mejor que la técnica de [[E/S programada][E/S programada]] que chequea a cada rato el estado del módulo de IO
+   - Realiza el mismo proceso que el de *E/S programada* excepto que no chequea a c/rato el estado del módulo de IO
+   - Lee el estado del *módulo de IO* sólo cuando el *controlador de IO* le avisa (/en vez de chequear a c/rato/)
+   - El (CPU) *Procesador espera una interrupción* pero mientras puede realizar otras tareas
+   - Lo realiza el (CPU) Procesador
+*** Ventajas
+    - Se evita el chequeo continuo
+*** Desventajas
+    - Agrega complejidad, por el hecho de guardar/restaurar contexto,...
+    - Se sigue usando MAL la CPU (aunque en menor medida que la de IO programada)
+*** Conceptos que utiliza
+    - *Interrupt Handler* (/pasos 2,3,4/) los realiza la CPU mediante un módulo del SO (en esta técnica)
+** (DMA) Acceso directo a memoria
+*** Conceptos
+   - Mecanismo/Técnica más utilizada
+   - Mejor que la [[E/S por interrupciones]]
+   - Es también por *Interrupciones*
+   - El (DMA) es otro dispositivo (otro procesador, con operaciones más básicas, que NO son ejecutar el instrucciones)
+
+   *Observación:*
+   En la materia se da por sentado, que siempre se tiene al (DMA)
+
+   #+BEGIN_QUOTE
+   El (CPU) *Procesador* le ordena al (DMA) *Direct Memory Access* que haga una *operación de E/S*
+   y este le avisa al (CPU) *Procesador* cuando termina y si ya está cargada en (RAM) Memoria Principal
+   #+END_QUOTE
+*** Proceso
+    1. El (CPU) *Procesador* dispara una *operación de lectura* al *Controlador de DMA*
+    2. El (CPU) *lee estado del módulo de (DMA)* <- el (DMA) le avisa al (CPU) mediante una *Interrupción*
+    3. El (CPU) pasa a la siguiente instrucción
+
+    *Observación:*
+    Es el (DMA) el que escribe en (RAM) Memoria Principal (/en las otras técnicas era el CPU/)
+*** Ventajas
+    - Se libera de trabajo a la (CPU), para que sólo ejecute instrucciones (interviene solo al principio)
+    - transferencias más eficientes (/relacionado al BUS/)
+*** Desventajas
+    - Requiere un HW especial
+    - Requiere más tiempo inicial
+    - Robo de ciclo de bus
+* [DONE] Controlador de E/S y Módulo de E/S
+  CLOSED: [2021-08-30 lun 21:07]
+  - El módulo de IO es donde conectamos los dispositivos (teclado, mouse, monitor, ..)
+  - Un controlador de IO se encarga de gestionar uno o varios módulos de IO
+    (/Ej. una controladora de disco/)
+* [DONE] BUS
+  CLOSED: [2021-08-30 lun 21:07]
+  - Para conectar el procesador, memoria, modulo de E/S
+  - Permite que los dispositivos IO se comuniquen con la CPU, Disco, Memoria
+

@@ -1,0 +1,220 @@
+* Cuestionario (1)
+** Pregunta (1)
+   #+BEGIN_QUOTE
+   *¿Qué es la técnica de overlaying?*
+   
+   1. Una técnica utilizada por el SO para implementar Memoria Virtual
+   2. Una técnica previa a la Memoria Virtual usada para ejecutar procesos más grandes que la memoria
+   3. Una configuración de la RAM para poder ejecutar procesos más grandes
+   4. Ninguna es correcta
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 2) Una técnica previa a la Memoria Virtual usada para ejecutar procesos más grandes que la memoria
+*** Justificación Respuestas Incorrectas
+    - 1) NO, porque no es a nivel de SO
+    - 3) NO, la RAM no se entera de estas cosas
+*** Observaciones
+   #+BEGIN_QUOTE
+   Antes de que desde los SOs den soporte a la MV, a nivel desarrollo se implementó esta técnica
+   para intercambiar secciones en memoria y así poder ejecutar procesos más grandes
+   que la memoria cargando sólo la sección necesaria
+   #+END_QUOTE
+** Pregunta (2)
+   #+BEGIN_QUOTE
+   *¿Cuáles de los siguientes atributos serían útiles guardar en la Tabla de Páginas convencional?*
+
+   1,2,5, 6,8
+   
+   1. Si está presente en RAM
+   2. Si fue modificada
+   3. Link a la TLB
+   4. Ubicación en disco
+   5. Bit de uso
+   6. Nro de marco asignado
+   7. Proceso al que pertenece
+   8. Momento de último acceso
+   #+END_QUOTE
+*** Respuesta Correcta
+    - 1) Si está presente en RAM
+    - 2) Si fue modificada
+    - 4) Ubicación en disco
+    - 5) Bit de uso
+    - 6) Nro de marco asignado
+    - 8) Momento de último acceso
+*** Justificación Respuestas Incorrectas
+    - 3) NO, xq es unica, no tiene sentido
+*** Observaciones
+    #+BEGIN_QUOTE
+    La mayoría son válidas, lo más importante obviamente es que indique el *marco*
+    Al agregar memoria virtual, es importante poder saber si esa pág está en memoria o si
+    hay que ir a buscarla a disco(por eso nos serviría su posición).
+
+    Por otro lado, dependiendo del algoritmo de sustitución de páginas puede ser necesario *bit de uso* ~u~,
+    el *bit de modificado* ~m~ y el último instante de referencia (lo último servía para el LRU)
+    
+    También sería útil saber por ejemplo si el acceso es sólo en modo lectura (por ejemplo para compartir frames).
+    
+    Por último, no tiene sentido tener acceso a la *TLB*, será la *MMU* quién acceda a ambos.
+    Tampoco tiene sentido tener el proceso, ya que justamente el link a la Tabla de Páginas
+    está en el PCB del proceso (sí tendría sentido por ejemplo en la invertida).
+    #+END_QUOTE
+** [#A] Pregunta (3)
+   #+BEGIN_QUOTE
+   V/F
+   *En el caso de intentar ejecutar una instrucción, se podría generar en total 0 o 1 PF*
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+BEGIN_QUOTE
+    Podrá generar más, ya que tiene que ir a buscar en memoria la instrucción y los operandos.
+    Por eso luego de ir a buscar a disco hay que volver a reejecutar toda la instrucción.
+    #+END_QUOTE
+** [#A] Pregunta (4)
+   #+BEGIN_QUOTE
+   *¿Cuáles de las siguientes afirmaciones son correctas sobre el PF?*
+   
+   1. Es una interrupción lanzada por el SO
+   2. Es una interrupción lanzada por la MMU
+   3. Es una interrupción atendida por la MMU
+   4. Es una interrupción atendida por el SO
+   5. Indica que la página a la que se está intentando acceder es inválida
+   6. Indica que la página a la que se está intentando acceder está en disco
+   7. Es posible minimizar su cantidad a cero
+   8. En paginación bajo demanda inicialmente es probable que ocurran varios
+   #+END_QUOTE
+*** Respuesta Correcta
+    - 2) Es una interrupción lanzada por la MMU
+    - 4) Es una interrupción atendida por el SO
+    - 8) En paginación bajo demanda inicialmente es probable que ocurran varios
+*** Justificación Respuestas Incorrectas
+    - 3) NO, porque las *interrupciones* son atendidas por el SO
+    - 7) NO, tiende a cero pero NUNCA es cero
+*** Observaciones
+    #+BEGIN_QUOTE
+    El PF es una interrupción lanzada por la MMU cuando ve que el *BIT de presencia está* en 0 ~p=0~,
+    es decir, la página no está en RAM.
+    *Luego el SO la interpretará si es que está en disco o si es que es inválida.*
+    
+    Nunca podrá ser 0 ya que sino implicaría que todas las páginas estarían siempre cargadas (y dejaría de tener sentido memoria virtual).
+    En *Paginación bajo demanda* se va a cargar una página recién cuando se intente accederla por eso al comenzar a
+    ejecutar un proceso no cargaríamos a priori ninguna generando varios PFs iniciales.
+    #+END_QUOTE
+** [#A] Pregunta (5)
+   #+BEGIN_QUOTE
+   V o F.
+   *SI la asignación de frames es dinámica (cambia la cantidad de frames asignados a un proceso durante su "vida")
+   implica que el tipo de sustitución de páginas es global*
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+BEGIN_QUOTE
+    Es cierto que *si la Sustitución es Global => no hay otra opción de que la Asignación sea Dinámica*
+
+    Sin embargo, el SO podría decidir asignar más o menos frames a cada proceso en determinados momentos
+    analizando distintas métricas (uso CPU- PFs) y aún así en el momento de sustituir mirar las págs de ese proceso.
+    #+END_QUOTE
+** Pregunta (6)
+   #+BEGIN_QUOTE
+   V o F.
+   *La sobrepaginación (thrashing) puede ocurrir tanto con Sustitución Fija como con Global
+   (aunque con esta última su impacto es más grave)*
+   #+END_QUOTE
+*** Respuesta Correcta
+    Verdadero
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+BEGIN_QUOTE
+    En cualquiera de los dos casos puede ocurrir:
+    - Sustitución global -> los procesos se roban frames entre sí generando que todos entren en el problema
+    - Sustitución local -> si le damos menos frames a un proceso de lo que necesita para acomodar su localidad -> entra en sobrepaginación
+    #+END_QUOTE
+** [#A] Pregunta (7)
+   #+BEGIN_QUOTE
+   *¿Cuáles de las siguientes afirmaciones son válidas sobre la Localidad Temporal?*
+   
+   1. Asume que si accedemos a una página próximamente querremos acceder a las siguientes (por ej, si accedí a la 4, querré acceder a la 5, 6,..)
+   2. Se puede aproximar con la *técnica del conjunto de trabajo*
+   3. Si el tamaño de la localidad de un proceso es mayor a los frames asignados probablemente entrará en *Sobrepaginación*
+   4. Se basa en que en un intervalo de tiempo uno accede repetidas veces a un conjunto acotado de páginas
+   5. Durante toda la ejecución cada proceso respetará una localidad
+   #+END_QUOTE
+*** Respuesta Correcta
+    - 2) Se puede aproximar con la técnica del conjunto de trabajo
+    - 3) Si el tamaño de la localidad de un proceso es mayor a los frames asignados probablemente entrará en sobrepaginación
+    - 4) Se basa en que en un intervalo de tiempo uno accede repetidas veces a un conjunto acotado de páginas
+
+    *Observaciones:*
+    - En la 3) es cierto porque además va a tener que reemplazar constantemente, porque no va a contar con la cant. de frames para acomodar
+      las páginas a las que necesita acceder
+*** Justificación Respuestas Incorrectas
+    - 1) NO, esa sería la *Localidad Espacial*, la *localidad temporal* apunta a un determinado conjunto de páginas
+    - 5) NO, porque uno se va a mover entre distintas *localidades*
+*** Observaciones
+    #+BEGIN_QUOTE
+    *La localidad es un concepto "teórico" relacionado a qué páginas accede en un intervalo de tiempo*
+    (asumiendo que es un conjunto acotado). Esta localidad irá cambiando mientras el proceso ejecute.
+
+    Para aplicar la técnica *se puede aproximar con el conjunto de trabajo* definiendo un tamaño de ventana
+    y así mirar las últimas X referencias.
+    Estas páginas son las que el proceso estará accediendo en forma activa durante ese intervalo,
+    por lo que necesita tenerlas cargadas en RAM.
+    #+END_QUOTE
+** Pregunta (8)
+   #+BEGIN_QUOTE
+   *En un sistema que se cumple el principio de localidad temporal. ¿Cuál algoritmo sería el que más aplica?*
+
+   1. FIFO
+   2. LRU
+   3. CLOCK
+   4. CLOCK MODIFICADO
+   #+END_QUOTE
+*** Respuesta Correcta
+   - 2) LRU
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+BEGIN_QUOTE
+    Claramente FIFO no es una buena opción.
+    LRU justamente se basa en ese principio por lo que sería la opción ideal
+    (elige los que no fueron utilizados recientemente - no forman parte de la localidad).
+
+    Si bien clock y clock modificado intentan aproximar LRU no nos olvidemos que vienen originalmente de FIFO,
+    y se basan en el *bit de uso* y a veces degeneran en FIFO
+    #+END_QUOTE
+** [#A] Pregunta (9)
+   #+BEGIN_QUOTE
+   V o F.
+   *En caso de que la víctima a sustituir tenga el bit de M = 1, significa que no nos queda otra que realizar
+   dos i/os en forma secuencial (la descarga de la página víctima y la carga de la página nueva)*
+   #+END_QUOTE
+*** Respuesta Correcta
+    Falso
+*** Justificación Respuestas Incorrectas
+*** Observaciones
+    #+BEGIN_QUOTE
+    Si bien es cierto que se realizan dos operaciones de E/S, se puede optimizar el acceso a disco
+    con un *pool de frames* evitando que sea de forma secuencial las operaciones
+    
+    Si se utiliza un *pool de frames* extra lo que se puede hacer es seleccionar una página
+    del mismo para la carga y en paralelo lanzar la descarga.
+    #+END_QUOTE
+** Pregunta (10)
+   #+BEGIN_QUOTE
+   *¿Para qué sirve el lockeo de páginas?*
+   
+   1. Para garantizar mutua exclusión sobre una página
+   2. Para compartir memoria entre procesos
+   3. Para evitar inconsistencias por reemplazar páginas que forman parte de una IO
+   #+END_QUOTE
+*** Respuesta Correcta
+    - 3) Para evitar inconsistencias por reemplazar páginas que forman parte de una IO
+*** Justificación Respuestas Incorrectas
+    - 1) NO, no confundir con los mutex
+*** Observaciones
+    #+BEGIN_QUOTE
+    Se usa en ese caso particular para no incluir dentro de las opciones de víctimas a sustituir,
+    aquellas páginas que van a ser modificadas por una IO en curso/espera.
+    #+END_QUOTE

@@ -1,0 +1,38 @@
+#+TITLE: Clase 04 - Arquitectura de kernel
+* Conceptos
+  - es apropiado *dividirlo en componentes* más pequeños
+* Arquitectura Monolítica
+** Conceptos
+   - Es el más utilizado por los *sistemas operativos* (/utilizado por Linux, Windows, .../)
+   - Todo el código del SO está dentro del kernel
+** Desventajas
+  - Es más eficiente, más rápido, porque es todo uno
+  - es *dificil de mantener* por estar todo tan *acoplado*
+  - funciona en *modo kernel* (si hay errores, es algo grave)
+  - *NO hay paso de mensajes*, solo buscaba lo q necesitaba
+** Ventajas
+* Arquitectura Micro-Kernel
+** Conceptos
+  + Se separan las funcionalidades en
+    * modo usuario
+    * modo kernel
+     (asociadas al hardware como ínterrupciones, 
+      E/S, memoria a bajo nivel)
+  + trata a los módulos como si fuesen *servicios*
+     (ej. si deja de funcionar un módulo, se puede reiniciar)
+** Ventajas
+   - En caso de problemas, son más fácil de detectar por estar modularizado
+   - NO está corriendo todo en *modo kernel*
+** Desventajas
+   El *paso de mensajes* lo hace más lento e implíca *overhead* porque
+   1. Usa ~syscalls~ para comunicarse entre los módulos, el kernel es el puente entre ellos
+   2. Guarda *contexto*
+   3. Hace *cambios de modo*
+* Arquitectura Multicapa
+** Conceptos
+   - Se comunican entre las capas adyacentes (/las que estén juntas/)
+   - Las capas están muy acopladas entre si
+** Desventajas
+  - funciona en *modo kernel* (si hay errores, es algo grave)
+** Ventajas
+  - más *fácil de mantener*
