@@ -38,6 +38,8 @@ tarea_t* tarea_mas_facil_entre(tarea_t* tarea_1, tarea_t* tarea_2);
 tarea_t* buscar_tarea(t_list* listaTareas, tarea_t* tarea);
 /* tarea_t* tarea_mas_facil_entre(void *arg1, void* arg2); */
 
+bool tarea_mas_facil(tarea_t* tarea_1, tarea_t* tarea_2);
+
 tarea_t* tarea_mas_facil_segun(tarea_t* tarea_1, tarea_t* tarea_2, int valor); // usa las commons modificadas
 
 void imprimir_persona(persona_t persona){
@@ -86,7 +88,7 @@ int main(){
 
   printf("\nuna tarea facil cualquiera del listado:\n");
   tarea_t* tareaFacil = crear_tarea(10, 5);
-  unaTarea = list_find_by_value(tareasDinamicas, tareaFacil);
+  unaTarea = list_find_by_value(tareasDinamicas, tarea_mas_facil_entre, tareaFacil);
 
   if(unaTarea){
     imprimir_tarea(unaTarea);
@@ -172,6 +174,9 @@ tarea_t* tarea_mas_facil_entre(void *arg1, void* arg2){
 }
  */
 
+tarea_t* tarea_mas_facil_entre(tarea_t* tarea_1, tarea_t* tarea_2){
+  return tarea_1->duracion <= tarea_2->duracion ? tarea_1 : tarea_2;
+}
 tarea_t* tarea_mas_facil_entre(tarea_t* tarea_1, tarea_t* tarea_2){
   return tarea_1->duracion <= tarea_2->duracion ? tarea_1 : tarea_2;
 }
