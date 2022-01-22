@@ -1,0 +1,143 @@
+#+TITLE: Guia Ejercicios - FileSytem
+* Pregunta 1
+** Problema
+   #+BEGIN_QUOTE
+   ¿Qué tipo de asignación de clusters tiene el esquema FAT? ¿Continua, encadenada o indexada? (ayuda: considere qué
+   debería hacer el filesystem para poder ubicar el enésimo cluster de un archivo)
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   Encadenada/Enlazada
+   #+END_QUOTE
+* Pregunta 2
+** Problema
+   #+BEGIN_QUOTE
+   Dado un filesystem FAT12 con clusters 8 KiB:
+   a) ¿Cual es el espacio máximo direccionable teórico?
+   b) Si quisiera direccionar un espacio de 128 Mib, ¿Cuales dos tipos de cambio se le podrían hacer al filesystem?
+   c) Cual de los dos cambios sería más eficiente en términos de:
+     1. Un máximo aprovechamiento del espacio del disco
+     2. Un alto tiempo de respuesta a la hora de contar los clusters libres en el disco
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+
+* Pregunta 3
+** Problema
+   #+BEGIN_QUOTE
+   Si un disco rígido de 8 GiB se formatea con FAT32, usando clusters de 4 KiB, y descartando el espacio ocupado por la
+   información administrativa del filesystem, se pide:
+   
+   a) ¿Cuántas entradas tendría la FAT?
+   b) ¿Qué porcentaje del disco estaría ocupado por la FAT?
+   c) ¿Cuantos bits de cada entrada se desperdiciarían?
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 4
+** Problema
+   #+BEGIN_QUOTE
+   Si se tiene un disco rígido de 4 GiB, y se desea formatear con FAT16:
+   
+   a) ¿Cuál sería el tamaño mínimo de cluster para poder direccionar el disco? (descartando el espacio ocupado por la
+   información administrativa del filesystem)
+   b) Si en este esquema almaceno tres archivos: de 1 KiB, 20 KiB y 1 MiB respectivamente, ¿Qué espacio en disco
+   ocuparía cada uno?
+   c) ¿Qué principal desventaja presenta este esquema de formateo?
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 5
+** Problema
+   #+BEGIN_QUOTE
+    Suponga que formatea un disco de 512 GiB con FAT32, indique el máximo espacio direccionable y el tamaño máximo
+    de un archivo (en ambos casos, tanto el teórico y el real) en las siguientes situaciones:
+    
+    a) Con clusters de 1 KiB
+    b) Con clusters de 4 KiB
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 6
+** Problema
+   #+BEGIN_QUOTE
+   ¿Qué tipo de asignación de bloques tiene el esquema EXT2? ¿Continua, encadenada o indexada?
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 7
+** Problema
+   #+BEGIN_QUOTE
+   Se tiene un sistema con ext2 como filesystem. Los bloques de disco son de 1 KiB y los punteros son de 4 bytes. Indique
+   el tamaño máximo teórico de un archivo para las siguientes conformaciones de punteros:
+   a) Solamente 12 punteros directos
+   b) 12 punteros directos y 1 indirecto
+   c) 12 directos, 1 indirecto, 1 doblemente indirecto y 1 triplemente indirecto
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 8
+** Problema
+   #+BEGIN_QUOTE
+   Sea un filesystem ext2 con bloques de 1 KiB y punteros de 8 bytes:
+   
+   a) ¿Cuál es la cantidad mínima de punteros en el inodo necesaria para direccionar hasta 30 MiB por archivo?
+   Asuma que puede diseñar el inodo como desee (tipos de puntero y/o cantidad), sabiendo no puede haber más
+   de 10 punteros directos, 2 indirectos simples, 2 indirectos dobles, y 2 indirectos triples.
+   b) ¿Sería eficiente dicho esquema para sistemas donde generalmente se persistieran archivos no mayores a 4 KiB?
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+
+* Pregunta 9
+** Problema
+   #+BEGIN_QUOTE
+   Se tiene un sistema con ext2 como filesystem, con bloques de 4 KiB y punteros de 8 bytes. El inodo está conformado
+   con 12 punteros directos, 1 indirecto, 1 indirecto doble y 1 indirecto triple. Se pide la cantidad de accesos a bloques
+   necesaria para leer:
+   
+   a) El byte nro 16777227 de un archivo
+   b) Desde el byte 0 hasta el 250180 de un archivo
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 10
+** Problema
+   #+BEGIN_QUOTE
+   Indique el máximo espacio direccionable y el tamaño máximo de un archivo (tanto teórico como real) de un sistema
+   ext2 con un disco de 10 TiB, asumiendo que el inodo está conformado con 10 punteros directos, 2 indirectos dobles y 2
+   indirectos triples (los bloques son de 4 KiB y los punteros de 8 bytes)
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
+* Pregunta 11
+** Problema
+   #+BEGIN_QUOTE
+   Suponga que tiene un sistema xubuntu/linux donde corre aplicaciones java, donde no todas usan la misma versión.
+   Actualmente existen dos versiones instaladas, cuyos binarios se encuentran ubicados en las siguientes rutas:
+   ­ /usr/lib/java­8/bin/java
+   ­ /usr/lib/java­9/bin/java
+   Suponga que desea tener configurado en el sistema la versión por defecto a usar a través de un link (en la ruta
+   /etc/alternatives/java) que apunte a la versión configurada (inicialmente java­8, pero pudiéndose cambiar más tarde).
+   a) Indique qué tipo de link crearía, sabiendo que la versión 9 se encuentra ubicada en otro volumen
+   b) En base al punto anterior, indique cuántos archivos existen en el sistema que permitan ejecutar java­8
+   c) Resuelva nuevamente los puntos anteriores, pero asumiendo que la versión 9 se encuentra en el mismo
+   volumen que la versión 8
+   d) En base al punto a) (cada ítem es independiente)
+   i) ¿Qué sucedería si se elimina /usr/lib/java­8/bin/java?
+   ii) ¿Qué sucedería si se elimina /etc/alternatives/java?
+   iii) ¿Qué sucedería si se elimina /etc/alternatives/java y /usr/lib/java­8/bin/java?
+   e) Repita el punto d), pero basándose en el punto c)
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   #+END_QUOTE
